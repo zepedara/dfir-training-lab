@@ -47,4 +47,4 @@ for f in $(find "$TMP/repo/$ATTACK_DIR" -name '*.evtx' 2>/dev/null); do
   cp -f "$f" "$DST/" && n=$((n+1))
 done
 echo "[+] Copied $n sample(s) into $DST"
-echo "    Provenance: EVTX-ATTACK-SAMPLES / '$ATTACK_DIR' (MIT-licensed, @sbousseaden)"
+echo "    Provenance: EVTX-ATTACK-SAMPLES / '$ATTACK_DIR' (GPLv3, @sbousseaden)"
