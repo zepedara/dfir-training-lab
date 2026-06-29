@@ -1,0 +1,8 @@
+$ rip -r SYSTEM -p shutdown
+
+shutdown v.20200518
+(System) Gets ShutdownTime value from System hive
+
+ControlSet001\Control\Windows key, ShutdownTime value
+LastWrite time: 2020-09-18 23:10:53Z
+ShutdownTime  : 2020-09-18 23:10:53Z

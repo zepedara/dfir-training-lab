@@ -1,0 +1,38 @@
+$ rip -r Administrator_NTUSER.DAT -p run
+
+run v.20200511
+(Software, NTUSER.DAT) [Autostart] Get autostart key contents from Software hive
+
+Software\Microsoft\Windows\CurrentVersion\Run
+LastWrite Time 2020-09-19 03:37:18Z
+  OneDrive - "C:\Users\Administrator\AppData\Local\Microsoft\OneDrive\OneDrive.exe" /background
+
+Software\Microsoft\Windows\CurrentVersion\Run has no subkeys.
+
+Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Run not found.
+
+Software\Microsoft\Windows\CurrentVersion\RunOnce
+LastWrite Time 2020-09-19 03:37:34Z
+  Delete Cached Standalone Update Binary - C:\Windows\system32\cmd.exe /q /c del /q "C:\Users\Administrator\AppData\Local\Microsoft\OneDrive\StandaloneUpdater\OneDriveSetup.exe"
+  Delete Cached Update Binary - C:\Windows\system32\cmd.exe /q /c del /q "C:\Users\Administrator\AppData\Local\Microsoft\OneDrive\Update\OneDriveSetup.exe"
+
+Software\Microsoft\Windows\CurrentVersion\RunOnce has no subkeys.
+
+Software\Microsoft\Windows\CurrentVersion\RunServices not found.
+
+Software\Microsoft\Windows\CurrentVersion\RunServicesOnce not found.
+
+Software\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run not found.
+
+Software\Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunOnce not found.
+
+Software\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run not found.
+
+Software\Wow6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run not found.
+
+Software\Microsoft\Windows\CurrentVersion\StartupApproved\Run not found.
+
+Software\Microsoft\Windows\CurrentVersion\StartupApproved\Run32 not found.
+
+Software\Microsoft\Windows\CurrentVersion\StartupApproved\StartupFolder not found.
+

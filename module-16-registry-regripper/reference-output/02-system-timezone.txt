@@ -1,0 +1,13 @@
+$ rip -r SYSTEM -p timezone
+
+timezone v.20200518
+(System) Get TimeZoneInformation key contents
+
+TimeZoneInformation key
+ControlSet001\Control\TimeZoneInformation
+LastWrite Time 2020-09-17 17:56:13Z
+  DaylightName   -> @tzres.dll,-211
+  StandardName   -> @tzres.dll,-212
+  Bias           -> 480 (8 hours)
+  ActiveTimeBias -> 420 (7 hours)
+  TimeZoneKeyName-> Pacific Standard Time

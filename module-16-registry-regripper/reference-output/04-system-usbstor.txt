@@ -1,0 +1,6 @@
+$ rip -r SYSTEM -p usbstor
+
+usbstor v.20200515
+(System) Get USBStor key info
+
+ControlSet001\Enum\USBStor not found.
