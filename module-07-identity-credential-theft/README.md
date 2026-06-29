@@ -100,7 +100,7 @@ File                                          Event  Detection(s)
 sysmon_3_10_Invoke-Mimikatz_hosted_Github     10     Potential Credential Dumping Attempt Via PowerShell
 sysmon_10_mimikatz_sekurlsa_logonpasswords    10     HackTool - Generic Process Access; Uncommon GrantedAccess Flags On LSASS
 sysmon_10_comsvcs_minidump_lsass              1, 10  Process Memory Dump Via Comsvcs.DLL; Uncommon Process Access Rights...
-powershell_4104_minidumpwritedump_lsass       4104   Malicious PowerShell Keywords; PowerShell Get-Process LSASS; WinAPI Calls Via PowerShell
+powershell_4104_minidumpwritedump_lsass       4104   Malicious PowerShell Keywords; PowerShell Get-Process LSASS in ScriptBlock; WinAPI Function Calls Via PowerShell Scripts
 security_4662_dcsync                          4662   Active Directory Replication from Non Machine Account; Mimikatz DC Sync
 security_4624_4625_logon_baseline             —      (no detections)
 ```
