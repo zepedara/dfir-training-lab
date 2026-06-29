@@ -41,6 +41,7 @@ Deeper, self-contained modules that extend the lab below the artifact layer (raw
 | 12 | [Memory forensics](module-12-memory-volatility3) | `Volatility 3` (`vol`) | reconstruct processes, injection, network & persistence from a RAM capture | Win7 memory image (`get-data.sh`) |
 | 14 | [Malicious documents](module-14-malicious-documents) | `oletools` + Didier Stevens suite | statically dissect a weaponised Office macro doc & PDF; carve the next-stage IOCs | bundled teaching samples |
 | 15 | [Filesystem & timelines](module-15-filesystem-timeline) | The Sleuth Kit + `MFTECmd` | partition→file→bytes, recover deleted files, catch timestomping, build the filesystem timeline | synthetic NTFS image |
+| 16 | [Registry forensics](module-16-registry-regripper) | RegRipper (`rip`) | persistence, accounts, USB history & program execution recovered from the registry hives | DFIR-Madness Case 001 hives |
 
 > **Why the numbering jumps from 12 to 14:** there is **no Module 13** — the number is intentionally **reserved/held** for a future module and skipped, so the advanced track runs **12 → 14 → 15**. The gap is deliberate, not a missing file.
 
@@ -59,4 +60,4 @@ All data is bundled in each module's `data/` folder (or fetched by a per-module 
 ## Suggested path
 Work **1 → 11, in order**. Part A teaches you to prove execution on a single host; Part B teaches you to hunt an intrusion across the logs; the **capstone (11)** fuses both on one real case. Then take the **advanced add-on modules (12, 14, 15)** to go below the artifact layer — raw memory, raw disk — and out to the malicious-document front door. By the capstone you can take a triage collection and build a full incident timeline — exactly the decks' goal: *"Master the Triad. Close the Gap."*
 
-*Modules 1–12, 14 and 15 are complete (there is **no Module 13** — see the note above). Each has a full walkthrough from the source decks, real bundled data, guided exercises, and an **answers / what to find** section. Work the core arc **1 → 11**, then the advanced add-ons **12, 14, 15**.*
+*Modules 1–12, 14, 15 and 16 are complete (there is **no Module 13** — see the note above). Each has a full walkthrough from the source decks, real bundled data, guided exercises, and an **answers / what to find** section. Work the core arc **1 → 11**, then the advanced add-ons **12, 14, 15, 16**.*

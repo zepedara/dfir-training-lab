@@ -111,6 +111,7 @@ These extend the lab *beneath* the OS-artifact layer and out to initial access. 
     *The phishing front door.* Without ever opening them, you statically dissect a weaponised Office macro `.doc`, the same payload in a modern `.docm` (OOXML/ZIP), and a malicious PDF — using `oleid`/`olevba`, `oledump`/`zipdump`, and `pdfid`/`pdf-parser`. **You'll learn:** to find the **auto-exec trigger** then read the **de-obfuscated/decoded** code it runs, and to carve the next-stage IOCs (download URLs, dropped scripts, launched programs) that pivot you into Module 9 (4104) and malware triage.
 
 15. **[Module 15 — Filesystem forensics & timelines](module-15-filesystem-timeline)** · tools: The Sleuth Kit + `MFTECmd`
+16. **[Module 16 — Registry forensics](module-16-registry-regripper)** · tools: RegRipper (`rip`)
     *The ground truth under every artifact.* You open a raw disk image with no Windows and no mounting, walk it layer by layer (`mmls` → `fls` → `istat`/`icat`), **recover deleted files**, inspect NTFS's **two timestamp sets** to catch **timestomping**, parse the `$MFT` with MFTECmd's `SI<FN`/`uSecZeros` flags, and build the **filesystem timeline** — the spine of a super-timeline. **You'll learn:** that *deleted ≠ gone*, why `$FN` defeats an attacker who only stomped `$SI`, and how per-layer timelines merge in Timeline Explorer.
 
 ---
@@ -141,6 +142,7 @@ Part C — advanced add-ons (no Module 13 — reserved)
   12 Memory (Volatility 3) ─ what was alive in RAM at capture
   14 Malicious documents ─ the phishing launcher that started it all
   15 Filesystem & timelines (TSK + MFTECmd) ─ deleted files, timestomping, the timeline spine
+  16 Registry forensics (RegRipper) ─ persistence, accounts, USB, program execution from hives
 ```
 
 The pivots are deliberate. A suspicious binary in **Module 1** is confirmed in **2/3** and hunted fleet-wide in **4**; its SHA1 and execution time become anchors you carry into **Part B**, where credential theft (**7**) explains *how* the attacker spread (**8**), PowerShell (**9**) shows *what they typed*, and Sysmon/WEF (**10**) is the sensor layer that recorded all of it. The capstone (**11**) closes the loop. The **advanced add-ons** then deepen the same case from new angles: memory (**12**) shows what was running and connected at capture, malicious documents (**14**) explain the **initial access** that dropped the implant, and filesystem forensics (**15**) recovers what the attacker deleted and exposes the timestamps he faked — feeding the super-timeline the capstone builds.
@@ -219,6 +221,7 @@ Each module ships its sample data in `data/` (committed to the repo), so you can
 | 12 Memory forensics | what was running/connected in RAM? | Volatility 3 (`vol`) | processes, `malfind`, `netscan`, `svcscan` |
 | 14 Malicious documents | how did they get in? | oletools + Didier Stevens | VBA auto-exec, PDF `/OpenAction`/`/Launch`, carved IOCs |
 | 15 Filesystem & timelines | what's on disk / deleted / faked? | The Sleuth Kit + MFTECmd | `$MFT`, `$SI` vs `$FN` (timestomp), recovered files, timeline |
+| 16 Registry forensics | what persisted / who logged on / what ran? | RegRipper | Run keys, services, UserAssist, USBSTOR, SAM, shellbags |
 
 ---
 
