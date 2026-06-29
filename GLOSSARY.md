@@ -77,7 +77,7 @@ A timestamp baked into a Windows executable when it was built. It's trivially **
 An attack where a program is tricked into loading a malicious DLL from an unexpected folder (`\Temp\`, `\AppData\`, `\Users\Public\`). Prefetch's "files loaded" list is a quick way to spot a DLL loaded from somewhere it shouldn't be.
 
 **PECmd**
-Eric Zimmerman's Prefetch parser (Windows). Exports a rich timeline CSV with all 8 run times. In the offline container the equivalent is the `prefetch` tool (libscca's `sccainfo`).
+Eric Zimmerman's Prefetch parser (Windows). Exports a rich timeline CSV with all 8 run times. The modules' hands-on steps use the open-source equivalent on the lab VM, the `prefetch` tool (libscca's `sccainfo`).
 *Sources:* EZ Tools <https://ericzimmerman.github.io/>.
 
 **AppCompatCacheParser**
