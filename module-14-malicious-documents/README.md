@@ -3,9 +3,9 @@
 **Deck mapping:** *Intrusion Hunting Playbook* → "Initial Access / Phishing Attachments" · *Advanced Intrusion Forensic Hunting* → "Weaponised Documents (Office macros & PDF)."
 **Goal:** take a suspicious **Office document** and a suspicious **PDF**, and — **without ever opening them in Office or a reader** — prove whether they are weaponised, read exactly what they would do, and extract the next-stage indicators (URLs, dropped file names, launched programs). You will use **oletools** (`oleid`, `olevba`) and the **Didier Stevens suite** (`oledump`, `pdfid`, `pdf-parser`, `zipdump`).
 
-> **Prerequisite:** none beyond the lab container. This is the "front door" module — most intrusions begin here, and the IOCs you carve feed Module 9 (did the macro's PowerShell actually run? check 4104) and the malware-triage flow (YARA/capa/FLOSS on the dropped payload).
+> **Prerequisite:** none beyond the lab VM. This is the "front door" module — most intrusions begin here, and the IOCs you carve feed Module 9 (did the macro's PowerShell actually run? check 4104) and the malware-triage flow (YARA/capa/FLOSS on the dropped payload).
 >
-> **Everything below was produced by running the named commands against the three bundled samples in the `dfir-aio:v2` container.** The samples are **benign teaching files built for this module** (see `data/README.md`); they contain realistic *indicators* but **no working payload** — the "download" host is the RFC-6761 reserved, non-routable domain `example.test`, and nothing is ever executed because every tool here is a **static** parser.
+> **Everything below was produced by running the named commands against the three bundled samples on the lab VM.** The samples are **benign teaching files built for this module** (see `data/README.md`); they contain realistic *indicators* but **no working payload** — the "download" host is the RFC-6761 reserved, non-routable domain `example.test`, and nothing is ever executed because every tool here is a **static** parser.
 
 ---
 
@@ -45,7 +45,7 @@ A PDF is a set of numbered **objects** (`N 0 obj … endobj`) referenced through
 Object **streams** (the JavaScript, for instance) are usually **compressed** with `FlateDecode` (zlib), so a raw view shows gibberish — you must ask the parser to *decode* the stream to read the script.
 
 ### The static-analysis mindset
-None of the tools below run the macro or the JavaScript. They **parse and decode**. That is what makes maldoc analysis safe and **reproducible** — the same bytes give the same answer every time, which matters for an investigation report. You still do the work **offline** (`--network none`), because you will be carving live payload URLs and (in real cases) live droppers.
+None of the tools below run the macro or the JavaScript. They **parse and decode**. That is what makes maldoc analysis safe and **reproducible** — the same bytes give the same answer every time, which matters for an investigation report. You still do the work **offline** (the lab VM has no network), because you will be carving live payload URLs and (in real cases) live droppers.
 
 ---
 
@@ -67,15 +67,15 @@ None of the tools below run the macro or the JavaScript. They **parse and decode
 
 ## 3. Setup
 
+Open **Git Bash** on the lab VM and change into this module's data directory:
+
 ```bash
 cd module-14-malicious-documents/data
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ```
-- `--rm` — throw the container away when you exit.
-- `--network none` — **no network**. The samples are inert, but this is the habit you want when handling real maldocs: even though these tools never execute the file, you never want a stray click or a second-stage fetch to reach the internet from your analysis box.
-- `-v "$PWD":/data` — mount this `data/` folder (with the three samples) read/write at **`/data`** inside the container, so output files land back on your host.
+- **`cd module-14-malicious-documents/data`** — move into the folder holding this module's three samples. **Every command below is run from inside this folder**, so files are named with simple relative paths and any output lands right beside them.
+- All the document-analysis tools (`oleid`, `olevba`, `oledump`, `zipdump`, `pdfid`, `pdf-parser`, `rtfobj`) are installed **natively on the lab VM and already on your `PATH`** — call them directly by name in Git Bash; there is no container or Docker. The VM is kept **offline** (no network): the samples are inert, but staying offline is the habit you want when handling real maldocs — even though these tools never execute the file, you never want a stray click or a second-stage fetch to reach the internet from your analysis box.
 
-Tool versions in `dfir-aio:v2` (verified 2026-06-29): **olevba 0.60.2**, **oleid 0.60.1**, **rtfobj 0.60.1** (oletools); **oledump 0.0.85**, **pdfid 0.2.10**, **pdf-parser 0.7.14**, **zipdump 0.0.35** (Didier Stevens). In this container the Didier tools are exposed **without the `.py` suffix** (`pdfid`, not `pdfid.py`).
+Tool versions on the lab VM (verified 2026-06-29): **olevba 0.60.2**, **oleid 0.60.1**, **rtfobj 0.60.1** (oletools); **oledump 0.0.85**, **pdfid 0.2.10**, **pdf-parser 0.7.14**, **zipdump 0.0.35** (Didier Stevens). On the lab VM the Didier tools are exposed **without the `.py` suffix** (`pdfid`, not `pdfid.py`).
 
 ---
 
@@ -85,7 +85,7 @@ Tool versions in `dfir-aio:v2` (verified 2026-06-29): **olevba 0.60.2**, **oleid
 Always start with the cheap question: *is this thing worth a deep dive?*
 
 ```bash
-oleid /data/Invoice_2024_0042.doc
+oleid Invoice_2024_0042.doc
 ```
 `oleid` takes just the filename — it walks the OLE structure and reports a table of indicators with a **Risk** column. Real output (abridged):
 
@@ -105,7 +105,7 @@ Relationships       |                    |          |templates, remote OLE objec
 
 ### Step A2 — Extract & scan the macro with `olevba`
 ```bash
-olevba -a /data/Invoice_2024_0042.doc
+olevba -a Invoice_2024_0042.doc
 ```
 - `-a` / `--analysis` — print **only the analysis table** (the IOC/keyword findings). Drop `-a` to also dump the full source; use `-c` for source-only.
 
@@ -144,7 +144,7 @@ The pattern **AutoExec + Shell/PowerShell + download + obfuscation** is the text
 
 ### Step A3 — Read the de-obfuscated macro with `olevba --reveal`
 ```bash
-olevba --reveal /data/Invoice_2024_0042.doc
+olevba --reveal Invoice_2024_0042.doc
 ```
 - `--reveal` — print the macro source with obfuscated strings shown in context (the cleanest way to *read intent*). Related: `--deobf` (aggressive decode pass), `-c` (source only), `--show-pcode` (disassemble the compiled p-code — use this to catch **VBA stomping**, where the readable source is a decoy and the real logic is in the p-code).
 
@@ -179,7 +179,7 @@ Now the story is unambiguous: on open it **rebuilds `powershell` from `Chr()` co
 `olevba` is automated; `oledump` gives you the **raw OLE structure** and a clean decompress — useful to confirm findings and to reach things `olevba` summarises.
 
 ```bash
-oledump /data/Invoice_2024_0042.doc
+oledump Invoice_2024_0042.doc
 ```
 Lists every stream; an **`M`** marks a stream that contains real macro code:
 
@@ -193,7 +193,7 @@ Lists every stream; an **`M`** marks a stream that contains real macro code:
 Stream **3** is the macro. Decompress just it:
 
 ```bash
-oledump -s 3 -v /data/Invoice_2024_0042.doc
+oledump -s 3 -v Invoice_2024_0042.doc
 ```
 - `-s 3` — **select** stream 3 (`-s a` = all streams).
 - `-v` — **decompress** the VBA (the compressed stream → readable source). Without `-v` you would dump the raw compressed bytes.
@@ -201,7 +201,7 @@ oledump -s 3 -v /data/Invoice_2024_0042.doc
 Output is the same source you revealed in A3, byte-for-byte. Finally, let a plugin do the IOC pull:
 
 ```bash
-oledump -p plugin_http_heuristics /data/Invoice_2024_0042.doc
+oledump -p plugin_http_heuristics Invoice_2024_0042.doc
 ```
 - `-p PLUGIN` — run a Didier Stevens **plugin** across the streams. `plugin_http_heuristics` reconstructs and prints URL-ish strings. Real output (abridged):
 
@@ -220,7 +220,7 @@ Note it surfaces `http://www` — the *prefix* of the concatenated URL. That is 
 
 ### Step B1 — List the ZIP members with `zipdump`
 ```bash
-zipdump /data/Statement_Q4.docm
+zipdump Statement_Q4.docm
 ```
 ```
 Index Filename                     Encrypted Timestamp
@@ -234,7 +234,7 @@ Member **5**, `word/vbaProject.bin`, is the OLE2 macro store. Its mere presence 
 
 ### Step B2 — Pipe the macro store straight into `oledump`
 ```bash
-zipdump -s 5 -d /data/Statement_Q4.docm | oledump
+zipdump -s 5 -d Statement_Q4.docm | oledump
 ```
 - `-s 5` — **select** member 5.
 - `-d` — **dump** its raw bytes to stdout.
@@ -246,11 +246,11 @@ zipdump -s 5 -d /data/Statement_Q4.docm | oledump
 Then read the macro the same way, over the same pipe:
 
 ```bash
-zipdump -s 5 -d /data/Statement_Q4.docm | oledump -s 3 -v
+zipdump -s 5 -d Statement_Q4.docm | oledump -s 3 -v
 ```
 → prints the identical VBA source from Part A.
 
-> **Tool gap worth knowing:** upstream Didier Stevens docs (and `research/didier-stevens-suite.md`) show piping with a `-` filename (`… | oledump -s 3 -v -`). In this container's **oledump 0.0.85** the `-` argument fails with `Error: - is not a file.` — the working form is to pipe in **with no filename at all** (as above). `olevba` also handles OOXML natively, so `olevba -a /data/Statement_Q4.docm` reaches the same macro in one step (it reports `Type: OpenXML`).
+> **Tool gap worth knowing:** upstream Didier Stevens docs (and `research/didier-stevens-suite.md`) show piping with a `-` filename (`… | oledump -s 3 -v -`). On the lab VM's **oledump 0.0.85** the `-` argument fails with `Error: - is not a file.` — the working form is to pipe in **with no filename at all** (as above). `olevba` also handles OOXML natively, so `olevba -a Statement_Q4.docm` reaches the same macro in one step (it reports `Type: OpenXML`).
 
 ---
 
@@ -258,12 +258,12 @@ zipdump -s 5 -d /data/Statement_Q4.docm | oledump -s 3 -v
 
 ### Step C1 — Triage with `pdfid`
 ```bash
-pdfid -n /data/Invoice_2024_0042.pdf
+pdfid -n Invoice_2024_0042.pdf
 ```
 - `-n` — hide zero-count keywords (cleaner). (`-e` shows *extra* keywords; `-f` forces parsing of a file not recognised as a PDF.)
 
 ```
-PDFiD 0.2.10 /data/Invoice_2024_0042.pdf
+PDFiD 0.2.10 Invoice_2024_0042.pdf
  obj                    8
  /Page                  1
  /JS                    2
@@ -277,7 +277,7 @@ PDFiD 0.2.10 /data/Invoice_2024_0042.pdf
 
 ### Step C2 — Follow the auto-action with `pdf-parser`
 ```bash
-pdf-parser -s OpenAction /data/Invoice_2024_0042.pdf
+pdf-parser -s OpenAction Invoice_2024_0042.pdf
 ```
 - `-s KEYWORD` — search for objects containing a name/keyword. Real output shows the document **Catalog** and where the auto-action points:
 
@@ -294,7 +294,7 @@ obj 1 0
 `/OpenAction 4 0 R` → the action is **object 4**. Show it:
 
 ```bash
-pdf-parser -o 4 /data/Invoice_2024_0042.pdf
+pdf-parser -o 4 Invoice_2024_0042.pdf
 ```
 - `-o N` — show **object N**.
 
@@ -307,7 +307,7 @@ It is a **JavaScript action** whose script is in **object 5**.
 
 ### Step C3 — Decode the (compressed) JavaScript stream
 ```bash
-pdf-parser -o 5 -f /data/Invoice_2024_0042.pdf
+pdf-parser -o 5 -f Invoice_2024_0042.pdf
 ```
 - `-f` — **apply the stream filters** (here `FlateDecode`/zlib). **Without `-f` you would see compressed gibberish;** with it you read the script:
 
@@ -324,7 +324,7 @@ The JavaScript pops a lure dialog (`app.alert`) and calls **`app.launchURL`** to
 
 ### Step C4 — Read the `/Launch` action
 ```bash
-pdf-parser -s Launch /data/Invoice_2024_0042.pdf
+pdf-parser -s Launch Invoice_2024_0042.pdf
 ```
 ```
 obj 8 0
@@ -335,7 +335,7 @@ obj 8 0
 A `/Launch` action that starts **`calc.exe`** (the classic harmless stand-in for "an arbitrary program"). This object is wired to the **page's `/AA /O`** (additional action, "on open"), so it too fires automatically. A one-line inventory of every object and indicator:
 
 ```bash
-pdf-parser -a /data/Invoice_2024_0042.pdf
+pdf-parser -a Invoice_2024_0042.pdf
 ```
 - `-a` — **stats**: object/type counts and a "Search keywords" tally (`/JS 2: 4, 7`, `/Launch 1: 8`, `/OpenAction 1: 1`, `/URI 1: 9`, …) — a fast map of *which object number* holds each indicator, so you know exactly where to point `-o`.
 
@@ -388,7 +388,7 @@ A finance user reports two attachments from a "supplier," `Invoice_2024_0042.doc
 - **Find the auto-exec trigger first:** `AutoOpen`/`Document_Open`/`Workbook_Open` in VBA; `/OpenAction`/`/AA` in PDF. No trigger, far lower urgency.
 - **Then read the de-obfuscated/decoded code:** `olevba --reveal` (and `oledump -s N -v`) for VBA; `pdf-parser -o N -f` for the compressed PDF script. Obfuscation hides bytes; these tools hand you intent.
 - **Know your container:** legacy `.doc`/`.xls` are **OLE2** (use `oledump` directly); modern `.docm`/`.xlsm` are **ZIP** (use `zipdump` to reach `vbaProject.bin`, *then* `oledump`).
-- **Watch the version quirks:** in this container the Didier tools have **no `.py`**, and **oledump 0.0.85 won't take `-` as a stdin filename** — pipe in with no filename instead.
+- **Watch the version quirks:** on the lab VM the Didier tools have **no `.py`**, and **oledump 0.0.85 won't take `-` as a stdin filename** — pipe in with no filename instead.
 - **The output is IOCs.** Every URL, dropped file, and launched program you carve feeds the next module (did it run? → **Module 9 / 4104**) and the malware-triage flow (YARA/capa/FLOSS on the dropped payload).
 
 ---

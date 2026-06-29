@@ -30,8 +30,8 @@ NTFS keeps its own bookkeeping in hidden files whose names start with `$`. The m
 > **The timestomp tell:** at real file creation, NTFS writes `$SI` and `$FN` together, so they match. A timestomping tool rewrites only `$SI` (backdating it to look old) and **cannot easily touch `$FN`** — so afterwards **`$SI` Created is *earlier* than `$FN` Created**. A second tell: many stomping tools only set **whole seconds**, leaving `$SI` times ending in `.0000000` while `$FN` keeps its 100-nanosecond precision. You will see both tells, in real tool output, below.
 
 ### What the two tools in this module do
-- **The Sleuth Kit (TSK)** — Brian Carrier's open-source disk-forensics toolkit (the engine under Autopsy). A family of small command-line tools (`mmls`, `fls`, `istat`, `icat`, `mactime`, …), each working at one layer above. Reads images **read-only and offline** — it never mounts anything, so the evidence can't change. Version in `dfir-aio:v2`: **4.11.1**.
-- **MFTECmd** — Eric Zimmerman's dedicated `$MFT`/`$J`/`$LogFile` parser (.NET). It flattens the `$MFT` into a rich CSV with **both** timestamp sets in separate columns *and* pre-computed timestomp flags (`SI<FN`, `uSecZeros`). Version in `dfir-aio:v2`: **2026.5.0**.
+- **The Sleuth Kit (TSK)** — Brian Carrier's open-source disk-forensics toolkit (the engine under Autopsy). A family of small command-line tools (`mmls`, `fls`, `istat`, `icat`, `mactime`, …), each working at one layer above. Reads images **read-only and offline** — it never mounts anything, so the evidence can't change. Version on the lab VM: **4.11.1**.
+- **MFTECmd** — Eric Zimmerman's dedicated `$MFT`/`$J`/`$LogFile` parser (.NET). It flattens the `$MFT` into a rich CSV with **both** timestamp sets in separate columns *and* pre-computed timestomp flags (`SI<FN`, `uSecZeros`). Version on the lab VM: **2026.5.0**.
 
 > **Plain-language summary:** TSK lets you read a disk image like a forensic surgeon — partitions, every file (even deleted), exact metadata, raw bytes. MFTECmd turns the NTFS master table into a spreadsheet that flags faked timestamps for you. Together they give you the **filesystem timeline** that the rest of the investigation hangs on.
 
@@ -55,20 +55,15 @@ The real intrusion happened on **2026-06-15, ~09:10–09:20 UTC**. Hold that win
 
 ## 3. Setup
 
+Open **Git Bash** on the lab VM and change into this module's data directory:
+
 ```bash
-cd module-15-filesystem-timeline
-docker run -it --rm --network none -v "$PWD/data":/data dfir-aio:v2
+cd module-15-filesystem-timeline/data
 ```
-- **`docker run`** — start a container from an image.
-- **`-it`** — interactive terminal (you get a shell inside).
-- **`--rm`** — delete the container on exit (keeps your host clean).
-- **`--network none`** — **no network at all**. Evidence can never "phone home"; the analysis is provably offline.
-- **`-v "$PWD/data":/data`** — **mount** this module's `data/` folder into the container at `/data` so the tools can read the image and write results back to your real folder.
-- **`dfir-aio:v2`** — the all-in-one image; it already contains the full Sleuth Kit and MFTECmd.
+- **`cd module-15-filesystem-timeline/data`** — move into the folder holding this module's disk image (`disk-DESKTOP-SDN1RPT.raw`) and the pre-carved `MFT`. **Every command below is run from inside this folder**, so the image and the reports you write use simple relative paths.
+- The full **Sleuth Kit** (`mmls`, `fls`, `istat`, `icat`, `mactime`, …) and **MFTECmd** are installed **natively on the lab VM and already on your `PATH`** — call them directly by name in Git Bash; there is no container or Docker. The VM is kept **offline** (no network), so evidence can never "phone home" and the analysis is provably offline. TSK reads the image **read-only** and never mounts it, so the evidence can't change.
 
-Everything below is run **inside that container**, from `/data`.
-
-> **Windows-native alternative:** on the lab VM you can run the EZ Tools directly (`C:\DFIR\tools\MFTECmd\MFTECmd.exe`); TSK is most easily used through **Autopsy** (its GUI) or a WSL/`dfir-aio` shell. Flags are identical — only paths differ.
+> **Prefer a GUI?** The Sleuth Kit also ships with **Autopsy**, its graphical front-end, on the lab VM — same engine, same results, point-and-click. The command-line walkthrough below is faster to follow and to drop into a report; the flags map one-to-one.
 
 ---
 
@@ -215,20 +210,20 @@ Created:	2019-03-15 08:34:21.765432100 (UTC)
 ### Step 6 — Parse the `$MFT` with MFTECmd (the timestomp flags, for free)
 Doing the `$SI`-vs-`$FN` comparison by eye works for one file; across a whole `$MFT` you want it computed for you. MFTECmd does exactly that. First carve the `$MFT` out of the image (it's always MFT entry **0**):
 ```bash
-icat -o 2048 disk-DESKTOP-SDN1RPT.raw 0 > /data/MFT
+icat -o 2048 disk-DESKTOP-SDN1RPT.raw 0 > MFT
 ```
 *(The carved `MFT` is already shipped in `data/` so you can skip straight to parsing.)* Now parse it:
 ```bash
-MFTECmd -f /data/MFT --csv /data --csvf mft.csv
+MFTECmd -f MFT --csv . --csvf mft.csv
 ```
-- **`-f /data/MFT`** — the metadata **f**ile to parse. MFTECmd **auto-detects** that it's a `$MFT` (it also accepts `$J`, `$LogFile`, `$Boot`, `$SDS`).
-- **`--csv /data`** — write CSV output into `/data`.
+- **`-f MFT`** — the metadata **f**ile to parse. MFTECmd **auto-detects** that it's a `$MFT` (it also accepts `$J`, `$LogFile`, `$Boot`, `$SDS`).
+- **`--csv .`** — write CSV output into the current folder.
 - **`--csvf mft.csv`** — name the output file (otherwise it's auto-timestamped).
 
 **Real output:**
 ```
-/data/MFT: FILE records found: 35 (Free records: 47) File size: 82KB
-	CSV output will be saved to /data/mft.csv
+MFT: FILE records found: 35 (Free records: 47) File size: 82KB
+	CSV output will be saved to ./mft.csv
 ```
 Open `mft.csv` (Excel / LibreOffice / Timeline Explorer). The columns that matter here:
 - **`Created0x10` / `Created0x30`** — `$SI` Created (`0x10`) vs `$FN` Created (`0x30`). (MFTECmd only fills `0x30` when it *differs* from `0x10`, so a populated `Created0x30` is itself a flag.)
@@ -280,10 +275,10 @@ Mon Jun 15 2026 09:20:15 , 12984 , .a.b , -/r... , 81-128-2 , "C:/Users/mortysmi
 #### Same timeline, from MFTECmd (the `$MFT` route)
 MFTECmd can emit a bodyfile too, so you can build the same timeline from the parsed `$MFT` (useful when all you were handed is the `$MFT`, not a full image):
 ```bash
-MFTECmd -f /data/MFT --body /data --bodyf mft.body --bdl C
-mactime -b /data/mft.body -d -z UTC > timeline_mft.csv
+MFTECmd -f MFT --body . --bodyf mft.body --bdl C
+mactime -b mft.body -d -z UTC > timeline_mft.csv
 ```
-- **`--body /data`** — write a TSK **bodyfile** into `/data`.
+- **`--body .`** — write a TSK **bodyfile** into the current folder.
 - **`--bodyf mft.body`** — its filename.
 - **`--bdl C`** — the **b**ody **d**rive **l**etter to prefix (`C`).
 
@@ -292,7 +287,7 @@ Either route gives you the **filesystem half of a super-timeline**.
 ### Step 8 — Where the heavier tooling fits (Plaso)
 A full **super-timeline** merges the filesystem (this module) with registry, EVTX (Module 5), Prefetch (Module 1), Amcache (Module 3), browser history, and more, into one sorted file. The standard one-shot merger is **Plaso** (`log2timeline.py` to ingest everything, `psort.py` to sort/filter).
 
-> **Tool gap (verified on `dfir-aio:v2`, 2026-06-29):** **Plaso is *not* installed** in the container — `which log2timeline.py psort.py` returns nothing. That's deliberate (Plaso is heavy). Until it's added, build the timeline **per layer** as you did here — TSK `fls`+`mactime` and MFTECmd for the filesystem, `EvtxECmd` for logs (Module 5), RegRipper for the registry — and **merge them in Timeline Explorer** (all EZ output and `mactime -d` CSV are easy to load and sort together). Adding Plaso is a recommended future enhancement to the image, not a requirement for this lesson.
+> **Tool gap (verified on the lab VM, 2026-06-29):** **Plaso is *not* installed** on the lab VM — `which log2timeline.py psort.py` returns nothing. That's deliberate (Plaso is heavy). Until it's added, build the timeline **per layer** as you did here — TSK `fls`+`mactime` and MFTECmd for the filesystem, `EvtxECmd` for logs (Module 5), RegRipper for the registry — and **merge them in Timeline Explorer** (all EZ output and `mactime -d` CSV are easy to load and sort together). Adding Plaso is a recommended future enhancement to the lab VM, not a requirement for this lesson.
 
 ---
 
@@ -341,7 +336,7 @@ Every one of those steps survived in the filesystem: the deletions were recovera
 - **Deleted ≠ gone.** `fls -d` lists deleted files and `icat -r` recovers their bytes until the clusters are reused — that's how you pull back a wiped dropper or staged archive.
 - NTFS keeps **two** timestamp sets. `$SI` is forgeable; `$FN` is kernel-written. **`$SI` Created earlier than `$FN` Created = timestomping**, and **whole-second `$SI`** is a second tell. `istat` shows both; MFTECmd flags them automatically as **`SI<FN`** and **`uSecZeros`**.
 - `fls -m` + `mactime` (or `MFTECmd --body`) builds the **filesystem timeline** — the spine of a super-timeline. Because it carries the `$FN` rows, it survives an attacker who only stomped `$SI`.
-- A full super-timeline normally uses **Plaso** to merge every artifact; Plaso is **not** in `dfir-aio:v2`, so here you timeline per-layer and merge in Timeline Explorer.
+- A full super-timeline normally uses **Plaso** to merge every artifact; Plaso is **not** on the lab VM, so here you timeline per-layer and merge in Timeline Explorer.
 
 ---
 
@@ -353,7 +348,7 @@ Every one of those steps survived in the filesystem: the deletions were recovera
 - Microsoft Learn — NTFS Master File Table and the `$STANDARD_INFORMATION` / `$FILE_NAME` attributes (the two timestamp sets).
 - 13Cubed — "NTFS Timestamps / Timestomping" and "MFTECmd" episodes (the `$SI` vs `$FN` and sub-second-precision detection).
 - SANS FOR500 / FOR508 — bodyfile→`mactime` timelining and `$MFT`/`$UsnJrnl` super-timeline methodology.
-- Plaso / log2timeline — the super-timeline merger (heavier alternative, not installed in `dfir-aio:v2`): <https://plaso.readthedocs.io/>
+- Plaso / log2timeline — the super-timeline merger (heavier alternative, not installed on the lab VM): <https://plaso.readthedocs.io/>
 - DFIR Madness — "The Stolen Szechuan Sauce" (Case 001), the intrusion the lab's narrative is built on: <https://dfirmadness.com/the-stolen-szechuan-sauce/>
 
 ---

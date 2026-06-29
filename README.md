@@ -1,8 +1,8 @@
 # DFIR Training Lab — Evidence of Execution → Intrusion Hunting
 
-A hands-on, **guided lab** that walks every tool from the source decks (*Windows Execution Forensics*, *Intrusion Hunting Playbook*, *Advanced Intrusion Forensic Hunting*) **in teaching order**, with **real training data** to practice on at each step. Pairs with the offline **[dfir-aio container](https://github.com/zepedara/dfir-drop)** — every tool you need is already in it.
+A hands-on, **guided lab** that walks every tool from the source decks (*Windows Execution Forensics*, *Intrusion Hunting Playbook*, *Advanced Intrusion Forensic Hunting*) **in teaching order**, with **real training data** to practice on at each step. It runs on the prebuilt **Windows analysis lab VM**, where every tool you need is **installed natively and already on your `PATH`** — no container, no Docker, nothing to install.
 
-> **How to use:** load the `dfir-aio` container, `cd` into a module's `data/` folder, run `docker run -it --rm -v "$PWD":/data dfir-aio:v2`, and follow that module's `README`. Each module = **theory (from the deck) → tool → guided exercises → what to find.**
+> **How to use:** open **Git Bash** on the lab VM, `cd` into a module's `data/` folder, and follow that module's `README` — you call each tool directly by name from inside that folder. The VM is kept **offline** so evidence can never phone home. Each module = **theory (from the deck) → tool → guided exercises → what to find.**
 
 ---
 
@@ -28,18 +28,35 @@ A hands-on, **guided lab** that walks every tool from the source decks (*Windows
 | 9 | [PowerShell tradecraft](module-09-powershell-tradecraft) | event-log analysis | Script Block Logging 4104, module 4103 | EVTX-ATTACK-SAMPLES › Execution |
 | 10 | [Sysmon + WEF](module-10-sysmon-wef) | concepts + Sysmon EVTX | the visibility layer | Sysmon sample EVTX |
 
+### Capstone
+| # | Module | Focus | Data |
+|---|---|---|---|
+| 11 | [Capstone investigation](module-11-capstone) | work one full intrusion end-to-end across the Triad + event logs → timeline & findings report | full triage collection |
+
+### Part C — Advanced add-on modules
+Deeper, self-contained modules that extend the lab below the artifact layer (raw memory and raw disk) and out to the initial-access front door. Take them after the capstone, in any order.
+
+| # | Module | Tool | Focus | Data |
+|---|---|---|---|---|
+| 12 | [Memory forensics](module-12-memory-volatility3) | `Volatility 3` (`vol`) | reconstruct processes, injection, network & persistence from a RAM capture | Win7 memory image (`get-data.sh`) |
+| 14 | [Malicious documents](module-14-malicious-documents) | `oletools` + Didier Stevens suite | statically dissect a weaponised Office macro doc & PDF; carve the next-stage IOCs | bundled teaching samples |
+| 15 | [Filesystem & timelines](module-15-filesystem-timeline) | The Sleuth Kit + `MFTECmd` | partition→file→bytes, recover deleted files, catch timestomping, build the filesystem timeline | synthetic NTFS image |
+
+> **Why the numbering jumps from 12 to 14:** there is **no Module 13** — the number is intentionally **reserved/held** for a future module and skipped, so the advanced track runs **12 → 14 → 15**. The gap is deliberate, not a missing file.
+
 ---
 
 ## Training data (provenance)
 - **EVTX-ATTACK-SAMPLES** (sbousseaden) — 278 EVTX of real attack techniques, organized by MITRE ATT&CK → modules 7–10.
 - **hayabusa-sample-evtx** (Yamato-Security) — 599 EVTX → module 6.
 - **DFIR Madness Case 001** disk image → real Prefetch/ShimCache/Amcache extracted for Part A (a documented intrusion with a known story, so the exercises have *answers*).
+- **Advanced-track data** → a published Win7 RAM capture for Module 12 (fetched by `get-data.sh`), purpose-built benign maldoc samples for Module 14, and a synthetic NTFS disk image for Module 15. Each module's `data/README.md` gives exact provenance and licensing.
 
-All data is bundled in each module's `data/` folder (or fetched by a per-module `get-data.sh`). All analysis runs **offline** in the container.
+All data is bundled in each module's `data/` folder (or fetched by a per-module `get-data.sh` on an online host). All analysis runs **offline** on the lab VM.
 
 ---
 
 ## Suggested path
-Work **1 → 10**. Part A teaches you to prove execution on a single host; Part B teaches you to hunt an intrusion across the logs. By module 10 you can take a triage collection and build a full incident timeline — exactly the decks' goal: *"Master the Triad. Close the Gap."*
+Work **1 → 11, in order**. Part A teaches you to prove execution on a single host; Part B teaches you to hunt an intrusion across the logs; the **capstone (11)** fuses both on one real case. Then take the **advanced add-on modules (12, 14, 15)** to go below the artifact layer — raw memory, raw disk — and out to the malicious-document front door. By the capstone you can take a triage collection and build a full incident timeline — exactly the decks' goal: *"Master the Triad. Close the Gap."*
 
-*All 10 modules are complete — each has a full walkthrough from the source decks, real bundled data, 2–4 guided exercises, and an **answers / what to find** section. Work them in order, **1 → 10**.*
+*Modules 1–12, 14 and 15 are complete (there is **no Module 13** — see the note above). Each has a full walkthrough from the source decks, real bundled data, guided exercises, and an **answers / what to find** section. Work the core arc **1 → 11**, then the advanced add-ons **12, 14, 15**.*
