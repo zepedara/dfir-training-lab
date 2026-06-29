@@ -22,7 +22,7 @@
 
 ## 2. The evidence you're given
 
-The triage collection *is* the Modules 1-10 `data/` folders. Each maps to a host/phase of this case. You do **not** need to copy anything — `cd` into the relevant module's `data/` and run the container there, exactly as you did in that module.
+The triage collection *is* the Modules 1-10 `data/` folders. Each maps to a host/phase of this case. You do **not** need to copy anything — `cd` into the relevant module's `data/` and run the tools there, exactly as you did in that module.
 
 | Phase of the case | Use the data in… | Represents |
 |---|---|---|
@@ -35,8 +35,7 @@ The triage collection *is* the Modules 1-10 `data/` folders. Each maps to a host
 | **PowerShell tradecraft** | `module-09…/data` | 4104 script blocks, in-memory PowerShell |
 | **Sensor / centralisation view** | `module-10…/data` | Sysmon vs default logging (incl. a DC attack) |
 
-> **Container reminder:** from any module's `data/` folder,
-> `docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2` → evidence at `/data`. (PowerShell: `-v "${PWD}:/data"`.)
+> **Reminder:** all tools are installed natively on the lab VM and already on your `PATH`. Open **Git Bash**, `cd` into the relevant module's `data/` folder, and run each command directly from there — no container, no Docker.
 
 ---
 
@@ -79,10 +78,8 @@ You don't need new commands — every one of these is from the module you're poi
 ### Step 1 — Establish initial access (Module 5)
 ```bash
 cd module-05-evtx-evtxecmd/data
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
-# inside:
-EvtxECmd -d /data --csv /data --csvf timeline.csv
-grep -i "uguu.se\|desktopimgdownldr" /data/timeline.csv
+EvtxECmd -d . --csv . --csvf timeline.csv
+grep -i "uguu.se\|desktopimgdownldr" timeline.csv
 ```
 Sort `timeline.csv` by `TimeCreated`. You're looking for a **trusted binary used as a downloader** (a LOLBAS) and the **same URL in more than one channel** (Sysmon command line *and* the BITS service that did the fetch). That's your entry point and your first corroboration.
 
@@ -90,8 +87,7 @@ Sort `timeline.csv` by `TimeCreated`. You're looking for a **trusted binary used
 ```bash
 # Module 1 — did it run?
 cd ../../module-01-prefetch-pecmd/data
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
-prefetch /data/prefetch/COREUPDATER.EXE-157C54BB.pf | grep -E "Run count|Last run time: 1|Number of filenames"
+prefetch prefetch/COREUPDATER.EXE-157C54BB.pf | grep -E "Run count|Last run time: 1|Number of filenames"
 # Module 3 — what is it? (SHA1 identity)
 #   in module-03…/data:  grep -i coreupdater amcache_UnassociatedFileEntries.csv
 # Module 2 — did the OS see it? (the gap)
@@ -105,9 +101,8 @@ With the SHA1 in hand, **stack** it across hosts. On the bundled three, confirm 
 ### Step 4 — Triage everything with rules (Module 6)
 ```bash
 cd ../../module-06-sigma-chainsaw-hayabusa/data
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
-hayabusa csv-timeline -d /data -o /data/all-timeline.csv
-chainsaw hunt /data -s /sigma --mapping /chainsaw/mappings/sigma-event-logs-all.yml
+hayabusa csv-timeline -d . -o all-timeline.csv
+chainsaw hunt . -s /sigma --mapping /chainsaw/mappings/sigma-event-logs-all.yml
 ```
 Run **both** engines over the whole folder. Hayabusa ranks by severity (reading order); Chainsaw names the technique with evidence. This is how you turn 20-plus logs into a prioritised lead list in two commands.
 
@@ -127,7 +122,7 @@ Lay every proven step on one phase-ordered timeline, write the findings, list IO
 
 ## 5. Solution
 
-> Spoilers. Values verified against the bundled data in the `dfir-aio:v2` container.
+> Spoilers. Values verified against the bundled data on the lab VM.
 
 ### A. Initial access
 A LOLBAS download: **`desktopimgdownldr.exe`** (a legit Windows lockscreen-image tool) was abused with
