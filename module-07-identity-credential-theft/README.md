@@ -70,13 +70,14 @@ This module's `data/` folder contains **six small real `.evtx` samples** (proven
 
 ## 4. Setup
 
+Open **Git Bash** on the lab VM and change into this module's data directory:
+
 ```bash
 cd module-07-identity-credential-theft/data
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ```
-(Flags explained in Module 5.)
+(Every command in this module is run **from inside this `data/` folder**. `chainsaw`, `hayabusa`, and `EvtxECmd` are installed natively and already on your `PATH`, so you call them directly by name in Git Bash; no container or Docker.)
 
-> **Windows-native alternative:** on the lab VM use `C:\DFIR\tools\chainsaw\chainsaw.exe`, `C:\DFIR\tools\hayabusa\hayabusa.exe`, and `C:\DFIR\tools\EvtxECmd\EvtxECmd.exe` with the same sub-commands/flags (and `C:\` paths).
+> **Chainsaw rules/mappings path:** the `chainsaw hunt` commands point `-s` at the bundled Sigma rules and `--mapping` at `sigma-event-logs-all.yml` (shown here as `/opt/chainsaw/...`). Those live wherever **chainsaw** is installed on your lab VM — adjust if your VM's paths differ.
 
 ---
 
@@ -84,15 +85,15 @@ docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 
 ### Step 1 — Hunt every credential-theft technique at once (Chainsaw across the folder)
 ```bash
-chainsaw hunt /data \
+chainsaw hunt . \
   -s /opt/chainsaw/sigma \
   --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml \
-  --csv --output /data/chainsaw-out
+  --csv --output chainsaw-out
 ```
-- **`hunt /data`** — run Sigma rules over **every** `.evtx` in the folder (not just one).
+- **`hunt .`** — run Sigma rules over **every** `.evtx` in the folder (not just one).
 - **`-s /opt/chainsaw/sigma`** — the bundled Sigma rules.
 - **`--mapping .../sigma-event-logs-all.yml`** — the field-translation table (see Module 6, Section 1).
-- **`--csv --output /data/chainsaw-out`** — write detections to CSV so you can compare all files side by side.
+- **`--csv --output chainsaw-out`** — write detections to CSV so you can compare all files side by side.
 
 **Expected result — one row per technique, and the baseline stays silent:**
 ```
@@ -109,7 +110,7 @@ security_4624_4625_logon_baseline             —      (no detections)
 ### Step 2 — Read one dump in detail (the `GrantedAccess` fingerprint)
 Run Chainsaw on just the classic Mimikatz sample to see the evidence fields:
 ```bash
-chainsaw hunt /data/sysmon_10_mimikatz_sekurlsa_logonpasswords.evtx \
+chainsaw hunt sysmon_10_mimikatz_sekurlsa_logonpasswords.evtx \
   -s /opt/chainsaw/sigma \
   --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
 ```
@@ -139,16 +140,16 @@ Two samples don't look like "Mimikatz" at all:
 ### Step 4 — Read the logons (who used the creds, and how)
 After a dump, chase how the creds were *used*. The fast way is Hayabusa's logon summary; run it on the benign baseline first so you learn to read the table:
 ```bash
-hayabusa logon-summary -f /data/security_4624_4625_logon_baseline.evtx
+hayabusa logon-summary -f security_4624_4625_logon_baseline.evtx
 ```
 - **`logon-summary`** — tabulate logons instead of building a full timeline.
-- **`-f /data/...evtx`** — the Security log to summarize (use **`-d`** for a folder of them).
+- **`-f ...evtx`** — the Security log to summarize (use **`-d`** for a folder of them).
 
 **Expected (shape):** a "Successful Logons" table grouped by **Target Account**, **Target Computer**, **Source Computer/IP**, and the **Event/Logon Type**, plus a "Failed Logons" table. On this baseline you'll see ordinary **Type 2 (interactive)** logons for `IEUser` and a **Type 5 (service)** for `SYSTEM`, with one **4625** failed attempt (a mistyped password). Nothing abnormal — your reference for "normal."
 
 For the *raw* rows (every field), parse with EvtxECmd as in Module 5:
 ```bash
-EvtxECmd -f /data/security_4624_4625_logon_baseline.evtx --csv /data --csvf logons.csv
+EvtxECmd -f security_4624_4625_logon_baseline.evtx --csv . --csvf logons.csv
 ```
 Then read the `PayloadData` columns for **LogonType**. **What a hunter looks for on a real Security log:**
 - **4624 / Type 9 (NewCredentials)** shortly after a dump → attacker using harvested creds (`runas /netonly`, a Pass-the-Hash signal).

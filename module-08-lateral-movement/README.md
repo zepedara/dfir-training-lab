@@ -3,7 +3,7 @@
 **Deck mapping:** *Intrusion Hunting Playbook* → "Detecting Lateral Movement" · *Advanced Intrusion Forensic Hunting* → "Phase 3: Lateral Movement."
 **Goal:** learn to recognise how an attacker hops from one Windows machine to the next — **PsExec / remote services, DCOM, WMI, named pipes, scheduled tasks, remote registry & shares, and RDP** — by reading the exact events each technique burns into the logs.
 
-> **New to this lab?** Do Module 5 (EvtxECmd) and Module 6 (Chainsaw/Hayabusa) first. This module assumes you can already parse an `.evtx` file to CSV and run a Sigma sweep. Every event ID and count below was produced by parsing the bundled files in the `dfir-aio` container, so what you read here is exactly what you will see on screen.
+> **New to this lab?** Do Module 5 (EvtxECmd) and Module 6 (Chainsaw/Hayabusa) first. This module assumes you can already parse an `.evtx` file to CSV and run a Sigma sweep. Every event ID and count below was produced by parsing the bundled files on the lab VM, so what you read here is exactly what you will see on screen.
 
 ---
 
@@ -42,20 +42,16 @@ Rule of thumb for this module: **Chainsaw to name it, EvtxECmd to prove it.**
 
 ## 3. Setup
 
+Open **Git Bash** on the lab VM and change into this module's data directory:
+
 ```bash
 cd module-08-lateral-movement/data
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ```
 What each piece means:
-- `docker run -it` — start the container interactively (so you get a shell).
-- `--rm` — delete the container when you exit (your CSV output stays on the host because of the mount).
-- `--network none` — run with **no network at all**. Forensics tooling never needs the internet, and cutting it off guarantees a sample can't "phone home." All analysis here is offline by design.
-- `-v "$PWD":/data` — **mount** your current folder (the module's `data/`) into the container at `/data`. The container sees the evidence at `/data`; anything a tool writes to `/data` lands back in your real folder.
-- `dfir-aio:v2` — the offline toolbox image; every tool below is already inside it.
+- `cd module-08-lateral-movement/data` — move into the folder holding this module's `.evtx` evidence. **Every command in the rest of this module is run from inside this folder**, so files are named with simple relative paths and a tool's output (e.g. `_out/`) lands right beside the evidence.
+- All tools below (`EvtxECmd`, `chainsaw`, `hayabusa`) are installed **natively on the lab VM and already on your `PATH`**, so you call them directly by name in Git Bash — no container, no Docker. Forensics tooling never needs the internet, and the VM is kept **offline** so a sample can't "phone home"; all analysis here is offline by design.
 
-> **Windows-native note:** the lab VM also ships the same EZ Tools natively under `C:\DFIR\tools`. There you would run `EvtxECmd.exe -f C:\path\file.evtx --csv C:\out` — identical flags, just `.exe` and Windows paths instead of the container's `/data`. Chainsaw/Hayabusa are likewise `chainsaw.exe` / `hayabusa.exe`. Everything below uses the container form.
-
-Inside the container the prompt changes; `/data` is your evidence folder. The commands in the rest of this module are run **from that container shell**.
+> **Chainsaw rules/mappings path:** the `chainsaw hunt` commands below point `-s` at the bundled Sigma rules and `--mapping` at `sigma-event-logs-all.yml` (shown here as `/opt/chainsaw/...`). Those live wherever **chainsaw** is installed on your lab VM — adjust if your VM's paths differ.
 
 ---
 
@@ -65,11 +61,11 @@ Inside the container the prompt changes; `/data` is your evidence folder. The co
 Before chasing any single technique, dump every file to CSV so you can see what is here.
 
 ```bash
-EvtxECmd -d /data --csv /data/_out --csvf all_events.csv
+EvtxECmd -d . --csv _out --csvf all_events.csv
 ```
 - `EvtxECmd` — the parser.
-- `-d /data` — **input directory**. Pointed at a *folder*, EvtxECmd parses every `.evtx` inside it. (Use `-f /data/one.evtx` to parse a single file instead — that `-f` form is what the per-technique steps below use.)
-- `--csv /data/_out` — write CSV output into `/data/_out` (created if missing). Because `/data` is mounted, the result appears in your real `data/_out/` folder too.
+- `-d .` — **input directory**. Pointed at a *folder*, EvtxECmd parses every `.evtx` inside it. (Use `-f one.evtx` to parse a single file instead — that `-f` form is what the per-technique steps below use.)
+- `--csv _out` — write CSV output into the `_out` sub-folder (created if missing) right beside the evidence in the current `data/` folder.
 - `--csvf all_events.csv` — the **f**ilename for that CSV (otherwise EvtxECmd auto-names it with a timestamp).
 
 **Expected output (tail):** a per-file line for each `.evtx`, then a combined run summary ("Processed 26 files..."). Open `all_events.csv` in any spreadsheet. The columns you will live in for this module:
@@ -84,7 +80,7 @@ EvtxECmd -d /data --csv /data/_out --csvf all_events.csv
 
 Parse the service-install file and read it:
 ```bash
-EvtxECmd -f /data/LM_Remote_Service02_7045.evtx --csv /data/_out --csvf svc.csv
+EvtxECmd -f LM_Remote_Service02_7045.evtx --csv _out --csvf svc.csv
 ```
 This file holds **three** 7045 events. The fields that matter are **Service Name** and **ImagePath** (the program the service runs). The real contents here are:
 
@@ -101,10 +97,10 @@ This file holds **three** 7045 events. The fields that matter are **Service Name
 Now the SMB side. PsExec-style tools light up **Security Event ID 5145, "A network share object was checked for access"** (this requires *Detailed File Share* auditing, which the samples were captured with). 5145's key field is **RelativeTargetName** — the share path or pipe that was touched:
 
 ```bash
-EvtxECmd -f /data/LM_Remote_Service01_5145_svcctl.evtx --csv /data/_out --csvf svcctl.csv
-EvtxECmd -f /data/LM_renamed_psexecsvc_5145.evtx       --csv /data/_out --csvf renamed.csv
-EvtxECmd -f /data/LM_REMCOM_5145_TargetHost.evtx       --csv /data/_out --csvf remcom.csv
-EvtxECmd -f /data/LM_5145_Remote_FileCopy.evtx         --csv /data/_out --csvf filecopy.csv
+EvtxECmd -f LM_Remote_Service01_5145_svcctl.evtx --csv _out --csvf svcctl.csv
+EvtxECmd -f LM_renamed_psexecsvc_5145.evtx       --csv _out --csvf renamed.csv
+EvtxECmd -f LM_REMCOM_5145_TargetHost.evtx       --csv _out --csvf remcom.csv
+EvtxECmd -f LM_5145_Remote_FileCopy.evtx         --csv _out --csvf filecopy.csv
 ```
 What each file proves (real counts):
 - **`LM_Remote_Service01_5145_svcctl.evtx`** — a single 5145 on the **`svcctl`** pipe over `\IPC$`. `svcctl` is the named pipe for the **remote Service Control Manager** — i.e. the RPC call that *creates the remote service*. svcctl-then-7045 is the textbook remote-service-install sequence.
@@ -114,12 +110,12 @@ What each file proves (real counts):
 
 Finally, let Chainsaw name the Meterpreter-over-PsExec payload:
 ```bash
-chainsaw hunt /data/LM_sysmon_psexec_smb_meterpreter.evtx \
+chainsaw hunt LM_sysmon_psexec_smb_meterpreter.evtx \
   -s /opt/chainsaw/sigma \
   --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
 ```
 - `chainsaw hunt FILE` — run detections against FILE.
-- `-s /opt/chainsaw/sigma` — the folder of Sigma **r**ules baked into the image (3,700+).
+- `-s /opt/chainsaw/sigma` — the folder of Sigma **r**ules bundled with chainsaw on the lab VM (3,700+).
 - `--mapping ...sigma-event-logs-all.yml` — tells Chainsaw how to translate Sigma's field names onto Windows event fields. Without the mapping, the rules can't line up with the data.
 
 This file is Sysmon `1/3/10/13/18`. Chainsaw flags **"PowerShell as a Service"** (a process whose parent is `services.exe` — i.e. spawned *by* a service) and **"Base64 Encoded PowerShell"** — a Meterpreter payload that landed as a service and ran encoded PowerShell. That `services.exe → encoded powershell.exe` parent/child chain is the heart of the detection.
@@ -128,9 +124,9 @@ This file is Sysmon `1/3/10/13/18`. Chainsaw flags **"PowerShell as a Service"**
 **The mechanism:** **DCOM** (Distributed COM) lets one machine create and drive a COM *object* on another machine. Some built-in COM objects can be coerced into running a command — `MMC20.Application`, `ShellWindows`, `ShellBrowserWindow`, `Excel.Application`, or `mshta`. When abused remotely, the object's host process (`mmc.exe`, `mshta.exe`, an Office app) runs the attacker's payload, and crucially it is **parented by `svchost.exe -k DcomLaunch`** (the service that brokers DCOM). That unusual parent is the giveaway.
 
 ```bash
-chainsaw hunt /data/LM_DCOM_MSHTA_LethalHTA_Sysmon_3_1.evtx               -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
-chainsaw hunt /data/LM_impacket_docmexec_mmc_sysmon_01.evtx               -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
-chainsaw hunt /data/LM_sysmon_3_DCOM_ShellBrowserWindow_ShellWindows.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
+chainsaw hunt LM_DCOM_MSHTA_LethalHTA_Sysmon_3_1.evtx               -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
+chainsaw hunt LM_impacket_docmexec_mmc_sysmon_01.evtx               -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
+chainsaw hunt LM_sysmon_3_DCOM_ShellBrowserWindow_ShellWindows.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
 ```
 What you see (real contents):
 - **`LM_DCOM_MSHTA_LethalHTA_*`** (Sysmon 1 + 3) — Chainsaw: **"LethalHTA"** — `mshta.exe` spawned via DCOM to run a remote HTA payload.
@@ -139,7 +135,7 @@ What you see (real contents):
 
 Now the **failures**:
 ```bash
-EvtxECmd -f /data/LM_dcom_shwnd_shbrwnd_mmc20_failed_traces_system_10016.evtx --csv /data/_out --csvf dcom10016.csv
+EvtxECmd -f LM_dcom_shwnd_shbrwnd_mmc20_failed_traces_system_10016.evtx --csv _out --csvf dcom10016.csv
 ```
 This file is **4 ×** System **10016, "The application-specific permission settings do not grant... DistributedCOM permission."** 10016 fires when a DCOM activation is *denied*. **Failed DCOM lateral movement still leaves 10016 events**, even when the payload never ran. A cluster of 10016 referencing unusual CLSIDs (the GUIDs that identify COM objects) is itself a DCOM-lateral lead — you can catch the *attempt*, not just the success.
 
@@ -147,8 +143,8 @@ This file is **4 ×** System **10016, "The application-specific permission setti
 **The mechanism:** many remote shells (and C2 frameworks like Cobalt Strike) tunnel their command channel through a **named pipe** over SMB. Sysmon records pipe activity as **Event ID 17 = Pipe Created** (a process opened a new pipe to *listen* on) and **Event ID 18 = Pipe Connected** (a process *connected* to an existing pipe). Created = the server side stood up; connected = something talked to it.
 
 ```bash
-chainsaw hunt /data/lm_sysmon_18_remshell_over_namedpipe.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
-EvtxECmd -f /data/LM_add_new_namedpipe_tp_nullsession_registry_turla_like_ttp.evtx --csv /data/_out --csvf nullpipe.csv
+chainsaw hunt lm_sysmon_18_remshell_over_namedpipe.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
+EvtxECmd -f LM_add_new_namedpipe_tp_nullsession_registry_turla_like_ttp.evtx --csv _out --csvf nullpipe.csv
 ```
 - **`lm_sysmon_18_remshell_over_namedpipe.evtx`** (Sysmon 1 ×3, 3, 10 ×2, **18**) — Chainsaw flags **"Non Interactive PowerShell"**: a PowerShell shell tunnelled over a named pipe (`invoke-pipeshell`-style). The Sysmon 18 is the pipe the shell rode in on.
 - **`LM_add_new_namedpipe_..._nullsession_registry_turla_like_ttp.evtx`** (Sysmon **13** ×1) — a registry write that adds a pipe name to **`NullSessionPipes`** (Turla-style). That setting lets a pipe be reached **anonymously**, with no credentials — a stealth backdoor channel. The registry edit (Sysmon 13) is the artefact.
@@ -159,8 +155,8 @@ EvtxECmd -f /data/LM_add_new_namedpipe_tp_nullsession_registry_turla_like_ttp.ev
 **The mechanism:** the Windows Task Scheduler can be driven *remotely* over the **`atsvc`** named pipe (the classic `schtasks /s <host>` or Impacket `atexec`). Creating a task on the target writes **Security 4698 "A scheduled task was created"**; updating writes **4702**; deleting writes **4699**. A favourite trick is *create task → run once → delete* so the task is gone by morning — but 4698 *and* 4699 both survive in the log.
 
 ```bash
-EvtxECmd -f /data/LM_ScheduledTask_ATSVC_target_host.evtx --csv /data/_out --csvf sched.csv
-EvtxECmd -f "/data/remote task update 4624 4702 same logonid.evtx" --csv /data/_out --csvf taskupd.csv
+EvtxECmd -f LM_ScheduledTask_ATSVC_target_host.evtx --csv _out --csvf sched.csv
+EvtxECmd -f "remote task update 4624 4702 same logonid.evtx" --csv _out --csvf taskupd.csv
 ```
 - **`LM_ScheduledTask_ATSVC_target_host.evtx`** is a rich trail (real counts): **4698** (task created) ×1, **4699** (deleted) ×1, plus **4624** ×6 and **4672** ×5 (the network logons), **4776** ×4 (credential validation), **5140/5145** on the `atsvc` pipe, and **4661/4688**. Walk it top to bottom and you see the whole remote-schtasks operation: authenticate → open `atsvc` → create task → (run) → delete task.
 - **`remote task update 4624 4702 same logonid.evtx`** — a **4702** (task updated) plus **4624** logons (×6) and a **1102** (log cleared). The lesson is **LogonId**: the 4702 and the relevant 4624 share the *same LogonId* value. LogonId is a number Windows assigns to one logon session; matching it across events is how you prove "*this* task change rode *that* specific remote logon," not some unrelated local activity.
@@ -169,9 +165,9 @@ EvtxECmd -f "/data/remote task update 4624 4702 same logonid.evtx" --csv /data/_
 **The mechanism:** with admin rights an attacker can reach across the network to (a) edit the target's **registry** (over the `winreg` pipe) to plant autoruns or weaken settings, (b) **create a new SMB share** to stage or exfiltrate tools, or (c) **drop a file into a Startup folder** over an admin share for persistence. Sysmon sees registry as **12** (key created/deleted), **13** (value set), **14** (renamed); file drops as **11 (FileCreate)**; the Security log sees share access as **5140/5145**.
 
 ```bash
-EvtxECmd -f /data/lm_remote_registry_sysmon_1_13_3.evtx --csv /data/_out --csvf remreg.csv
-EvtxECmd -f /data/LM_NewShare_Added_Sysmon_12_13.evtx   --csv /data/_out --csvf newshare.csv
-EvtxECmd -f /data/lateral_movement_startup_3_11.evtx    --csv /data/_out --csvf startup.csv
+EvtxECmd -f lm_remote_registry_sysmon_1_13_3.evtx --csv _out --csvf remreg.csv
+EvtxECmd -f LM_NewShare_Added_Sysmon_12_13.evtx   --csv _out --csvf newshare.csv
+EvtxECmd -f lateral_movement_startup_3_11.evtx    --csv _out --csvf startup.csv
 ```
 - **`lm_remote_registry_sysmon_1_13_3.evtx`** (Sysmon 1/3/12/13) — remote registry edits arriving over the network.
 - **`LM_NewShare_Added_Sysmon_12_13.evtx`** (Sysmon 12 ×1, 13 ×2) — registry writes under `...\LanmanServer\Shares` = **a new share was stood up**. New shares appearing on a workstation are abnormal and worth a hard look.
@@ -184,10 +180,10 @@ EvtxECmd -f /data/lateral_movement_startup_3_11.evtx    --csv /data/_out --csvf 
 - **140** — a **failed** authentication where the username does *not* exist; also records the source IP. Great for spotting password-spray against RDP.
 
 ```bash
-EvtxECmd -f /data/dfir_rdpsharp_target_RdpCoreTs_168_68_131.evtx        --csv /data/_out --csvf rdp_target.csv
-EvtxECmd -f /data/DFIR_RDP_Client_TimeZone_RdpCoreTs_104_example.evtx   --csv /data/_out --csvf rdp_client.csv
-chainsaw hunt /data/LM_sysmon_3_12_13_1_SharpRDP.evtx           -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
-chainsaw hunt /data/LM_sysmon_1_12_13_3_tsclient_SharpRdp.evtx  -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
+EvtxECmd -f dfir_rdpsharp_target_RdpCoreTs_168_68_131.evtx        --csv _out --csvf rdp_target.csv
+EvtxECmd -f DFIR_RDP_Client_TimeZone_RdpCoreTs_104_example.evtx   --csv _out --csvf rdp_client.csv
+chainsaw hunt LM_sysmon_3_12_13_1_SharpRDP.evtx           -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
+chainsaw hunt LM_sysmon_1_12_13_3_tsclient_SharpRdp.evtx  -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
 ```
 - **`dfir_rdpsharp_target_RdpCoreTs_168_68_131.evtx`** — on the **target**: **131** ×22 (connections accepted), plus 68 ×9 and 168 ×9 (session/reconnect bookkeeping).
 - **`DFIR_RDP_Client_TimeZone_RdpCoreTs_104_example.evtx`** — **client-side** RdpCoreTS **104** ×21. Client-side RDP artefacts are how you prove a given workstation was the *source* of an RDP hop.
@@ -196,8 +192,8 @@ chainsaw hunt /data/LM_sysmon_1_12_13_3_tsclient_SharpRdp.evtx  -s /opt/chainsaw
 ### Step 8 — The logon that carried it (Security **4624 Type 3**, **4672**, Pass-the-Hash)
 Every technique above rides a logon. Two files show the **source** and the **handoff**:
 ```bash
-EvtxECmd -f /data/LM_4624_mimikatz_sekurlsa_pth_source_machine.evtx --csv /data/_out --csvf pth_src.csv
-EvtxECmd -f "/data/ImpersonateUser-via local Pass The Hash Sysmon and Security.evtx" --csv /data/_out --csvf pth_local.csv
+EvtxECmd -f LM_4624_mimikatz_sekurlsa_pth_source_machine.evtx --csv _out --csvf pth_src.csv
+EvtxECmd -f "ImpersonateUser-via local Pass The Hash Sysmon and Security.evtx" --csv _out --csvf pth_local.csv
 ```
 - **`LM_4624_mimikatz_sekurlsa_pth_source_machine.evtx`** — on the **attacker's** box: **4624** + **4672** (a logon granted admin) + **4688** ×3 (the mimikatz process) + **1102** (the Security log being cleared). This is the machine *launching* `sekurlsa::pth` (**Pass-the-Hash** — authenticating with a stolen password *hash* instead of the password). 1102 right after the attack tool is the classic "cover your tracks" tell.
 - **`ImpersonateUser-via local Pass The Hash...evtx`** — Sysmon 1/3/18 + Security **4624** + **5145**: a local PtH, then a pipe/share hop. The **4624 Type 3** is the through-line.

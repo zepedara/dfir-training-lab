@@ -30,7 +30,7 @@ Every module follows the same shape, taken straight from the source decks (*Wind
 
 **theory (why this artifact exists) → the tool → a guided walkthrough on real data → try-it-yourself exercises → key takeaways → sources.**
 
-You are not reading *about* forensics — at every step you run a real tool against **real artifacts from real attacks** and find the same things an analyst would find on the job. Every command runs **offline**, inside one container, on data that ships with the repo (or is fetched by a small `get-data.sh` on an online host).
+You are not reading *about* forensics — at every step you run a real tool against **real artifacts from real attacks** and find the same things an analyst would find on the job. Every command runs **offline**, in the lab VM's Git Bash shell, on data that ships with the repo (or is fetched by a small `get-data.sh` on an online host).
 
 Two big arcs run through the ten modules:
 
@@ -132,7 +132,7 @@ You do **not** need prior forensics experience — that is the point of the cour
 
 - **A command line.** Every walkthrough is a handful of shell commands, each explained word-by-word the first time it appears.
 - **Basic Windows literacy** — what a file path, a registry hive, and a "service" roughly are. The modules define the rest (Prefetch, ShimCache, LSASS, Sysmon, …) as they go; the **[GLOSSARY](GLOSSARY.md)** has plain-language definitions of every term and tool.
-- **Docker** installed on your analysis machine (to run the `dfir-aio` container). Nothing else needs installing — every tool lives in the container.
+- **The lab VM.** All hands-on work runs on the prebuilt Windows analysis VM, where every tool is installed natively and on your `PATH` and you work from a **Git Bash** shell. Nothing else needs installing — see §7, *How to run the lab*.
 
 Helpful but optional: a passing familiarity with [MITRE ATT&CK](https://attack.mitre.org/) (the public catalogue of attacker techniques the samples map to).
 
@@ -140,36 +140,28 @@ Helpful but optional: a passing familiarity with [MITRE ATT&CK](https://attack.m
 
 ## 7. How to run the lab
 
-There are two ways to do the hands-on work; **the container is all you need** for every module.
+The lab runs on the prebuilt **Windows analysis VM** (the companion **dfir-lab-vm**). Every parser used in the course (`PECmd`/`prefetch`, `AppCompatCacheParser`, `AmcacheParser`, `EvtxECmd`, `Chainsaw`, `Hayabusa`, …) is **installed natively and already on your `PATH`** — nothing to install, no internet needed, no container or Docker.
 
-### Option A — the `dfir-aio` container (recommended)
-
-An offline, all-tools forensics toolbox. Every parser used in the course (`PECmd`/`prefetch`, `AppCompatCacheParser`, `AmcacheParser`, `EvtxECmd`, `Chainsaw`, `Hayabusa`, …) is already inside it — nothing to install, no internet needed.
+You drive the tools from a **Git Bash** shell on the VM, so the Unix-style pipelines in the walkthroughs (`grep`, `awk`, `sort`, `head`, `less`, …) work exactly as written.
 
 ```bash
-# 1. Pull the image once (on a machine with internet):
-docker pull ghcr.io/zepedara/dfir-aio:latest      # then optionally: docker tag it dfir-aio:v2
+# 1. Open Git Bash on the lab VM.
 
-# 2. Go into the module you're working on and mount its data folder:
+# 2. Go into the module you're working on:
 cd module-01-prefetch-pecmd/data
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 
-# 3. Inside the container, evidence is at /data. Follow that module's README.
-#    Type `dfir` for the built-in tool menu.
+# 3. Run the tools directly by name, from inside that data/ folder, following
+#    the module's README. Evidence files are named with simple relative paths
+#    (e.g. prefetch/AM_DELTA.EXE-78CA83B0.pf), and reports you write land right
+#    beside the evidence in the same folder.
 ```
 
-- `--rm` — delete the container when you exit (your files on the host are untouched).
-- `--network none` — **run with no network at all.** The evidence is inert, but this guarantees nothing can phone home. Forensics should be offline by default.
-- `-v "$PWD":/data` — mount the current folder (the module's `data/`) into the container at `/data`.
-- On Windows PowerShell use `-v "${PWD}:/data"`; on `cmd.exe` use `-v "%cd%:/data"`.
+- **All tools are on your `PATH`** — call them by name (`PECmd`, `EvtxECmd`, `chainsaw`, `hayabusa`, …); there is no wrapper to type.
+- **Run each command from inside the module's `data/` folder**, so inputs and outputs use plain relative paths.
+- **The VM is kept offline** (no network). The evidence is inert, but staying offline guarantees nothing can phone home — forensics should be offline by default.
+- **Reports persist** — anything a tool writes lands in the module's `data/` folder, so it's there after you're done.
 
-Reports you write land in `/data`, which is the module's `data/` folder on your host — so they persist after you exit.
-
-### Option B — the prebuilt Windows VM
-
-Some tools (notably **PECmd** and **Timeline Explorer**) are native Windows GUIs/CLIs. The companion **dfir-lab-vm** gives you a ready-made Windows analysis box with Eric Zimmerman's EZ Tools installed, for the few steps marked *"(Windows VM)"* in the modules (e.g. PECmd's richer CSV export, or sorting a timeline in Timeline Explorer). Everything those steps do can also be done in the container; the VM is for when you want the native experience.
-
-> Either way, **the data is the same and the answers are the same.** Use the container for everything; reach for the VM only where a module explicitly offers a Windows-native alternative.
+> **The data is the same and the answers are the same** as in any standard EZ Tools / Chainsaw / Hayabusa deployment — the VM just has them all pre-installed so you can start immediately.
 
 ### Getting the data
 

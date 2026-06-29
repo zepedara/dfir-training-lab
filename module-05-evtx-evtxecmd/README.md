@@ -62,18 +62,13 @@ This module's `data/` folder contains **four small real `.evtx` samples** (from 
 
 ## 4. Setup
 
+Open **Git Bash** on the lab VM and change into this module's data directory:
+
 ```bash
 cd module-05-evtx-evtxecmd/data
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ```
-- **`docker run`** — start a container from an image.
-- **`-it`** — interactive terminal, so you get a shell inside the container.
-- **`--rm`** — delete the container when you exit (keeps your machine clean).
-- **`--network none`** — give the container **no network at all**. This proves the analysis is fully offline (evidence never "phones home") and is the safe way to handle attacker artifacts.
-- **`-v "$PWD":/data`** — **mount** (share) your current folder into the container at the path `/data`, so the tools can read the `.evtx` files and write results back out to your real folder.
-- **`dfir-aio:v2`** — the all-in-one DFIR container image that already contains EvtxECmd, Chainsaw, Hayabusa, and the rest.
-
-> **Windows-native alternative:** on the lab VM you can skip Docker and run the EZ Tools directly: `C:\DFIR\tools\EvtxECmd\EvtxECmd.exe`. The flags are identical; only the paths differ (use `C:\` paths instead of `/data`).
+- **`cd module-05-evtx-evtxecmd/data`** — move into the folder holding this module's `.evtx` evidence. **Every command below is run from inside this folder**, so files are named with simple relative paths.
+- All forensic tools (EvtxECmd, Chainsaw, Hayabusa, and the rest) are installed **natively on the lab VM and already on your `PATH`** — you call them directly by name in Git Bash, no container or Docker. The VM is kept **offline** (no network) so evidence never "phones home" and nothing can tamper with it.
 
 ---
 
@@ -81,23 +76,23 @@ docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 
 ### Step 1 — Parse the whole folder into one CSV
 ```bash
-EvtxECmd -d /data --csv /data --csvf events.csv
+EvtxECmd -d . --csv . --csvf events.csv
 ```
-- **`-d /data`** — process a **d**irectory: every `.evtx` under `/data` (recursively). Use **`-f /data/one.evtx`** instead to parse a single **f**ile.
-- **`--csv /data`** — write CSV output into the `/data` folder.
+- **`-d .`** — process a **d**irectory: every `.evtx` under `.` (recursively). Use **`-f one.evtx`** instead to parse a single **f**ile.
+- **`--csv .`** — write CSV output into the `.` folder.
 - **`--csvf events.csv`** — name the output **f**ile `events.csv`. (Without it EvtxECmd auto-names the file with a timestamp.)
 
 **Expected output (trimmed):**
 ```
-Processing /data/sysmon_11_1_lolbas_downldr_desktopimgdownldr.evtx...
+Processing sysmon_11_1_lolbas_downldr_desktopimgdownldr.evtx...
 Record # 1 (Event Record Id: 305352): In map for event 1, Property ...ParentUser not found! Replacing with empty string
 ...
 Total event log records found: 3
-Processing /data/powershell_4104_scriptblock.evtx...
+Processing powershell_4104_scriptblock.evtx...
 Total event log records found: 2
-Processing /data/bits_lolbas_desktopimgdownldr_59_60.evtx...
+Processing bits_lolbas_desktopimgdownldr_59_60.evtx...
 Total event log records found: 5
-Processing /data/security_4624_4625_logon_baseline.evtx...
+Processing security_4624_4625_logon_baseline.evtx...
 Total event log records found: 4
 Processed 4 files in 0.49 seconds
 ```
@@ -106,9 +101,9 @@ Processed 4 files in 0.49 seconds
 You now have one merged spreadsheet, **`events.csv`**, holding all 14 events from all four channels — already in a single sortable table.
 
 ### Step 2 — Look at the column headers
-On your host (outside the container), open `events.csv` in Excel/LibreOffice/Timeline Explorer, or peek from the shell:
+On the lab VM, open `events.csv` in Excel/LibreOffice/Timeline Explorer, or peek from the shell:
 ```bash
-head -1 /data/events.csv
+head -1 events.csv
 ```
 The most useful columns:
 - **`TimeCreated`** — when the event happened (your timeline axis).
@@ -121,7 +116,7 @@ The most useful columns:
 
 ### Step 3 — Isolate the process-creation events (find the malicious command)
 ```bash
-EvtxECmd -f /data/sysmon_11_1_lolbas_downldr_desktopimgdownldr.evtx --csv /data --csvf sysmon.csv
+EvtxECmd -f sysmon_11_1_lolbas_downldr_desktopimgdownldr.evtx --csv . --csvf sysmon.csv
 ```
 Same flags as Step 1, but **`-f`** targets just the one Sysmon file. Open `sysmon.csv` and read the **Event ID 1 (Process creation)** rows. You will see:
 ```
@@ -137,7 +132,7 @@ EventId 11 FileCreate  @ 2020-07-03 08:47:21
 This is the key teaching point: **one attack often spans several logs.** `desktopimgdownldr.exe` doesn't actually open the network socket itself — it asks the **BITS** service to do the transfer (BITS runs inside `svchost.exe`). So the proof of the download lives in a *different* channel. EvtxECmd already parsed it for you; filter to the BITS events:
 ```bash
 # from your host:
-grep -E ',59,|,60,' /data/events.csv
+grep -E ',59,|,60,' events.csv
 ```
 You will see (cleaned up):
 ```
@@ -148,7 +143,7 @@ EventId 60  "BITS transfer has stopped"  jobTitle: Download LockScreen Image  UR
 
 ### Step 5 — Read the benign baseline (logon events)
 ```bash
-EvtxECmd -f /data/security_4624_4625_logon_baseline.evtx --csv /data --csvf logons.csv
+EvtxECmd -f security_4624_4625_logon_baseline.evtx --csv . --csvf logons.csv
 ```
 The Security channel uses a totally different schema. Open `logons.csv`:
 ```
@@ -160,15 +155,15 @@ EventId 4624  Successful logon   Target: NT AUTHORITY\SYSTEM LogonType 5
 
 ### Step 6 — See how a PowerShell script is captured (Event 4104)
 ```bash
-grep -E ',4104,' /data/events.csv
+grep -E ',4104,' events.csv
 ```
 Event **4104** is **PowerShell Script Block Logging** — Windows records the *actual script text* PowerShell executed. One row in this sample is a Base64+GZip-compressed blob (a classic obfuscation wrapper); another is a readable `Invoke-LoginPrompt` function that pops a fake "Windows Security" password box to phish the user's credentials. EvtxECmd drops the whole script into the `PayloadData2`/`ScriptBlockText` field so you can read exactly what ran. (Module 9 is devoted to PowerShell.)
 
 ### Step 7 (optional) — JSON output
 ```bash
-EvtxECmd -d /data --json /data --jsonf events.json
+EvtxECmd -d . --json . --jsonf events.json
 ```
-- **`--json /data`** / **`--jsonf events.json`** — same idea as CSV, but emits **JSON** (one object per event, nested fields preserved). CSV is best for eyeballing in a spreadsheet and timelining; JSON is best for feeding another tool, a script, or a SIEM. Same data, different shape.
+- **`--json .`** / **`--jsonf events.json`** — same idea as CSV, but emits **JSON** (one object per event, nested fields preserved). CSV is best for eyeballing in a spreadsheet and timelining; JSON is best for feeding another tool, a script, or a SIEM. Same data, different shape.
 
 ---
 

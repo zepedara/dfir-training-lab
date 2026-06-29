@@ -3,7 +3,7 @@
 **Deck mapping:** *Intrusion Hunting Playbook* → "Hunting Malicious PowerShell" · *Advanced Intrusion Forensic Hunting* → "Living-off-the-Land / Script-Based Attacks."
 **Goal:** catch obfuscated, encoded, in-memory PowerShell — the attacker's favourite "living-off-the-land" tool — using **Script Block Logging (Event ID 4104)** and **Module Logging (4103)**, and know the **Sysmon backstop** for when those logs are switched off.
 
-> **Prerequisite:** Modules 5 and 6 (parsing `.evtx`, running Chainsaw). Every event ID, count, and Chainsaw detection name below was produced by parsing the bundled files in the `dfir-aio` container.
+> **Prerequisite:** Modules 5 and 6 (parsing `.evtx`, running Chainsaw). Every event ID, count, and Chainsaw detection name below was produced by parsing the bundled files on the lab VM.
 
 ---
 
@@ -45,11 +45,15 @@ The bundled files are **EVTX-ATTACK-SAMPLES** captures from the Execution and De
 ---
 
 ## 3. Setup
+
+Open **Git Bash** on the lab VM and change into this module's data directory:
+
 ```bash
 cd module-09-powershell-tradecraft/data
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ```
-(See Module 8 §3 for what each flag means — `--network none` = offline, `-v "$PWD":/data` = mount the evidence at `/data`. **Windows-native:** the same EZ Tools live at `C:\DFIR\tools\EvtxECmd.exe`, `chainsaw.exe`.)
+(Every command in this module is run **from inside this `data/` folder**. `EvtxECmd` and `chainsaw` are installed natively and already on your `PATH`, so you call them directly by name in Git Bash — no container, no Docker. The VM is kept offline. See Module 8 §3.)
+
+> **Chainsaw rules/mappings path:** the `chainsaw hunt` commands below point `-s` at the bundled Sigma rules and `--mapping` at `sigma-event-logs-all.yml` (shown here as `/opt/chainsaw/...`). Those live wherever **chainsaw** is installed on your lab VM — adjust if your VM's paths differ.
 
 ---
 
@@ -59,12 +63,12 @@ docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 There are three real Script-Block-Logging samples. Parse them and read the script text directly.
 
 ```bash
-EvtxECmd -f /data/exec_emotet_ps_4104.evtx                                  --csv /data/_out --csvf emotet.csv
-EvtxECmd -f /data/phish_windows_credentials_powershell_scriptblockLog_4104.evtx --csv /data/_out --csvf phish.csv
-EvtxECmd -f /data/Powershell_4104_MiniDumpWriteDump_Lsass.evtx             --csv /data/_out --csvf minidump.csv
+EvtxECmd -f exec_emotet_ps_4104.evtx                                  --csv _out --csvf emotet.csv
+EvtxECmd -f phish_windows_credentials_powershell_scriptblockLog_4104.evtx --csv _out --csvf phish.csv
+EvtxECmd -f Powershell_4104_MiniDumpWriteDump_Lsass.evtx             --csv _out --csvf minidump.csv
 ```
 - `-f <file>` — the single `.evtx` to parse.
-- `--csv /data/_out` — output folder (mounted back to your host).
+- `--csv _out` — output folder (`_out`, created right beside the evidence in the current `data/` folder).
 - `--csvf <name>.csv` — the output filename.
 
 Open each CSV and read the **`Payload`** column — for a 4104 event it contains the **ScriptBlockText**, the decoded script. Real contents:
@@ -74,7 +78,7 @@ Open each CSV and read the **`Payload`** column — for a 4104 event it contains
 
 Now let Chainsaw name the MiniDump sample:
 ```bash
-chainsaw hunt /data/Powershell_4104_MiniDumpWriteDump_Lsass.evtx \
+chainsaw hunt Powershell_4104_MiniDumpWriteDump_Lsass.evtx \
   -s /opt/chainsaw/sigma \
   --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
 ```
@@ -96,8 +100,8 @@ chainsaw hunt /data/Powershell_4104_MiniDumpWriteDump_Lsass.evtx \
 Now the same goal — dumping credentials with PowerShell — but seen through **Sysmon** instead of 4104, because the attacker ran unmanaged/in-memory PowerShell.
 
 ```bash
-chainsaw hunt /data/babyshark_mimikatz_powershell.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
-chainsaw hunt /data/de_unmanagedpowershell_psinject_sysmon_7_8_10.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
+chainsaw hunt babyshark_mimikatz_powershell.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
+chainsaw hunt de_unmanagedpowershell_psinject_sysmon_7_8_10.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
 ```
 - **`babyshark_mimikatz_powershell.evtx`** — Sysmon `1/3/4/5/7/10/11/12/16`. Chainsaw flags **"Potential Credential Dumping Attempt Via PowerShell"** (driven by **Sysmon 10 / ProcessAccess** opening `lsass.exe`) and **"Non Interactive PowerShell."** This is the *Sysmon* view of a PowerShell credential attack — **no 4104 needed**. (The Sysmon **16** events here are Sysmon's own config-state-change records.)
 - **`de_unmanagedpowershell_psinject_sysmon_7_8_10.evtx`** — Sysmon **7** (image load) + **8 (CreateRemoteThread) ×82** + **10**. A non-PowerShell process loaded `System.Management.Automation.dll` (Sysmon 7) and then injected **82** remote threads (Sysmon 8) = **unmanaged PowerShell injection** (PSInject / `powerpick`-style). Chainsaw flags **"PowerShell Core DLL Loaded By Non PowerShell Process"** (the Sysmon 7 unmanaged-PowerShell load) and **"Remote Thread Creation In Uncommon Target Image"** (the Sysmon 8 injection).
@@ -108,11 +112,11 @@ chainsaw hunt /data/de_unmanagedpowershell_psinject_sysmon_7_8_10.evtx -s /opt/c
 Attackers prepare the ground by weakening PowerShell's defences first; those changes are themselves detections.
 
 ```bash
-EvtxECmd -f /data/DE_Powershell_CLM_Disabled_Sysmon_12.evtx        --csv /data/_out --csvf clm.csv
-EvtxECmd -f /data/de_powershell_execpolicy_changed_sysmon_13.evtx  --csv /data/_out --csvf execpol.csv
-EvtxECmd -f /data/RemotePowerShell_MS_Windows-Remote_Management_EventID_169.evtx --csv /data/_out --csvf winrm.csv
-EvtxECmd -f /data/LM_PowershellRemoting_sysmon_1_wsmprovhost.evtx  --csv /data/_out --csvf remoting.csv
-chainsaw hunt /data/LM_sysmon_remote_task_src_powershell.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
+EvtxECmd -f DE_Powershell_CLM_Disabled_Sysmon_12.evtx        --csv _out --csvf clm.csv
+EvtxECmd -f de_powershell_execpolicy_changed_sysmon_13.evtx  --csv _out --csvf execpol.csv
+EvtxECmd -f RemotePowerShell_MS_Windows-Remote_Management_EventID_169.evtx --csv _out --csvf winrm.csv
+EvtxECmd -f LM_PowershellRemoting_sysmon_1_wsmprovhost.evtx  --csv _out --csvf remoting.csv
+chainsaw hunt LM_sysmon_remote_task_src_powershell.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
 ```
 - **`DE_Powershell_CLM_Disabled_Sysmon_12.evtx`** — Sysmon **12** (registry key event). **Constrained Language Mode (CLM)** is a PowerShell lockdown that blocks the dangerous API calls attackers need; this sample is an attempt to *disable* it (via `__PSLockdownPolicy`) so full PowerShell can run.
 - **`de_powershell_execpolicy_changed_sysmon_13.evtx`** — Sysmon **13** ×5 — the **ExecutionPolicy** flipped via the registry. ExecutionPolicy is a weak control (it is trivially bypassed), but *changing it* is still a behavioural tell worth flagging.

@@ -58,13 +58,14 @@ The **guided walkthrough below uses one file** — `sysmon_privesc_psexec_dwell.
 
 ## 4. Setup
 
+Open **Git Bash** on the lab VM and change into this module's data directory:
+
 ```bash
 cd module-06-sigma-chainsaw-hayabusa/data        # 23 curated .evtx samples
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ```
-(See Module 5 for what each flag means. `--network none` again proves the analysis is fully offline.)
+(Every command in this module is run **from inside this `data/` folder**. Both tools — `chainsaw` and `hayabusa` — are installed natively and already on your `PATH`, so you call them directly by name in Git Bash; no container or Docker. The VM is kept offline so the analysis stays fully offline.)
 
-> **Windows-native alternative:** the lab VM has both tools as native binaries — `C:\DFIR\tools\chainsaw\chainsaw.exe` and `C:\DFIR\tools\hayabusa\hayabusa.exe` — with the same sub-commands and flags shown below (use `C:\` paths instead of `/data`).
+> **Chainsaw rules/mappings path:** the `chainsaw hunt` commands below point `-s` at the bundled Sigma rules and `--mapping` at `sigma-event-logs-all.yml`. Those paths (shown here as `/opt/chainsaw/...`) live wherever **chainsaw** is installed on your lab VM — adjust them to your VM's chainsaw rules/mappings location if they differ.
 
 ---
 
@@ -72,11 +73,11 @@ docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 
 ### Step 1 — Hayabusa timeline on the PsExec sample
 ```bash
-hayabusa csv-timeline -f /data/sysmon_privesc_psexec_dwell.evtx -o /data/timeline.csv -w -C
+hayabusa csv-timeline -f sysmon_privesc_psexec_dwell.evtx -o timeline.csv -w -C
 ```
 - **`csv-timeline`** — the sub-command that builds a CSV timeline (Hayabusa has others, like `logon-summary`).
-- **`-f /data/...evtx`** — analyze this one **f**ile. (Use **`-d /data`** for a whole **d**irectory — Step 4.)
-- **`-o /data/timeline.csv`** — write the **o**utput timeline here.
+- **`-f ...evtx`** — analyze this one **f**ile. (Use **`-d .`** for a whole **d**irectory — Step 4.)
+- **`-o timeline.csv`** — write the **o**utput timeline here.
 - **`-w`** — **no-wizard**: just use all the rules, don't prompt me interactively. (Required when you're not babysitting a terminal.)
 - **`-C`** — **clobber**: overwrite `timeline.csv` if it already exists (otherwise Hayabusa refuses, to protect your work). On a first run you can omit it.
 
@@ -88,12 +89,12 @@ Events with hits / Total events: 8 / 12  (Data reduction: 33.33%)
 Total | Unique detections: 15 | 8
 Top high alerts:   PsExec Service Child Process Execution (1)
 Top medium alerts: PsExec Tool Execution From Suspicious Locations (2) · PsExec Service Execution (1)
-Saved file: /data/timeline.csv
+Saved file: timeline.csv
 ```
 **Read the summary:** Hayabusa loaded ~4,600 rules, kept the ~2,280 that apply to these channels, and out of **12** events, **8** were notable — a **33% data reduction** before you read a single line. The headline alert is **HIGH: "PsExec Service Child Process Execution."** That's the whole value proposition: 12 events became one obvious lead.
 
 ### Step 2 — Read the timeline
-Open `/data/timeline.csv`. The important columns are `Timestamp`, `RuleTitle`, `Level`, `Computer`, `Channel`, `EventID`. Sorted by time, the story is:
+Open `timeline.csv`. The important columns are `Timestamp`, `RuleTitle`, `Level`, `Computer`, `Channel`, `EventID`. Sorted by time, the story is:
 ```
 Timestamp                       Level  RuleTitle                                 EventID
 2020-12-09 16:52:34.622 +00:00  low    PsExec Default Named Pipe                 17  (Pipe Created)
@@ -106,13 +107,13 @@ Timestamp                       Level  RuleTitle                                
 
 ### Step 3 — Chainsaw hunt (named detections + evidence)
 ```bash
-chainsaw hunt /data/sysmon_privesc_psexec_dwell.evtx \
+chainsaw hunt sysmon_privesc_psexec_dwell.evtx \
   -s /opt/chainsaw/sigma \
   --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
 ```
 - **`hunt`** — run Sigma rules over the logs and print matches (Chainsaw's main mode).
-- **`/data/...evtx`** — the artifact to hunt (a file **or** a folder).
-- **`-s /opt/chainsaw/sigma`** — the **s**igma rules folder bundled in the container.
+- **`...evtx`** — the artifact to hunt (a file **or** a folder).
+- **`-s /opt/chainsaw/sigma`** — the **s**igma rules folder bundled with chainsaw on the lab VM (adjust to your VM's path if different).
 - **`--mapping .../sigma-event-logs-all.yml`** — the **mapping** (Section 1) that tells Chainsaw where each Sigma logical field lives inside a real Windows event. Without it, Chainsaw can't translate the rules to these logs.
 
 **Expected output (trimmed):**
@@ -135,21 +136,21 @@ chainsaw hunt /data/sysmon_privesc_psexec_dwell.evtx \
 Now stop cherry-picking one file. Point each tool at the directory and let it triage all 23 samples at once:
 ```bash
 # Hayabusa: one merged, ranked timeline of everything
-hayabusa csv-timeline -d /data -o /data/all-timeline.csv -w -C
+hayabusa csv-timeline -d . -o all-timeline.csv -w -C
 
 # Chainsaw: every named detection across the folder, saved to CSV
-chainsaw hunt /data -s /opt/chainsaw/sigma \
+chainsaw hunt . -s /opt/chainsaw/sigma \
   --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml \
-  --csv --output /data/chainsaw-out
+  --csv --output chainsaw-out
 ```
-- **`-d /data`** (Hayabusa) / pointing Chainsaw at the folder — process every `.evtx` in one shot, merging results.
-- **`--csv --output /data/chainsaw-out`** (Chainsaw) — instead of the screen table, write the detections to CSV files in that folder (one per rule group), so you can sort and filter the full set.
+- **`-d .`** (Hayabusa) / pointing Chainsaw at the folder — process every `.evtx` in one shot, merging results.
+- **`--csv --output chainsaw-out`** (Chainsaw) — instead of the screen table, write the detections to CSV files in that folder (one per rule group), so you can sort and filter the full set.
 
 Open the merged outputs and you'll see each sample light up with the technique its filename hints at: the `mimikatz-*` files fire credential-dumping rules, `Powershell-Invoke-Obfuscation-*` fire encoded-PowerShell rules, `password-spray` / `smb-password-guessing` fire brute-force rules, `UACME_59` fires a UAC-bypass rule, and `disablestop-eventlog` fires a defense-evasion (log-tampering) rule. **This is the real workflow:** one command turns a folder of unknown logs into a ranked list of named leads.
 
 ### Step 5 — Tune the noise with severity
 ```bash
-hayabusa csv-timeline -d /data -o /data/high.csv -w -C --min-level high
+hayabusa csv-timeline -d . -o high.csv -w -C --min-level high
 ```
 - **`--min-level high`** — only keep detections rated **high** or **critical**; drop the informational/low/medium chatter.
 
