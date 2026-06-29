@@ -1,6 +1,6 @@
 # DFIR Training Lab — Course Guide
 
-> This is the **full course index and study guide**. The repository's [`README.md`](README.md) is the quick-start landing page; this file is the deeper walk-through of *what DFIR is*, *how the ten modules fit together*, and *how to actually run the lab*. New here? Read this top-to-bottom once, then work the modules in order.
+> This is the **full course index and study guide**. The repository's [`README.md`](README.md) is the quick-start landing page; this file is the deeper walk-through of *what DFIR is*, *how the modules fit together*, and *how to actually run the lab*. New here? Read this top-to-bottom once, then work the modules in order.
 
 ---
 
@@ -32,12 +32,14 @@ Every module follows the same shape, taken straight from the source decks (*Wind
 
 You are not reading *about* forensics — at every step you run a real tool against **real artifacts from real attacks** and find the same things an analyst would find on the job. Every command runs **offline**, in the lab VM's Git Bash shell, on data that ships with the repo (or is fetched by a small `get-data.sh` on an online host).
 
-Two big arcs run through the ten modules:
+Two big arcs run through the core modules:
 
 - **Part A (Modules 1-4) — Evidence of Execution.** Prove *what ran* on a single Windows host. This is where you learn **the Triad**.
 - **Part B (Modules 5-10) — Intrusion Hunting.** Move from one host's execution evidence to hunting a whole intrusion across the **event logs** — credential theft, lateral movement, PowerShell, and the sensors that record it all.
 
-A new **capstone (Module 11)** then makes you work one full intrusion end-to-end, using everything from Parts A and B.
+A **capstone (Module 11)** then makes you work one full intrusion end-to-end, using everything from Parts A and B.
+
+After the capstone, a set of **advanced add-on modules (12, 14, 15)** goes *below* the artifact layer — into raw **memory** and raw **disk** — and out to the malicious-document front door. (There is **no Module 13**: the number is intentionally **reserved/held** for a future module, so the advanced track runs **12 → 14 → 15**. The gap is deliberate, not a missing file.)
 
 ---
 
@@ -96,7 +98,20 @@ Module 4 then **scales** the Triad: instead of one host, you stack the same arti
 ### Capstone
 
 11. **[Module 11 — Capstone investigation](module-11-capstone)**
-    *One intrusion, end-to-end.* You are handed a triage collection and must work a complete case across the Triad, event logs, credential theft, lateral movement, and PowerShell — producing a **timeline + findings report**. Guiding questions first, then a walkthrough, then the full solution. This is where the ten modules become one skill.
+    *One intrusion, end-to-end.* You are handed a triage collection and must work a complete case across the Triad, event logs, credential theft, lateral movement, and PowerShell — producing a **timeline + findings report**. Guiding questions first, then a walkthrough, then the full solution. This is where the core modules become one skill.
+
+### Part C — Advanced add-on modules
+
+These extend the lab *beneath* the OS-artifact layer and out to initial access. Each is self-contained; take them after the capstone, in any order. **There is no Module 13** — the number is reserved/held for a future module, so the track is **12 → 14 → 15**.
+
+12. **[Module 12 — Memory forensics](module-12-memory-volatility3)** · tool: `Volatility 3` (`vol`)
+    *What was alive in RAM at the moment of capture.* You analyse a Windows memory image and reconstruct running processes and ancestry, hunt hidden processes (`psscan` vs `pslist`), read launch command lines, look for injected code (`malfind`), map network connections (`netscan`) and service persistence (`svcscan`), then **carve a suspect binary back out of RAM**. **You'll learn:** that *disk can lie but memory tells the truth at capture time*, why Volatility 3 needs no profile, and how a clean injection/C2/persistence result is itself a finding (here it scopes an **insider data-staging** case).
+
+14. **[Module 14 — Malicious documents](module-14-malicious-documents)** · tools: `oletools` + the Didier Stevens suite
+    *The phishing front door.* Without ever opening them, you statically dissect a weaponised Office macro `.doc`, the same payload in a modern `.docm` (OOXML/ZIP), and a malicious PDF — using `oleid`/`olevba`, `oledump`/`zipdump`, and `pdfid`/`pdf-parser`. **You'll learn:** to find the **auto-exec trigger** then read the **de-obfuscated/decoded** code it runs, and to carve the next-stage IOCs (download URLs, dropped scripts, launched programs) that pivot you into Module 9 (4104) and malware triage.
+
+15. **[Module 15 — Filesystem forensics & timelines](module-15-filesystem-timeline)** · tools: The Sleuth Kit + `MFTECmd`
+    *The ground truth under every artifact.* You open a raw disk image with no Windows and no mounting, walk it layer by layer (`mmls` → `fls` → `istat`/`icat`), **recover deleted files**, inspect NTFS's **two timestamp sets** to catch **timestomping**, parse the `$MFT` with MFTECmd's `SI<FN`/`uSecZeros` flags, and build the **filesystem timeline** — the spine of a super-timeline. **You'll learn:** that *deleted ≠ gone*, why `$FN` defeats an attacker who only stomped `$SI`, and how per-layer timelines merge in Timeline Explorer.
 
 ---
 
@@ -120,9 +135,15 @@ Part B — hunt the INTRUSION across the logs
         │
         ▼
   11 CAPSTONE ─ do it all on one case, produce a timeline + findings
+        │
+        ▼  go BELOW the artifact layer + out to the front door
+Part C — advanced add-ons (no Module 13 — reserved)
+  12 Memory (Volatility 3) ─ what was alive in RAM at capture
+  14 Malicious documents ─ the phishing launcher that started it all
+  15 Filesystem & timelines (TSK + MFTECmd) ─ deleted files, timestomping, the timeline spine
 ```
 
-The pivots are deliberate. A suspicious binary in **Module 1** is confirmed in **2/3** and hunted fleet-wide in **4**; its SHA1 and execution time become anchors you carry into **Part B**, where credential theft (**7**) explains *how* the attacker spread (**8**), PowerShell (**9**) shows *what they typed*, and Sysmon/WEF (**10**) is the sensor layer that recorded all of it. The capstone (**11**) closes the loop.
+The pivots are deliberate. A suspicious binary in **Module 1** is confirmed in **2/3** and hunted fleet-wide in **4**; its SHA1 and execution time become anchors you carry into **Part B**, where credential theft (**7**) explains *how* the attacker spread (**8**), PowerShell (**9**) shows *what they typed*, and Sysmon/WEF (**10**) is the sensor layer that recorded all of it. The capstone (**11**) closes the loop. The **advanced add-ons** then deepen the same case from new angles: memory (**12**) shows what was running and connected at capture, malicious documents (**14**) explain the **initial access** that dropped the implant, and filesystem forensics (**15**) recovers what the attacker deleted and exposes the timestamps he faked — feeding the super-timeline the capstone builds.
 
 ---
 
@@ -172,6 +193,7 @@ Each module ships its sample data in `data/` (committed to the repo), so you can
 ## 8. Suggested study plan
 
 - **Work 1 → 11, in order.** Part A teaches single-host execution proof; Part B teaches intrusion hunting; the capstone fuses them. The pivots only make sense forward.
+- **Then take the advanced add-ons (12, 14, 15).** After the capstone, go below the artifact layer — memory (**12**) and disk (**15**) — and out to initial access (**14**). They are self-contained and can be done in any order. (Remember: **no Module 13** — it's reserved.)
 - **Do the exercises.** Each module ends with 4-6 *try-it-yourself* questions on the real data. They are where the learning sticks. Worked answers live in **[ANSWER-KEY.md](ANSWER-KEY.md)** (instructor material — try first, then check).
 - **Keep the [GLOSSARY](GLOSSARY.md) open** in another tab for any unfamiliar term.
 - **Take notes as a timeline.** From Module 1, start a running `YYYY-MM-DD HH:MM:SS UTC | host | what | artifact` log. By the capstone you will be building one for real.
@@ -193,7 +215,11 @@ Each module ships its sample data in `data/` (committed to the repo), so you can
 | 9 PowerShell | what did they type? | event analysis | **4104/4103**, Sysmon **7/8/10** |
 | 10 Sysmon + WEF | how do we see all this? | concepts | Sysmon ID map; WEF `ForwardedEvents` |
 | 11 Capstone | put it all together | all of the above | timeline + findings |
+| *— advanced add-ons (no Module 13) —* | | | |
+| 12 Memory forensics | what was running/connected in RAM? | Volatility 3 (`vol`) | processes, `malfind`, `netscan`, `svcscan` |
+| 14 Malicious documents | how did they get in? | oletools + Didier Stevens | VBA auto-exec, PDF `/OpenAction`/`/Launch`, carved IOCs |
+| 15 Filesystem & timelines | what's on disk / deleted / faked? | The Sleuth Kit + MFTECmd | `$MFT`, `$SI` vs `$FN` (timestomp), recovered files, timeline |
 
 ---
 
-*Start with **[Module 1 — Prefetch](module-01-prefetch-pecmd)**. By Module 11 you'll take a triage collection and build a full incident timeline — exactly the decks' goal: **"Master the Triad. Close the Gap."***
+*Start with **[Module 1 — Prefetch](module-01-prefetch-pecmd)**. By Module 11 you'll take a triage collection and build a full incident timeline — exactly the decks' goal: **"Master the Triad. Close the Gap."** Then take the advanced add-ons (**12, 14, 15**) to go below the artifact layer and out to the front door.*
