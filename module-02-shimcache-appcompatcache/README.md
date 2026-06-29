@@ -92,31 +92,34 @@ Found 266 cache entries for Windows10C_11 in ControlSet001
 The CSV columns are: `ControlSet, CacheEntryPosition, Path, LastModifiedTimeUTC, Executed, Duplicate, SourceFile`.
 
 ```bash
-head -13 /data/shimcache.csv | column -s, -t
+head -13 /data/shimcache.csv | awk -F, '{printf "%-3s %-58s %-20s %s\n",$2,$3,$4,$5}'
 ```
 - `head -13` — first 13 lines (header + the 12 most-recent entries).
-- `column -s, -t` — align the comma-separated fields into readable columns.
+- `awk -F, '{printf ...}'` — print the four key columns (cache position, path, last-modified time, executed flag) in aligned fields. (`-F,` sets the comma as the field separator. This container image has no `column` utility, so we format with `awk`.)
 
 **Expected (real, Case 001) — the first few rows:**
 ```
-ControlSet  CacheEntryPosition  Path                                                              LastModifiedTimeUTC   Executed
-1           0                   C:\Windows\System32\WScript.exe                                   2019-12-07 09:09:07   No
-1           1                   C:\ProgramData\Microsoft\Windows Defender\platform\...\MpCmdRun   2020-09-18 22:52:47   No
-1           7                   C:\Windows\TEMP\94A2D383-...\MpSigStub.exe                        2020-09-18 22:52:47   No
-1           8                   C:\Windows\SoftwareDistribution\Download\Install\updateplatform   2020-09-18 22:52:46   No
-1           10                  C:\Users\mortysmith\AppData\Local\Microsoft\OneDrive\...\FileSy   2020-09-18 22:47:45   No
+CacheEntryPosition Path                                                       LastModifiedTimeUTC  Executed
+0   C:\Windows\System32\WScript.exe                            2019-12-07 09:09:07  No
+1   C:\ProgramData\Microsoft\Windows Defender\platform\4.18.2009.2-0\MpCmdRun.exe 2020-09-18 22:52:47  No
+2   C:\Windows\System32\PickerHost.exe                         2019-12-07 09:08:21  No
+3   C:\Windows\system32\RAServer.exe                           2019-12-07 09:10:32  No
+4   C:\Windows\system32\AppHostRegistrationVerifier.exe        2019-12-07 09:08:21  No
+5   C:\ProgramData\Microsoft\Windows Defender\platform\4.18.2009.2-0\NisSrv.exe 2020-09-18 22:52:47  No
+6   C:\ProgramData\Microsoft\Windows Defender\platform\4.18.2009.2-0\MsMpEng.exe 2020-09-18 22:52:47  No
+7   C:\Windows\TEMP\94A2D383-2409-448F-9E98-6B888EB7D248\MpSigStub.exe 2020-09-18 22:52:47  No
 ```
 **Reading every column:**
 - **CacheEntryPosition** — `0` is the **most recently inserted**. Lower number = more recent. This is your relative timeline.
 - **Path** — the full path Windows saw. **This is the field you hunt in.** Note `WScript.exe` (the Windows Script Host — a LOLBin) sitting at position 0.
 - **LastModifiedTimeUTC** — the file's last-modified time, **not** when it ran. Useful for correlation (does it match Amcache/MFT?), but never read it as an execution time.
 - **Executed** — on this Win10 hive it's `No` for **every** row. That is the unreliability in action: do **not** conclude these never ran. (On a Win7 hive this column is meaningful — see the contrast box below.)
-- **Duplicate / SourceFile** — whether the entry repeats, and which hive it came from.
+- **Duplicate / SourceFile** — whether the entry repeats, and which hive it came from. (These are columns 6-7 of the CSV; the trimmed `awk` view above shows only the four key columns.)
 
 ### Step 3 — Hunt for staging-location paths
 Attacker tools often live outside the usual `System32`/`Program Files`. Sweep the cache for the classic staging directory names:
 ```bash
-grep -iE 'Temp|AppData|ProgramData|Public|PerfLogs' /data/shimcache.csv | column -s, -t
+grep -iE 'Temp|AppData|ProgramData|Public|PerfLogs' /data/shimcache.csv | awk -F, '{printf "%-3s %-58s %-20s %s\n",$2,$3,$4,$5}'
 ```
 - `grep -iE` — search, **i**gnoring case, with **E**xtended regex so `|` means "or".
 - The pattern matches any path that mentions `Temp`, `AppData`, `ProgramData`, `Public`, or `PerfLogs` — the folders malware tends to stage in. (We match the folder *name* rather than `\Temp\` with backslashes, because a literal backslash in a shell regex is fiddly to type; the trade-off is you may catch the word inside a longer name, which is fine for a first-pass sweep.)

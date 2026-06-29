@@ -93,8 +93,8 @@ prefetch /data/prefetch/AM_DELTA.EXE-78CA83B0.pf
 ```
 Windows Prefetch File (PF) information:
 	Format version			: 30
+	Prefetch hash			: 0x78ca83b0
 	Executable filename		: AM_DELTA.EXE
-	Prefetch hash			: 78ca83b0
 	Run count			: 1
 	Last run time: 1		: Sep 18, 2020 22:44:32.551352300 UTC
 	...
@@ -161,11 +161,12 @@ done | sort
 
 **Shortcut — just read the pre-parsed CSV.** The folder ships `pf.csv` with PECmd-style columns already extracted. To sort the whole host by real run time without any parsing:
 ```bash
-sort -t, -k4 /data/pf.csv | column -s, -t | less -S
+sort -t, -k4 /data/pf.csv | awk -F, '{printf "%-40s %-26s %-5s %s
+",$1,$2,$3,$4}' | less -S
 ```
 - `-t,` — fields are separated by commas.
 - `-k4` — sort by **column 4** (`LastRun`, which is in `YYYY-MM-DD HH:MM:SS` ISO order, so it sorts correctly).
-- `column -s, -t` — pretty-print the CSV into aligned columns; `less -S` — scroll without wrapping long lines (`q` to quit).
+- `awk -F, '{printf ...}'` — pretty-print the first four columns (source file, executable, run count, last run) into aligned columns; `-F,` sets the comma as the field separator and we skip the long `AllRunTimes` column for readability. `less -S` — scroll without wrapping long lines (`q` to quit).
 
 ### Step 4 — Compare a benign baseline file against the suspect (multi-file reasoning)
 A single file in isolation rarely looks "wrong." You judge it by comparison. Parse a known-good system binary and the suspect side by side:

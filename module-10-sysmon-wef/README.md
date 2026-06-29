@@ -85,13 +85,13 @@ docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 Start by treating `data/` the way you would treat a real collection: many logs, one timeline. **Hayabusa** ranks events by how alarming they are.
 
 ```bash
-hayabusa csv-timeline -d /data -o /data/_out/timeline.csv -w
+hayabusa csv-timeline -d /data -o /data/timeline.csv -w
 ```
 - `hayabusa` — the timeline/triage tool.
 - `csv-timeline` — the mode that produces one ranked CSV across everything.
 - `-d /data` — the **d**irectory of `.evtx` to scan (all six files at once).
-- `-o /data/_out/timeline.csv` — the **o**utput CSV (lands back on your host via the mount).
-- `-w` — show a progress bar / **w**ait display while it runs.
+- `-o /data/timeline.csv` — the **o**utput CSV (lands back on your host via the mount). Hayabusa writes straight into `/data`; it will not create a missing sub-folder, so don't point `-o` at a directory that doesn't exist yet.
+- `-w` — **no-wizard**: don't ask any questions, just scan with all rules (the same flag used in Module 6).
 
 **Expected output:** a console summary of how many events matched each severity (critical/high/medium/low), then a `timeline.csv` you can sort. Sort by the rule **`Level`** column and the worst hits — LSASS access, CreateRemoteThread, the UAC bypass — float to the top. This is exactly how you would triage a freshly collected `ForwardedEvents` export.
 
