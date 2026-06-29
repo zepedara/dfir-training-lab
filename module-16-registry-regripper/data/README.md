@@ -13,7 +13,7 @@ Real Windows **registry hives** from the public **DFIR-Madness "The Stolen Szech
 |---|---|---|---|
 | `SYSTEM`, `SYSTEM.LOG1`, `SYSTEM.LOG2` | CITADEL-DC01 (machine) | ~13 MB | SYSTEM — computer name, time zone, **services** (`coreupdater` auto-start), USB, mounted devices, last shutdown. |
 | `SAM` | CITADEL-DC01 (machine) | 256 KB | SAM — local accounts (Administrator/Guest) + group membership. |
-| `NTUSER.DAT`, `ntuser.dat.LOG1` | DESKTOP-SDN1RPT \ `mortysmith` | 1 MB | NTUSER — UserAssist, **RecentDocs**, per-user Run (benign baseline). |
+| `NTUSER.DAT` | DESKTOP-SDN1RPT \ `mortysmith` | 1 MB | NTUSER — UserAssist, **RecentDocs**, per-user Run (benign baseline). (Its transaction log was empty/sparse in the source image, so none is shipped.) |
 | `UsrClass.dat`, `UsrClass.dat.LOG1` | DESKTOP-SDN1RPT \ `mortysmith` | 3.4 MB | UsrClass — **Shellbags** (folder-browsing history). |
 | `Administrator_NTUSER.DAT`, `Administrator_ntuser.dat.LOG1` | DESKTOP-SDN1RPT \ `Administrator` | 786 KB | NTUSER — **UserAssist proof `coreupdater.exe` was run** by the attacker. |
 
