@@ -31,7 +31,7 @@ The key subkey is **`InventoryApplicationFile`** — one entry per executable Wi
 ### Why investigators love it (what you can prove)
 Amcache is the **"identity / attribution"** corner of the Triad. The **SHA1** is the prize:
 
-- Drop it into threat intelligence (VirusTotal, internal IOC lists) to confirm a known-bad — *offline-deferred* in this lab, since the container has no network.
+- Drop it into threat intelligence (VirusTotal, internal IOC lists) to confirm a known-bad — *offline-deferred* in this lab, since the lab VM is kept offline (no network).
 - **Stack the same SHA1 across every host's Amcache** to find every machine that holds that exact file (the cross-host hunt of Module 4).
 - Combine SHA1 + path + size + metadata to spot a binary masquerading as a system file.
 
@@ -57,17 +57,18 @@ The `-i` flag adds the *file entries that are associated with Programs entries* 
 
 **Data for this module (multiple files):**
 - `Amcache.hve`, `Amcache.hve.LOG1`, `Amcache.hve.LOG2` — the **real** Amcache hive (+ transaction logs) from **DFIR Madness Case 001** desktop `DESKTOP-SDN1RPT`.
-- The **pre-parsed CSV set** is committed too (`amcache_UnassociatedFileEntries.csv`, `amcache_AssociatedFileEntries.csv`, `amcache_ProgramEntries.csv`, and the device CSVs) so you can read the results without running the container. See `data/README.md` for provenance/licensing. That's one hive + 2 logs + 8 output CSVs — plenty to run multiple commands across.
+- The **pre-parsed CSV set** is committed too (`amcache_UnassociatedFileEntries.csv`, `amcache_AssociatedFileEntries.csv`, `amcache_ProgramEntries.csv`, and the device CSVs) so you can read the results without running the parser yourself. See `data/README.md` for provenance/licensing. That's one hive + 2 logs + 8 output CSVs — plenty to run multiple commands across.
 
 ---
 
 ## 3. Setup
 
+Open **Git Bash** on the lab VM and change into this module's data directory:
+
 ```bash
 cd module-03-amcache-amcacheparser/data        # Amcache.hve, .LOG1, .LOG2, + parsed CSVs
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ```
-(`docker run` flags explained in Module 1 §3: interactive throwaway container, no network, `data` mounted at `/data`.)
+(Every command in this module is run **from inside this `data/` folder**; all forensic tools are installed natively and already on your `PATH`, so you call them directly by name — no container, no Docker. See Module 1 §3.)
 
 ---
 
@@ -75,11 +76,11 @@ docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 
 ### Step 1 — Parse the Amcache hive
 ```bash
-AmcacheParser -f /data/Amcache.hve --csv /data --csvf amcache.csv -i
+AmcacheParser -f Amcache.hve --csv . --csvf amcache.csv -i
 ```
 - `AmcacheParser` — the tool.
-- `-f /data/Amcache.hve` — input hive (`.LOG1/.LOG2` beside it are auto-replayed).
-- `--csv /data` — folder to write the CSVs into.
+- `-f Amcache.hve` — input hive (`.LOG1/.LOG2` beside it are auto-replayed).
+- `--csv .` — folder to write the CSVs into.
 - `--csvf amcache.csv` — a base name; the tool appends the category to each file (e.g. `amcache_UnassociatedFileEntries.csv`).
 - `-i` — **i**nclude file entries associated with Programs entries (richer output). The Unassociated file entries with SHA1 appear regardless.
 
@@ -98,7 +99,7 @@ Found 15 unassociated file entry and 83 program file entries (across 85 program 
 The SHA1 lives in the Unassociated CSV. Columns of interest: `SHA1` (4), `FullPath` (6), `Name` (7), `LinkDate` (9), `ProductName` (10), `Size` (11).
 ```bash
 awk -F, 'NR>1{printf "%-22s sha1=%s size=%-8s prod=%s\n", $7, $4, $11, $10}' \
-  /data/amcache_UnassociatedFileEntries.csv
+  amcache_UnassociatedFileEntries.csv
 ```
 - `-F,` — split on commas. `NR>1` — skip the header row.
 - `printf "%-22s ..."` — print Name, SHA1, Size, ProductName in aligned columns.
@@ -119,7 +120,7 @@ FTK Imager.exe         sha1=32756b3a...  size=22566752 prod=accessdata® ftk® i
 
 ### Step 3 — Isolate the suspect and read its full record
 ```bash
-grep -i coreupdater /data/amcache_UnassociatedFileEntries.csv
+grep -i coreupdater amcache_UnassociatedFileEntries.csv
 ```
 **Expected (real, Case 001):**
 ```
@@ -138,13 +139,13 @@ Unassociated,0006485495bded616c6d407985279849903e0000ffff,2020-09-19 03:40:45,fd
 
 ### Step 4 — Extract all SHA1s for the cross-host hunt
 ```bash
-awk -F, 'NR>1 && $4!="" {print $4"  "$7}' /data/amcache_UnassociatedFileEntries.csv | sort
+awk -F, 'NR>1 && $4!="" {print $4"  "$7}' amcache_UnassociatedFileEntries.csv | sort
 ```
 - Prints `SHA1  Name` for every entry that has a hash, sorted. This is the list you'd carry into threat-intel and into Module 4's multi-host stacking. In a real case you'd feed `fd153c66…` to your IOC platform and to every other host's Amcache.
 
 ### Step 5 — Glance at the installed-programs view (context)
 ```bash
-awk -F, 'NR>1{print $3" | "$5}' /data/amcache_ProgramEntries.csv | head
+awk -F, 'NR>1{print $3" | "$5}' amcache_ProgramEntries.csv | head
 ```
 - Columns here are different (this is `ProgramEntries.csv`): `Name` (3) and `Publisher` (5). This shows the machine's installed-software picture — useful context for "what is this box and who used it," and for spotting software that shouldn't be there.
 
