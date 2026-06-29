@@ -1,0 +1,12 @@
+$ rip -r UsrClass.dat -p shellbags
+
+shellbags v.20200428
+(USRCLASS.DAT) Shell/BagMRU traversal in Win7+ USRCLASS.DAT hives
+
+MRU Time             |Modified             | Accessed             | Created              | Zip_Subfolder        | MFT File Ref |Resource
+------------         |------------         | ------------         | ------------         | ------------         | ------------ |------------
+                     |                     |                      |                      |                      |              |My Games [Desktop\0\]
+2020-09-18 23:07:36  |                     |                      |                      |                      |              |My Computer [Desktop\1\]
+2020-09-18 23:07:39  |                     |                      |                      |                      |              |My Computer\{d3162b92-9365-467a-956b-92703aca08af} [Desktop\1\0\]
+                     |                     |                      |                      |                      |              |My Computer\{3dfdf296-dbec-4fb4-81d1-6a3438bcf4de} [Desktop\1\1\]
+                     |                     |                      |                      |                      |              |My Computer\{24ad3ad4-a569-4530-98e1-ab02f9417aa8} [Desktop\1\2\]

@@ -1,0 +1,25 @@
+$ rip -r SOFTWARE -p networklist
+
+Launching networklist v.20200518
+(Software) Collects network info from NetworkList key
+
+Microsoft\Windows NT\CurrentVersion\NetworkList\Profiles
+Network
+  Key LastWrite    : 2020-09-19 01:23:21Z
+  DateLastConnected: 2020-09-18 18:23:21
+  DateCreated      : 2020-09-17 10:07:03
+  DefaultGatewayMac: 00-0C-29-95-CD-21
+  Type             : wired
+
+C137.local
+  Key LastWrite    : 2020-09-18 05:10:45Z
+  DateLastConnected: 2020-09-17 22:10:45
+  DateCreated      : 2020-09-17 17:43:29
+  DefaultGatewayMac: 00-0C-29-95-CD-21
+  Type             : wired
+
+
+Domain/IP                     
+C137.local                    
+localdomain                   
+

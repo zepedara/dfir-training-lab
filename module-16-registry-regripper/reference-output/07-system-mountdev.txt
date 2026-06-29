@@ -1,0 +1,20 @@
+$ rip -r SYSTEM -p mountdev
+
+mountdev v.20200517
+(System) Return contents of System hive MountedDevices key
+
+
+MountedDevices
+LastWrite time = 2020-09-17 17:56:13Z
+
+\DosDevices\C:
+  Drive Signature =  b5 d7 83 b3
+\??\Volume{a7f6108b-f8fd-11ea-80b5-806e6f6e6963}
+  Drive Signature =  b5 d7 83 b3
+\??\Volume{a7f6108c-f8fd-11ea-80b5-806e6f6e6963}
+  Drive Signature =  b5 d7 83 b3
+
+Device: \??\SCSI#CdRom&Ven_NECVMWar&Prod_VMware_SATA_CD01#5&12368b4a&0&010000#{53f5630d-b6bf-11d0-94f2-00a0c91efb8b}
+  \??\Volume{a7f61091-f8fd-11ea-80b5-806e6f6e6963}
+  \DosDevices\D:
+

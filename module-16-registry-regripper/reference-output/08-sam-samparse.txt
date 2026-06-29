@@ -1,0 +1,107 @@
+$ rip -r SAM -p samparse
+
+samparse v.20220921
+(SAM) Parse SAM file for user & group mbrshp info
+
+
+User Information
+-------------------------
+Username        : Administrator [500]
+SID             : S-1-5-21-2620694702-3641965580-775306395-500
+Full Name       : 
+User Comment    : Built-in account for administering the computer/domain
+Account Type    : Default Admin User
+Account Created : Thu Sep 17 17:57:10 2020 Z
+Name            :  
+Last Login Date : Never
+Pwd Reset Date  : Never
+Pwd Fail Date   : Never
+Login Count     : 0
+  --> Password does not expire
+  --> Normal user account
+
+Username        : Guest [501]
+SID             : S-1-5-21-2620694702-3641965580-775306395-501
+Full Name       : 
+User Comment    : Built-in account for guest access to the computer/domain
+Account Type    : Default Guest Acct
+Account Created : Thu Sep 17 17:57:10 2020 Z
+Name            :  
+Last Login Date : Never
+Pwd Reset Date  : Never
+Pwd Fail Date   : Never
+Login Count     : 0
+  --> Password does not expire
+  --> Account Disabled
+  --> Password not required
+  --> Normal user account
+
+-------------------------
+Group Membership Information
+-------------------------
+Group Name    : Administrators [2]
+LastWrite     : Thu Sep 17 17:57:10 2020 Z
+Group Comment : Administrators have complete and unrestricted access to the computer/domain
+Users :
+  S-1-5-21-2620694702-3641965580-775306395-500
+  S-1-5-21-2232410529-1445159330-2725690660-512
+
+Group Name    : Performance Log Users [0]
+LastWrite     : Thu Sep 17 17:57:12 2020 Z
+Group Comment : Members of this group may schedule logging of performance counters, enable trace providers, and collect event traces both locally and via remote access to this computer
+Users         : None
+
+Group Name    : Backup Operators [0]
+LastWrite     : Thu Sep 17 17:57:10 2020 Z
+Group Comment : Backup Operators can override security restrictions for the sole purpose of backing up or restoring files
+Users         : None
+
+Group Name    : Remote Desktop Users [0]
+LastWrite     : Thu Sep 17 17:57:12 2020 Z
+Group Comment : Members in this group are granted the right to logon remotely
+Users         : None
+
+Group Name    : Performance Monitor Users [0]
+LastWrite     : Thu Sep 17 17:57:12 2020 Z
+Group Comment : Members of this group can access performance counter data locally and remotely
+Users         : None
+
+Group Name    : Network Configuration Operators [0]
+LastWrite     : Thu Sep 17 17:57:12 2020 Z
+Group Comment : Members in this group can have some administrative privileges to manage configuration of networking features
+Users         : None
+
+Group Name    : Replicator [0]
+LastWrite     : Thu Sep 17 17:57:10 2020 Z
+Group Comment : Supports file replication in a domain
+Users         : None
+
+Group Name    : Guests [2]
+LastWrite     : Thu Sep 17 17:57:10 2020 Z
+Group Comment : Guests have the same access as members of the Users group by default, except for the Guest account which is further restricted
+Users :
+  S-1-5-21-2232410529-1445159330-2725690660-514
+  S-1-5-21-2620694702-3641965580-775306395-501
+
+Group Name    : Print Operators [0]
+LastWrite     : Thu Sep 17 17:57:12 2020 Z
+Group Comment : Members can administer printers installed on domain controllers
+Users         : None
+
+Group Name    : Users [1]
+LastWrite     : Thu Sep 17 17:57:10 2020 Z
+Group Comment : Users are prevented from making accidental or intentional system-wide changes and can run most applications
+Users :
+  S-1-5-21-2232410529-1445159330-2725690660-513
+
+Group Name    : Power Users [0]
+LastWrite     : Thu Sep 17 17:57:10 2020 Z
+Group Comment : Power Users are included for backwards compatibility and possess limited administrative powers
+Users         : None
+
+Analysis Tips:
+ - For well-known SIDs, see http://support.microsoft.com/kb/243330
+     - S-1-5-4  = Interactive
+     - S-1-5-11 = Authenticated Users
+ - Correlate the user SIDs to the output of the ProfileList plugin
+

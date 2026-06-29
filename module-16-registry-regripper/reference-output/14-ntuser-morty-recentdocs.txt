@@ -1,0 +1,38 @@
+$ rip -r NTUSER.DAT -p recentdocs
+
+recentdocs v.20200427
+(NTUSER.DAT) Gets contents of user's RecentDocs key
+
+RecentDocs
+**All values printed in MRUList\MRUListEx order.
+Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs
+LastWrite Time: 2020-09-18 23:07:44Z
+  5 = Portal_gun.png
+  4 = Pictures
+  3 = Jessica.jpg
+  2 = My Social Security Number.txt
+  1 = Plans.txt
+  0 = Thoughts.txt
+
+Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs\.jpg
+LastWrite Time 2020-09-18 23:01:11Z
+MRUListEx = 0
+  0 = Jessica.jpg
+
+Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs\.png
+LastWrite Time 2020-09-18 23:07:44Z
+MRUListEx = 0
+  0 = Portal_gun.png
+
+Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs\.txt
+LastWrite Time 2020-09-18 22:50:36Z
+MRUListEx = 2,1,0
+  2 = My Social Security Number.txt
+  1 = Plans.txt
+  0 = Thoughts.txt
+
+Software\Microsoft\Windows\CurrentVersion\Explorer\RecentDocs\Folder
+LastWrite Time 2020-09-18 23:01:11Z
+MRUListEx = 0
+  0 = Pictures
+

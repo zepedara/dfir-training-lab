@@ -1,0 +1,7 @@
+$ rip -r SYSTEM -p compname
+
+compname v.20090727
+(System) Gets ComputerName and Hostname values from System hive
+
+ComputerName    = CITADEL-DC01
+TCP/IP Hostname = CITADEL-DC01

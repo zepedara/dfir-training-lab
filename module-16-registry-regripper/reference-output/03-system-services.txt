@@ -1,0 +1,3199 @@
+$ rip -r SYSTEM -p services
+
+services v.20191024
+(System) Lists services/drivers in Services key by LastWrite times
+
+ControlSet001\Services
+Lists services/drivers in Services key by LastWrite times
+
+Sat Sep 19 03:27:49 2020 Z
+  Name      = coreupdater
+  Display   = 
+  ImagePath = C:\Windows\System32\coreupdater.exe
+  Type      = Own_Process
+  Start     = Auto Start
+  Group     = 
+
+Sat Sep 19 03:21:47 2020 Z
+  Name      = terminpt
+  Display   = @termmou.inf,%TermInpt.SVCDESC%;Microsoft Remote Desktop Input Driver
+  ImagePath = \SystemRoot\System32\drivers\terminpt.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+Sat Sep 19 01:23:20 2020 Z
+  Name      = VMTools
+  Display   = VMware Tools
+  ImagePath = "C:\Program Files\VMware\VMware Tools\vmtoolsd.exe"
+  Type      = Own_Process
+  Start     = Auto Start
+  Group     = 
+
+Sat Sep 19 01:22:57 2020 Z
+  Name      = tunnel
+  Display   = @nettun.inf,%TUNNEL.Service.DisplayName%;Microsoft Tunnel Miniport Adapter Driver
+  ImagePath = \SystemRoot\system32\DRIVERS\tunnel.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = NDIS
+
+Sat Sep 19 01:22:40 2020 Z
+  Name      = BasicDisplay
+  Display   = 
+  ImagePath = \SystemRoot\System32\drivers\BasicDisplay.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = Video
+
+  Name      = monitor
+  Display   = @monitor.inf,%Monitor.SVCDESC%;Microsoft Monitor Class Function Driver Service
+  ImagePath = \SystemRoot\System32\drivers\monitor.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+Sat Sep 19 01:22:39 2020 Z
+  Name      = HidUsb
+  Display   = @input.inf,%HID.SvcDesc%;Microsoft HID Class Driver
+  ImagePath = \SystemRoot\System32\drivers\hidusb.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = extended base
+
+  Name      = mouhid
+  Display   = @msmouse.inf,%MOUHID.SvcDesc%;Mouse HID Driver
+  ImagePath = \SystemRoot\System32\drivers\mouhid.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = usbccgp
+  Display   = @usb.inf,%GenericParent.SvcDesc%;Microsoft USB Generic Parent Driver
+  ImagePath = \SystemRoot\System32\drivers\usbccgp.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Base
+
+  Name      = vmusbmouse
+  Display   = @oem5.inf,%VMUsbMouse.SvcDesc%;VMware USB Pointing Device
+  ImagePath = \SystemRoot\System32\drivers\vmusbmouse.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Pointer Port
+
+Sat Sep 19 01:22:38 2020 Z
+  Name      = cdrom
+  Display   = @cdrom.inf,%cdrom_ServiceDesc%;CD-ROM Driver
+  ImagePath = \SystemRoot\System32\drivers\cdrom.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = SCSI CDROM Class
+
+  Name      = disk
+  Display   = @disk.inf,%disk_ServiceDesc%;Disk Driver
+  ImagePath = System32\drivers\disk.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = 
+
+  Name      = HdAudAddService
+  Display   = @hdaudio.inf,%UAAFunctionDriverForHdAudio.SvcDesc%;Microsoft 1.1 UAA Function Driver for High Definition Audio Service
+  ImagePath = \SystemRoot\system32\drivers\HdAudio.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = ksthunk
+  Display   = Kernel Streaming Thunks
+  ImagePath = \SystemRoot\system32\drivers\ksthunk.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = PNP Filter
+
+  Name      = mssmbios
+  Display   = @mssmbios.inf,%mssmbios_svcdesc%;Microsoft System Management BIOS Driver
+  ImagePath = \SystemRoot\System32\drivers\mssmbios.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = 
+
+  Name      = partmgr
+  Display   = @%SystemRoot%\system32\drivers\partmgr.sys,-100
+  ImagePath = System32\drivers\partmgr.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Boot Bus Extender
+
+  Name      = usbhub
+  Display   = @usbport.inf,%ROOTHUB.SvcDesc%;Microsoft USB Standard Hub Driver
+  ImagePath = \SystemRoot\System32\drivers\usbhub.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Base
+
+  Name      = USBHUB3
+  Display   = @usbhub3.inf,%UsbHub3.SVCDESC%;SuperSpeed Hub
+  ImagePath = \SystemRoot\System32\drivers\UsbHub3.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Base
+
+  Name      = vmrawdsk
+  Display   = VMware Physical Disk Helper
+  ImagePath = \SystemRoot\system32\DRIVERS\vmrawdsk.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = Base
+
+  Name      = volsnap
+  Display   = @volume.inf,%VolumeClassName%;Storage volumes
+  ImagePath = System32\drivers\volsnap.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = 
+
+Sat Sep 19 01:22:36 2020 Z
+  Name      = atapi
+  Display   = @mshdc.inf,%idechannel.DeviceDesc%;IDE Channel
+  ImagePath = System32\drivers\atapi.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+Sat Sep 19 01:22:35 2020 Z
+  Name      = e1iexpress
+  Display   = @net1ix64.inf,%e1iExpress.Service.DispName%;Intel(R) PRO/1000 PCI Express Network Connection Driver I
+  ImagePath = \SystemRoot\system32\DRIVERS\e1i63x64.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = NDIS
+
+  Name      = gencounter
+  Display   = @wgencounter.inf,%GenCounter.SVCDESC%;Microsoft Hyper-V Generation Counter
+  ImagePath = \SystemRoot\System32\drivers\vmgencounter.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = HDAudBus
+  Display   = @hdaudbus.inf,%HDAudBus.SVCDESC%;Microsoft UAA Bus Driver for High Definition Audio
+  ImagePath = \SystemRoot\System32\drivers\HDAudBus.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = i8042prt
+  Display   = @msmouse.inf,%i8042prt.SvcDesc%;PS/2 Keyboard and Mouse Port Driver
+  ImagePath = \SystemRoot\System32\drivers\i8042prt.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Keyboard Port
+
+  Name      = intelide
+  Display   = 
+  ImagePath = System32\drivers\intelide.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = kbdclass
+  Display   = @keyboard.inf,%kbdclass.SvcDesc%;Keyboard Class Driver
+  ImagePath = \SystemRoot\System32\drivers\kbdclass.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = LSI_SAS
+  Display   = 
+  ImagePath = System32\drivers\lsi_sas.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = mouclass
+  Display   = @msmouse.inf,%mouclass.SvcDesc%;Mouse Class Driver
+  ImagePath = \SystemRoot\System32\drivers\mouclass.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = msisadrv
+  Display   = 
+  ImagePath = System32\drivers\msisadrv.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Boot Bus Extender
+
+  Name      = storahci
+  Display   = @mshdc.inf,%storahci_ServiceDescription%;Microsoft Standard SATA AHCI Driver
+  ImagePath = System32\drivers\storahci.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = usbehci
+  Display   = @usbport.inf,%EHCIMP.SvcDesc%;Microsoft USB 2.0 Enhanced Host Controller Miniport Driver
+  ImagePath = \SystemRoot\System32\drivers\usbehci.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Base
+
+  Name      = usbuhci
+  Display   = @usbport.inf,%UHCIMP.SvcDesc%;Microsoft USB Universal Host Controller Miniport Driver
+  ImagePath = \SystemRoot\System32\drivers\usbuhci.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Base
+
+  Name      = USBXHCI
+  Display   = @usbxhci.inf,%PCI\CC_0C0330.DeviceDesc%;USB xHCI Compliant Host Controller
+  ImagePath = \SystemRoot\System32\drivers\USBXHCI.SYS
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = vm3dmp_loader
+  Display   = 
+  ImagePath = \SystemRoot\system32\DRIVERS\vm3dmp_loader.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Video
+
+  Name      = vmmouse
+  Display   = @oem6.inf,%VMMouse.SvcDesc%;VMware Pointing Device
+  ImagePath = \SystemRoot\System32\drivers\vmmouse.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Pointer Port
+
+Sat Sep 19 01:22:34 2020 Z
+  Name      = ACPI
+  Display   = @acpi.inf,%ACPI.SvcDesc%;Microsoft ACPI Driver
+  ImagePath = System32\drivers\ACPI.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Core
+
+  Name      = BasicRender
+  Display   = 
+  ImagePath = \SystemRoot\System32\drivers\BasicRender.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = Video
+
+  Name      = CmBatt
+  Display   = @cmbatt.inf,%CmBatt.SvcDesc%;Microsoft ACPI Control Method Battery Driver
+  ImagePath = \SystemRoot\System32\drivers\CmBatt.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = CompositeBus
+  Display   = @CompositeBus.inf,%CompositeBus.SVCDESC%;Composite Bus Enumerator Driver
+  ImagePath = \SystemRoot\System32\drivers\CompositeBus.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = intelppm
+  Display   = @cpu.inf,%IntelPPM.SvcDesc%;Intel Processor Driver
+  ImagePath = \SystemRoot\System32\drivers\intelppm.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = kdnic
+  Display   = @kdnic.inf,%KdNic.Service.DispName%;Microsoft Kernel Debug Network Miniport (NDIS 6.20)
+  ImagePath = \SystemRoot\system32\DRIVERS\kdnic.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = NDIS
+
+  Name      = NdisTapi
+  Display   = @%systemroot%\system32\rascfg.dll,-32001
+  ImagePath = \SystemRoot\system32\DRIVERS\ndistapi.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = NdisVirtualBus
+  Display   = @%SystemRoot%\System32\drivers\NdisVirtualBus.sys,-200
+  ImagePath = \SystemRoot\System32\drivers\NdisVirtualBus.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = NdisWan
+  Display   = @%systemroot%\system32\rascfg.dll,-32002
+  ImagePath = \SystemRoot\System32\drivers\ndiswan.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = pci
+  Display   = @machine.inf,%pci_svcdesc%;PCI Bus Driver
+  ImagePath = System32\drivers\pci.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Boot Bus Extender
+
+  Name      = PptpMiniport
+  Display   = @%systemroot%\system32\rascfg.dll,-32006
+  ImagePath = \SystemRoot\System32\drivers\raspptp.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = RasAgileVpn
+  Display   = @netavpna.inf,%Svc-Mp-AgileVpn-DispName%;WAN Miniport (IKEv2)
+  ImagePath = \SystemRoot\system32\DRIVERS\AgileVpn.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = Rasl2tp
+  Display   = @%systemroot%\system32\rascfg.dll,-32005
+  ImagePath = \SystemRoot\System32\drivers\rasl2tp.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = RasPppoe
+  Display   = @%systemroot%\system32\rascfg.dll,-32007
+  ImagePath = \SystemRoot\System32\drivers\raspppoe.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = RasSstp
+  Display   = @%systemroot%\system32\sstpsvc.dll,-202
+  ImagePath = \SystemRoot\system32\DRIVERS\rassstp.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = rdpbus
+  Display   = @rdpbus.inf,%rdpbus_svcdesc%;Remote Desktop Device Redirector Bus Driver
+  ImagePath = \SystemRoot\System32\drivers\rdpbus.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = spaceport
+  Display   = @spaceport.inf,%Spaceport_ServiceDesc%;Storage Spaces Driver
+  ImagePath = System32\drivers\spaceport.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = swenum
+  Display   = @swenum.inf,%SWENUM.SVCDESC%;Software Bus Driver
+  ImagePath = \SystemRoot\System32\drivers\swenum.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = umbus
+  Display   = @umbus.inf,%umbus.SVCDESC%;UMBus Enumerator Driver
+  ImagePath = \SystemRoot\System32\drivers\umbus.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = vdrvroot
+  Display   = @vdrvroot.inf,%vdrvroot_svcdesc%;Microsoft Virtual Drive Enumerator
+  ImagePath = System32\drivers\vdrvroot.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Boot Bus Extender
+
+  Name      = vmci
+  Display   = @oem1.inf,%loc.vmciServiceDisplayName%;VMware VMCI Bus Driver
+  ImagePath = System32\drivers\vmci.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = volmgr
+  Display   = @volmgr.inf,%volmgr_svcdesc%;Volume Manager Driver
+  ImagePath = System32\drivers\volmgr.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = Wdf01000
+  Display   = @%SystemRoot%\system32\drivers\Wdf01000.sys,-1000
+  ImagePath = system32\drivers\Wdf01000.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = WdfLoadGroup
+
+Fri Sep 18 22:26:44 2020 Z
+  Name      = Netlogon
+  Display   = @%SystemRoot%\System32\netlogon.dll,-102
+  ImagePath = %systemroot%\system32\lsass.exe
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = MS_WindowsRemoteValidation
+
+Fri Sep 18 01:11:34 2020 Z
+  Name      = BITS
+  Display   = @%SystemRoot%\system32\qmgr.dll,-1000
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+Thu Sep 17 18:05:45 2020 Z
+  Name      = EFS
+  Display   = @%SystemRoot%\system32\efssvc.dll,-100
+  ImagePath = %SystemRoot%\System32\lsass.exe
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+Thu Sep 17 17:58:19 2020 Z
+  Name      = TrustedInstaller
+  Display   = @%SystemRoot%\servicing\TrustedInstaller.exe,-100
+  ImagePath = %SystemRoot%\servicing\TrustedInstaller.exe
+  Type      = Own_Process
+  Start     = Manual
+  Group     = ProfSvc_Group
+
+Thu Sep 17 17:57:59 2020 Z
+  Name      = ADWS
+  Display   = @%SystemRoot%\ADWS\adwsres.dll,-1
+  ImagePath = %systemroot%\ADWS\Microsoft.ActiveDirectory.WebServices.exe
+  Type      = Own_Process
+  Start     = Auto Start
+  Group     = 
+
+Thu Sep 17 17:57:54 2020 Z
+  Name      = DNS
+  Display   = @%systemroot%\system32\dns.exe,-49157
+  ImagePath = %systemroot%\system32\dns.exe
+  Type      = Own_Process
+  Start     = Auto Start
+  Group     = 
+
+Thu Sep 17 17:57:52 2020 Z
+  Name      = NtFrs
+  Display   = @ntfrsres.dll,-130
+  ImagePath = %SystemRoot%\system32\ntfrs.exe
+  Type      = Own_Process
+  Start     = Disabled
+  Group     = 
+
+Thu Sep 17 17:57:13 2020 Z
+  Name      = SamSs
+  Display   = @%SystemRoot%\system32\samsrv.dll,-1
+  ImagePath = %SystemRoot%\system32\lsass.exe
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = MS_WindowsLocalValidation
+
+Thu Sep 17 17:56:14 2020 Z
+  Name      = Browser
+  Display   = @%systemroot%\system32\browser.dll,-100
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Disabled
+  Group     = NetworkProvider
+
+  Name      = Dfs
+  Display   = @%systemroot%\system32\dfssvc.exe,-101
+  ImagePath = %SystemRoot%\system32\dfssvc.exe
+  Type      = Own_Process
+  Start     = Auto Start
+  Group     = dfs
+
+Thu Sep 17 17:56:13 2020 Z
+  Name      = .NET CLR Data
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = .NET CLR Networking
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = .NET CLR Networking 4.0.0.0
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = .NET Data Provider for Oracle
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = .NET Data Provider for SqlServer
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = .NET Memory Cache 4.0
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = .NETFramework
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = 1394ohci
+  Display   = @1394.inf,%PCI\CC_0C0010.DeviceDesc%;1394 OHCI Compliant Host Controller
+  ImagePath = \SystemRoot\System32\drivers\1394ohci.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = 3ware
+  Display   = 
+  ImagePath = System32\drivers\3ware.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI miniport
+
+  Name      = acpiex
+  Display   = Microsoft ACPIEx Driver
+  ImagePath = System32\Drivers\acpiex.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Boot Bus Extender
+
+  Name      = acpipagr
+  Display   = @acpipagr.inf,%SvcDesc%;ACPI Processor Aggregator Driver
+  ImagePath = \SystemRoot\System32\drivers\acpipagr.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = AcpiPmi
+  Display   = @acpipmi.inf,%AcpiPmi.SvcDesc%;ACPI Power Meter Driver
+  ImagePath = \SystemRoot\System32\drivers\acpipmi.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = acpitime
+  Display   = @acpitime.inf,%AcpiTime.SvcDesc%;ACPI Wake Alarm Driver
+  ImagePath = \SystemRoot\System32\drivers\acpitime.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = ADP80XX
+  Display   = 
+  ImagePath = System32\drivers\ADP80XX.SYS
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = adsi
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = AeLookupSvc
+  Display   = @%SystemRoot%\system32\aelupsvc.dll,-1
+  ImagePath = %systemroot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = AFD
+  Display   = @%systemroot%\system32\drivers\afd.sys,-1000
+  ImagePath = \SystemRoot\system32\drivers\afd.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = PNP_TDI
+
+  Name      = agp440
+  Display   = @machine.inf,%agp440_svcdesc%;Intel AGP Bus Filter
+  ImagePath = System32\drivers\agp440.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = PnP Filter
+
+  Name      = ahcache
+  Display   = @%systemroot%\system32\drivers\ahcache.sys,-102
+  ImagePath = system32\DRIVERS\ahcache.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = 
+
+  Name      = ALG
+  Display   = @%SystemRoot%\system32\Alg.exe,-112
+  ImagePath = %SystemRoot%\System32\alg.exe
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = AmdK8
+  Display   = @cpu.inf,%AmdK8.SvcDesc%;AMD K8 Processor Driver
+  ImagePath = \SystemRoot\System32\drivers\amdk8.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = AmdPPM
+  Display   = @cpu.inf,%AmdPPM.SvcDesc%;AMD Processor Driver
+  ImagePath = \SystemRoot\System32\drivers\amdppm.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = amdsata
+  Display   = 
+  ImagePath = System32\drivers\amdsata.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI miniport
+
+  Name      = amdsbs
+  Display   = 
+  ImagePath = System32\drivers\amdsbs.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI miniport
+
+  Name      = amdxata
+  Display   = 
+  ImagePath = System32\drivers\amdxata.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI miniport
+
+  Name      = AppID
+  Display   = @%systemroot%\system32\appidsvc.dll,-102
+  ImagePath = \SystemRoot\system32\drivers\appid.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = AppIDSvc
+  Display   = @%systemroot%\system32\appidsvc.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalServiceNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = ProfSvc_Group
+
+  Name      = Appinfo
+  Display   = @%systemroot%\system32\appinfo.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = AppMgmt
+  Display   = @appmgmts.dll,-3250
+  ImagePath = %SystemRoot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = AppReadiness
+  Display   = @%SystemRoot%\System32\AppReadiness.dll,-1000
+  ImagePath = %SystemRoot%\System32\svchost.exe -k AppReadiness
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = AppXSvc
+  Display   = @%SystemRoot%\system32\appxdeploymentserver.dll,-1
+  ImagePath = %systemroot%\system32\svchost.exe -k wsappx
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = arcsas
+  Display   = @arcsas.inf,%arcsas_ServiceName%;Adaptec SAS/SATA-II RAID Storport's Miniport Driver
+  ImagePath = System32\drivers\arcsas.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI miniport
+
+  Name      = AsyncMac
+  Display   = @%systemroot%\system32\rascfg.dll,-32000
+  ImagePath = \SystemRoot\System32\drivers\asyncmac.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = AudioEndpointBuilder
+  Display   = @%SystemRoot%\system32\AudioEndpointBuilder.dll,-204
+  ImagePath = %SystemRoot%\System32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = AudioGroup
+
+  Name      = Audiosrv
+  Display   = @%SystemRoot%\system32\audiosrv.dll,-200
+  ImagePath = %SystemRoot%\System32\svchost.exe -k LocalServiceNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = AudioGroup
+
+  Name      = b06bdrv
+  Display   = @netbvbda.inf,%vbd_srv_desc%;Broadcom NetXtreme II VBD
+  ImagePath = System32\drivers\bxvbda.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = BattC
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = Beep
+  Display   = Beep
+  ImagePath = 
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Base
+
+  Name      = bfadfcoei
+  Display   = 
+  ImagePath = System32\drivers\bfadfcoei.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI miniport
+
+  Name      = bfadi
+  Display   = 
+  ImagePath = System32\drivers\bfadi.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI miniport
+
+  Name      = BFE
+  Display   = @%SystemRoot%\system32\bfe.dll,-1001
+  ImagePath = %systemroot%\system32\svchost.exe -k LocalServiceNoNetwork
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = NetworkProvider
+
+  Name      = bowser
+  Display   = @%systemroot%\system32\browser.dll,-102
+  ImagePath = system32\DRIVERS\bowser.sys
+  Type      = File system driver
+  Start     = Manual
+  Group     = Network
+
+  Name      = BrokerInfrastructure
+  Display   = @%windir%\system32\bisrv.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k DcomLaunch
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = COM Infrastructure
+
+  Name      = bxfcoe
+  Display   = @bxfcoe.inf,%BXFCOE.SVCDESC%;Broadcom NetXtreme II Offload FCoE Driver
+  ImagePath = System32\drivers\bxfcoe.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = 
+
+  Name      = bxois
+  Display   = @bxois.inf,%BXOIS.SVCDESC%;Broadcom NetXtreme II Offload iSCSI Driver
+  ImagePath = System32\drivers\bxois.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = 
+
+  Name      = cdfs
+  Display   = CD/DVD File System Reader
+  ImagePath = system32\DRIVERS\cdfs.sys
+  Type      = File system driver
+  Start     = Disabled
+  Group     = Boot File System
+
+  Name      = CertPropSvc
+  Display   = @%SystemRoot%\System32\certprop.dll,-11
+  ImagePath = %SystemRoot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = cht4vbd
+  Display   = @cht4vx64.inf,%cht4vbd.generic%;Chelsio T4 Virtual Bus Driver
+  ImagePath = \SystemRoot\System32\drivers\cht4vx64.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = System Bus Extender
+
+  Name      = CLFS
+  Display   = @%SystemRoot%\system32\drivers\clfs.sys,-100
+  ImagePath = System32\drivers\CLFS.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Filter
+
+  Name      = clr_optimization_v4.0.30319_32
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = clr_optimization_v4.0.30319_64
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = CNG
+  Display   = 
+  ImagePath = System32\Drivers\cng.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Core
+
+  Name      = CngHwAssist
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = COMSysApp
+  Display   = @comres.dll,-947
+  ImagePath = %SystemRoot%\system32\dllhost.exe /Processid:{02D4B3F1-FD88-11D1-960D-00805FC79235}
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = condrv
+  Display   = Console Driver
+  ImagePath = System32\drivers\condrv.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Base
+
+  Name      = crypt32
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = CryptSvc
+  Display   = @%SystemRoot%\system32\cryptsvc.dll,-1001
+  ImagePath = %SystemRoot%\system32\svchost.exe -k NetworkService
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = DCLocator
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = DcomLaunch
+  Display   = @combase.dll,-5012
+  ImagePath = %SystemRoot%\system32\svchost.exe -k DcomLaunch
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = COM Infrastructure
+
+  Name      = defragsvc
+  Display   = @%SystemRoot%\system32\defragsvc.dll,-101
+  ImagePath = %SystemRoot%\system32\svchost.exe -k defragsvc
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = DeviceAssociationService
+  Display   = @%SystemRoot%\system32\das.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = DeviceInstall
+  Display   = @%SystemRoot%\system32\umpnpmgr.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k DcomLaunch
+  Type      = Share_Process
+  Start     = Manual
+  Group     = PlugPlay
+
+  Name      = Dfsc
+  Display   = @%systemroot%\system32\wkssvc.dll,-1008
+  ImagePath = System32\Drivers\dfsc.sys
+  Type      = File system driver
+  Start     = System Start
+  Group     = Network
+
+  Name      = DfsDriver
+  Display   = @%systemroot%\system32\dfssvc.exe,-201
+  ImagePath = system32\drivers\dfs.sys
+  Type      = File system driver
+  Start     = System Start
+  Group     = Filter
+
+  Name      = DFSR
+  Display   = @dfsrress.dll,-101
+  ImagePath = %SystemRoot%\system32\DFSRs.exe
+  Type      = Own_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = DfsrRo
+  Display   = @dfsrress.dll,-124
+  ImagePath = system32\drivers\dfsrro.sys
+  Type      = File system driver
+  Start     = Boot Start
+  Group     = FSFilter Content Screener
+
+  Name      = Dhcp
+  Display   = @%SystemRoot%\system32\dhcpcore.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalServiceNetworkRestricted
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = TDI
+
+  Name      = DirectoryServices
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = dmvsc
+  Display   = 
+  ImagePath = \SystemRoot\System32\drivers\dmvsc.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = Dnscache
+  Display   = @%SystemRoot%\System32\dnsapi.dll,-101
+  ImagePath = %SystemRoot%\system32\svchost.exe -k NetworkService
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = TDI
+
+  Name      = dot3svc
+  Display   = @%systemroot%\system32\dot3svc.dll,-1102
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = TDI
+
+  Name      = DPS
+  Display   = @%systemroot%\system32\dps.dll,-500
+  ImagePath = %SystemRoot%\System32\svchost.exe -k LocalServiceNoNetwork
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = drmkaud
+  Display   = @wdmaudio.inf,%drmkaud.SvcDesc%;Microsoft Trusted Audio Drivers
+  ImagePath = \SystemRoot\system32\drivers\drmkaud.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = DsmSvc
+  Display   = @%SystemRoot%\system32\DeviceSetupManager.dll,-1000
+  ImagePath = %SystemRoot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = DsRoleSvc
+  Display   = @%SystemRoot%\System32\dsrolesrv.dll,-1
+  ImagePath = %SystemRoot%\System32\lsass.exe
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = DXGKrnl
+  Display   = LDDM Graphics Subsystem
+  ImagePath = \SystemRoot\System32\drivers\dxgkrnl.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Video Init
+
+  Name      = Eaphost
+  Display   = @%systemroot%\system32\eapsvc.dll,-1
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = ebdrv
+  Display   = @netevbda.inf,%vbd_srv_desc%;Broadcom NetXtreme II 10 GigE VBD
+  ImagePath = System32\drivers\evbda.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = elxfcoe
+  Display   = 
+  ImagePath = System32\drivers\elxfcoe.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = elxstor
+  Display   = 
+  ImagePath = System32\drivers\elxstor.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = ErrDev
+  Display   = @errdev.inf,%ERRDEV.SvcDesc%;Microsoft Hardware Error Device Driver
+  ImagePath = \SystemRoot\System32\drivers\errdev.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = ESENT
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = EventLog
+  Display   = @%SystemRoot%\system32\wevtsvc.dll,-200
+  ImagePath = %SystemRoot%\System32\svchost.exe -k LocalServiceNetworkRestricted
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = Event Log
+
+  Name      = EventSystem
+  Display   = @comres.dll,-2450
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalService
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = exfat
+  Display   = exFAT File System Driver
+  ImagePath = 
+  Type      = File system driver
+  Start     = Manual
+  Group     = Boot File System
+
+  Name      = fastfat
+  Display   = FAT12/16/32 File System Driver
+  ImagePath = 
+  Type      = File system driver
+  Start     = Manual
+  Group     = Boot File System
+
+  Name      = fcvsc
+  Display   = 
+  ImagePath = \SystemRoot\System32\drivers\fcvsc.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = SCSI miniport
+
+  Name      = fdc
+  Display   = @fdc.inf,%fdc_ServiceDesc%;Floppy Disk Controller Driver
+  ImagePath = \SystemRoot\System32\drivers\fdc.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = fdPHost
+  Display   = @%systemroot%\system32\fdPHost.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalService
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = FDResPub
+  Display   = @%systemroot%\system32\fdrespub.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalServiceAndNoImpersonation
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = FileInfo
+  Display   = @%SystemRoot%\system32\drivers\fileinfo.sys,-100
+  ImagePath = \SystemRoot\System32\drivers\fileinfo.sys
+  Type      = File system driver
+  Start     = Manual
+  Group     = FSFilter Bottom
+
+  Name      = Filetrace
+  Display   = @%SystemRoot%\system32\drivers\filetrace.sys,-10001
+  ImagePath = system32\drivers\filetrace.sys
+  Type      = File system driver
+  Start     = Manual
+  Group     = FSFilter Activity Monitor
+
+  Name      = flpydisk
+  Display   = @flpydisk.inf,%floppy_ServiceDesc%;Floppy Disk Driver
+  ImagePath = \SystemRoot\System32\drivers\flpydisk.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = FltMgr
+  Display   = @%SystemRoot%\system32\drivers\fltmgr.sys,-10001
+  ImagePath = system32\drivers\fltmgr.sys
+  Type      = File system driver
+  Start     = Boot Start
+  Group     = FSFilter Infrastructure
+
+  Name      = FontCache
+  Display   = @%systemroot%\system32\FntCache.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalService
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = AudioGroup
+
+  Name      = FsDepends
+  Display   = @%SystemRoot%\system32\drivers\fsdepends.sys,-10001
+  ImagePath = System32\drivers\FsDepends.sys
+  Type      = File system driver
+  Start     = Manual
+  Group     = FSFilter Top
+
+  Name      = Fs_Rec
+  Display   = 
+  ImagePath = 
+  Type      = 0x0
+  Start     = Boot Start
+  Group     = File System
+
+  Name      = FxPPM
+  Display   = @cpu.inf,%FxPPM.SvcDesc%;Power Framework Processor Driver
+  ImagePath = \SystemRoot\System32\drivers\fxppm.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = gagp30kx
+  Display   = @machine.inf,%gagp30kx_svcdesc%;Microsoft Generic AGPv3.0 Filter for K8 Processor Platforms
+  ImagePath = System32\drivers\gagp30kx.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = PnP Filter
+
+  Name      = GPIOClx0101
+  Display   = Microsoft GPIO Class Extension Driver
+  ImagePath = System32\Drivers\msgpioclx.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = System Bus Extender
+
+  Name      = gpsvc
+  Display   = @gpapi.dll,-112
+  ImagePath = %systemroot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = ProfSvc_Group
+
+  Name      = HidBatt
+  Display   = @hidbatt.inf,%HidBatt.SvcDesc%;HID UPS Battery Driver
+  ImagePath = \SystemRoot\System32\drivers\HidBatt.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = hidserv
+  Display   = @%SystemRoot%\System32\hidserv.dll,-101
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = hkmsvc
+  Display   = @%SystemRoot%\system32\kmsvc.dll,-6
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = HpSAMD
+  Display   = 
+  ImagePath = System32\drivers\HpSAMD.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = HTTP
+  Display   = @%SystemRoot%\system32\drivers\http.sys,-1
+  ImagePath = system32\drivers\HTTP.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = hwpolicy
+  Display   = @%systemroot%\system32\drivers\hwpolicy.sys,-101
+  ImagePath = System32\drivers\hwpolicy.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = 
+
+  Name      = hyperkbd
+  Display   = 
+  ImagePath = \SystemRoot\System32\drivers\hyperkbd.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = HyperVideo
+  Display   = 
+  ImagePath = \SystemRoot\system32\DRIVERS\HyperVideo.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Video
+
+  Name      = iaStorAV
+  Display   = @iastorav.inf,%iaStorAV.DeviceDesc%;Intel(R) SATA RAID Controller Windows
+  ImagePath = System32\drivers\iaStorAV.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI miniport
+
+  Name      = iaStorV
+  Display   = @iastorv.inf,%*PNP0600.DeviceDesc%;Intel RAID Controller Windows 7
+  ImagePath = System32\drivers\iaStorV.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = ibbus
+  Display   = @mlx4_bus.inf,%Ibbus.ServiceDesc%;Mellanox InfiniBand Bus/AL (Filter Driver)
+  ImagePath = System32\drivers\ibbus.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = PnP Filter
+
+  Name      = IEEtwCollectorService
+  Display   = @%SystemRoot%\system32\ieetwcollectorres.dll,-1000
+  ImagePath = %SystemRoot%\system32\IEEtwCollector.exe /V
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = IKEEXT
+  Display   = @%SystemRoot%\system32\ikeext.dll,-501
+  ImagePath = %systemroot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = inetaccs
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = IpFilterDriver
+  Display   = @%systemroot%\system32\rascfg.dll,-32013
+  ImagePath = system32\DRIVERS\ipfltdrv.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = iphlpsvc
+  Display   = @%SystemRoot%\system32\iphlpsvc.dll,-500
+  ImagePath = %SystemRoot%\System32\svchost.exe -k NetSvcs
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = IPMIDRV
+  Display   = 
+  ImagePath = \SystemRoot\System32\drivers\IPMIDrv.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = IPNAT
+  Display   = IP Network Address Translator
+  ImagePath = System32\drivers\ipnat.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = isapnp
+  Display   = 
+  ImagePath = System32\drivers\isapnp.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Boot Bus Extender
+
+  Name      = iScsiPrt
+  Display   = @iscsi.inf,%iScsiPortName%;iScsiPort Driver
+  ImagePath = \SystemRoot\System32\drivers\msiscsi.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = IsmServ
+  Display   = @%SystemRoot%\System32\ismserv.exe,-1
+  ImagePath = %SystemRoot%\System32\ismserv.exe
+  Type      = Own_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = kbdhid
+  Display   = @keyboard.inf,%KBDHID.SvcDesc%;Keyboard HID Driver
+  ImagePath = \SystemRoot\System32\drivers\kbdhid.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = Kdc
+  Display   = @%SystemRoot%\System32\kdcsvc.dll,-1
+  ImagePath = %SystemRoot%\System32\lsass.exe
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = MS_WindowsRemoteValidation
+
+  Name      = KdsSvc
+  Display   = @KdsSvc.dll,-100
+  ImagePath = %SystemRoot%\system32\lsass.exe
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = KeyIso
+  Display   = @keyiso.dll,-100
+  ImagePath = %SystemRoot%\system32\lsass.exe
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = KPSSVC
+  Display   = @%systemroot%\system32\kpssvc.dll,-100
+  ImagePath = %systemroot%\system32\svchost.exe -k KpsSvcGroup
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = KSecDD
+  Display   = 
+  ImagePath = System32\Drivers\ksecdd.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Base
+
+  Name      = KSecPkg
+  Display   = 
+  ImagePath = System32\Drivers\ksecpkg.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Cryptography
+
+  Name      = KtmRm
+  Display   = @comres.dll,-2946
+  ImagePath = %SystemRoot%\System32\svchost.exe -k NetworkServiceAndNoImpersonation
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = LanmanServer
+  Display   = @%systemroot%\system32\srvsvc.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = LanmanWorkstation
+  Display   = @%systemroot%\system32\wkssvc.dll,-100
+  ImagePath = %SystemRoot%\System32\svchost.exe -k NetworkService
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = NetworkProvider
+
+  Name      = ldap
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = lltdio
+  Display   = @%SystemRoot%\system32\lltdres.dll,-6
+  ImagePath = \SystemRoot\system32\DRIVERS\lltdio.sys
+  Type      = Kernel driver
+  Start     = Auto Start
+  Group     = NDIS
+
+  Name      = lltdsvc
+  Display   = @%SystemRoot%\system32\lltdres.dll,-1
+  ImagePath = %SystemRoot%\System32\svchost.exe -k LocalService
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = lmhosts
+  Display   = @%SystemRoot%\system32\lmhsvc.dll,-101
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalServiceNetworkRestricted
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = TDI
+
+  Name      = Lsa
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = LSI_SAS2
+  Display   = 
+  ImagePath = System32\drivers\lsi_sas2.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = LSI_SAS3
+  Display   = 
+  ImagePath = System32\drivers\lsi_sas3.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = LSI_SSS
+  Display   = 
+  ImagePath = System32\drivers\lsi_sss.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = LSM
+  Display   = @%windir%\system32\lsm.dll,-1001
+  ImagePath = %SystemRoot%\system32\svchost.exe -k DcomLaunch
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = COM Infrastructure
+
+  Name      = luafv
+  Display   = @%systemroot%\system32\drivers\luafv.sys,-100
+  ImagePath = \SystemRoot\system32\drivers\luafv.sys
+  Type      = File system driver
+  Start     = Auto Start
+  Group     = FSFilter Virtualization
+
+  Name      = megasas
+  Display   = 
+  ImagePath = System32\drivers\megasas.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = megasr
+  Display   = 
+  ImagePath = System32\drivers\megasr.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = mlx4_bus
+  Display   = @mlx4_bus.inf,%MLX4BUS.ServiceDesc%;Mellanox ConnectX Bus Enumerator
+  ImagePath = System32\drivers\mlx4_bus.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = NDIS
+
+  Name      = MMCSS
+  Display   = @%systemroot%\system32\mmcss.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = Modem
+  Display   = 
+  ImagePath = system32\drivers\modem.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended base
+
+  Name      = mountmgr
+  Display   = @%SystemRoot%\system32\drivers\mountmgr.sys,-100
+  ImagePath = System32\drivers\mountmgr.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = mpsdrv
+  Display   = @%SystemRoot%\system32\FirewallAPI.dll,-23092
+  ImagePath = System32\drivers\mpsdrv.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = network
+
+  Name      = MpsSvc
+  Display   = @%SystemRoot%\system32\FirewallAPI.dll,-23090
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalServiceNoNetwork
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = NetworkProvider
+
+  Name      = mrxsmb
+  Display   = @%systemroot%\system32\wkssvc.dll,-1002
+  ImagePath = system32\DRIVERS\mrxsmb.sys
+  Type      = File system driver
+  Start     = Manual
+  Group     = Network
+
+  Name      = mrxsmb10
+  Display   = @%systemroot%\system32\wkssvc.dll,-1004
+  ImagePath = system32\DRIVERS\mrxsmb10.sys
+  Type      = File system driver
+  Start     = Auto Start
+  Group     = Network
+
+  Name      = mrxsmb20
+  Display   = @%systemroot%\system32\wkssvc.dll,-1006
+  ImagePath = system32\DRIVERS\mrxsmb20.sys
+  Type      = File system driver
+  Start     = Manual
+  Group     = Network
+
+  Name      = MsBridge
+  Display   = @%SystemRoot%\system32\bridgeres.dll,-1
+  ImagePath = \SystemRoot\system32\DRIVERS\bridge.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = NDIS
+
+  Name      = MSDTC
+  Display   = @comres.dll,-2797
+  ImagePath = %SystemRoot%\System32\msdtc.exe
+  Type      = Own_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = MSDTC Bridge 4.0.0.0
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = Msfs
+  Display   = 
+  ImagePath = 
+  Type      = File system driver
+  Start     = System Start
+  Group     = File system
+
+  Name      = mshidkmdf
+  Display   = @%SystemRoot%\system32\drivers\mshidkmdf.sys,-100
+  ImagePath = \SystemRoot\System32\drivers\mshidkmdf.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Base
+
+  Name      = mshidumdf
+  Display   = @%SystemRoot%\system32\drivers\mshidumdf.sys,-100
+  ImagePath = \SystemRoot\System32\drivers\mshidumdf.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Base
+
+  Name      = MSiSCSI
+  Display   = @%SystemRoot%\system32\iscsidsc.dll,-5000
+  ImagePath = %systemroot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = iSCSI
+
+  Name      = msiserver
+  Display   = @%SystemRoot%\system32\msimsg.dll,-27
+  ImagePath = %systemroot%\system32\msiexec.exe /V
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = MSKSSRV
+  Display   = @ksfilter.inf,%MSKSSRV.DeviceDesc%;Microsoft Streaming Service Proxy
+  ImagePath = \SystemRoot\system32\drivers\MSKSSRV.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = MsLbfoProvider
+  Display   = @%SystemRoot%\System32\drivers\MsLbfoProvider.sys,-501
+  ImagePath = \SystemRoot\system32\DRIVERS\MsLbfoProvider.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = NDIS
+
+  Name      = MSPCLOCK
+  Display   = @ksfilter.inf,%MSPCLOCK.DeviceDesc%;Microsoft Streaming Clock Proxy
+  ImagePath = \SystemRoot\system32\drivers\MSPCLOCK.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = MSPQM
+  Display   = @ksfilter.inf,%MSPQM.DeviceDesc%;Microsoft Streaming Quality Manager Proxy
+  ImagePath = \SystemRoot\system32\drivers\MSPQM.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = MsRPC
+  Display   = 
+  ImagePath = 
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = MSTEE
+  Display   = @ksfilter.inf,%MSTEE.DeviceDesc%;Microsoft Streaming Tee/Sink-to-Sink Converter
+  ImagePath = \SystemRoot\system32\drivers\MSTEE.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = MTConfig
+  Display   = @mtconfig.inf,%MTConfig.SVCDESC%;Microsoft Input Configuration Driver
+  ImagePath = \SystemRoot\System32\drivers\MTConfig.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = Mup
+  Display   = @%systemroot%\system32\drivers\mup.sys,-101
+  ImagePath = System32\Drivers\mup.sys
+  Type      = File system driver
+  Start     = Boot Start
+  Group     = Network
+
+  Name      = mvumis
+  Display   = 
+  ImagePath = System32\drivers\mvumis.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = napagent
+  Display   = @%SystemRoot%\system32\qagentrt.dll,-6
+  ImagePath = %SystemRoot%\System32\svchost.exe -k NetworkService
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = NcaSvc
+  Display   = @%SystemRoot%\system32\ncasvc.dll,-3009
+  ImagePath = %SystemRoot%\System32\svchost.exe -k NetSvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = ndfltr
+  Display   = @mlx4_bus.inf,%ndfltr.ServiceDesc%;NetworkDirect Service
+  ImagePath = System32\drivers\ndfltr.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = PNP Filter
+
+  Name      = NDIS
+  Display   = @%SystemRoot%\system32\drivers\ndis.sys,-200
+  ImagePath = system32\drivers\ndis.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = NDIS Wrapper
+
+  Name      = NdisCap
+  Display   = @%SystemRoot%\System32\drivers\ndiscap.sys,-5000
+  ImagePath = \SystemRoot\system32\DRIVERS\ndiscap.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = NDIS
+
+  Name      = NdisImPlatform
+  Display   = @%SystemRoot%\System32\drivers\ndisimplatform.sys,-501
+  ImagePath = \SystemRoot\system32\DRIVERS\NdisImPlatform.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = Ndisuio
+  Display   = @ndisuio.inf,%NDISUIO_Desc%;NDIS Usermode I/O Protocol
+  ImagePath = \SystemRoot\system32\DRIVERS\ndisuio.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = NDIS
+
+  Name      = NDISWANLEGACY
+  Display   = @%systemroot%\system32\rascfg.dll,-32014
+  ImagePath = \SystemRoot\system32\DRIVERS\ndiswan.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = NDProxy
+  Display   = NDIS Proxy
+  ImagePath = 
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = PNP_TDI
+
+  Name      = NetBIOS
+  Display   = @netnb.inf,%NetBIOS_Desc%;NetBIOS Interface
+  ImagePath = system32\DRIVERS\netbios.sys
+  Type      = File system driver
+  Start     = System Start
+  Group     = NetBIOSGroup
+
+  Name      = NetBT
+  Display   = @%SystemRoot%\system32\drivers\netbt.sys,-2
+  ImagePath = System32\DRIVERS\netbt.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = PNP_TDI
+
+  Name      = Netman
+  Display   = @%SystemRoot%\system32\netman.dll,-109
+  ImagePath = %SystemRoot%\System32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = netprofm
+  Display   = @%SystemRoot%\system32\netprofmsvc.dll,-202
+  ImagePath = %SystemRoot%\System32\svchost.exe -k LocalService
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = NetTcpPortSharing
+  Display   = @%systemroot%\Microsoft.NET\Framework64\v4.0.30319\ServiceModelInstallRC.dll,-8201
+  ImagePath = %systemroot%\Microsoft.NET\Framework64\v4.0.30319\SMSvcHost.exe
+  Type      = Share_Process
+  Start     = Disabled
+  Group     = 
+
+  Name      = netvsc
+  Display   = 
+  ImagePath = \SystemRoot\system32\DRIVERS\netvsc63.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = NlaSvc
+  Display   = @%SystemRoot%\System32\nlasvc.dll,-1
+  ImagePath = %SystemRoot%\System32\svchost.exe -k NetworkService
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = Npfs
+  Display   = 
+  ImagePath = 
+  Type      = File system driver
+  Start     = System Start
+  Group     = File system
+
+  Name      = npsvctrig
+  Display   = @npsvctrig.inf,%NPSVCTRIG.SvcDisplayName%;Named pipe service trigger provider
+  ImagePath = \SystemRoot\System32\drivers\npsvctrig.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = 
+
+  Name      = nsi
+  Display   = @%SystemRoot%\system32\nsisvc.dll,-200
+  ImagePath = %systemroot%\system32\svchost.exe -k LocalService
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = nsiproxy
+  Display   = @%SystemRoot%\system32\drivers\nsiproxy.sys,-2
+  ImagePath = system32\drivers\nsiproxy.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = 
+
+  Name      = NTDS
+  Display   = @%SystemRoot%\System32\ntdsmsg.dll,-1
+  ImagePath = %SystemRoot%\System32\lsass.exe
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = Base
+
+  Name      = Ntfs
+  Display   = 
+  ImagePath = 
+  Type      = File system driver
+  Start     = Manual
+  Group     = Boot File System
+
+  Name      = Null
+  Display   = 
+  ImagePath = 
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = Base
+
+  Name      = nvraid
+  Display   = 
+  ImagePath = System32\drivers\nvraid.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = nvstor
+  Display   = 
+  ImagePath = System32\drivers\nvstor.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = nv_agp
+  Display   = @machine.inf,%agpnvidia_svcdesc%;NVIDIA nForce AGP Bus Filter
+  ImagePath = System32\drivers\nv_agp.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = PnP Filter
+
+  Name      = Parport
+  Display   = @msports.inf,%Parport.SVCDESC%;Parallel port driver
+  ImagePath = \SystemRoot\System32\drivers\parport.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Parallel arbitrator
+
+  Name      = pciide
+  Display   = 
+  ImagePath = System32\drivers\pciide.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = pcmcia
+  Display   = 
+  ImagePath = System32\drivers\pcmcia.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = pcw
+  Display   = Performance Counters for Windows Driver
+  ImagePath = System32\drivers\pcw.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Base
+
+  Name      = pdc
+  Display   = @%SystemRoot%\system32\drivers\pdc.sys,-100
+  ImagePath = system32\drivers\pdc.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Boot Bus Extender
+
+  Name      = PEAUTH
+  Display   = PEAUTH
+  ImagePath = system32\drivers\peauth.sys
+  Type      = Kernel driver
+  Start     = Auto Start
+  Group     = 
+
+  Name      = PerfDisk
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = PerfHost
+  Display   = @%systemroot%\sysWow64\perfhost.exe,-2
+  ImagePath = %SystemRoot%\SysWow64\perfhost.exe
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = PerfNet
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = PerfOS
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = PerfProc
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = pla
+  Display   = @%systemroot%\system32\pla.dll,-500
+  ImagePath = %SystemRoot%\System32\svchost.exe -k LocalServiceNoNetwork
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = PlugPlay
+  Display   = @%SystemRoot%\system32\umpnpmgr.dll,-200
+  ImagePath = %SystemRoot%\system32\svchost.exe -k DcomLaunch
+  Type      = Share_Process
+  Start     = Manual
+  Group     = PlugPlay
+
+  Name      = PolicyAgent
+  Display   = @%SystemRoot%\System32\polstore.dll,-5010
+  ImagePath = %SystemRoot%\system32\svchost.exe -k NetworkServiceNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = PortProxy
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = Power
+  Display   = @%SystemRoot%\system32\umpo.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k DcomLaunch
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = Plugplay
+
+  Name      = PrintNotify
+  Display   = @C:\Windows\system32\spool\drivers\x64\3\PrintConfig.dll,-1
+  ImagePath = %SystemRoot%\system32\svchost.exe -k print
+  Type      = 0x0
+  Start     = Manual
+  Group     = 
+
+  Name      = Processor
+  Display   = @cpu.inf,%Processor.SvcDesc%;Processor Driver
+  ImagePath = \SystemRoot\System32\drivers\processr.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = ProfSvc
+  Display   = @%systemroot%\system32\profsvc.dll,-300
+  ImagePath = %systemroot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = profsvc_group
+
+  Name      = Psched
+  Display   = @%SystemRoot%\System32\drivers\pacer.sys,-101
+  ImagePath = \SystemRoot\system32\DRIVERS\pacer.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = NDIS
+
+  Name      = pvscsi
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = ql2300i
+  Display   = @ql2300.inf,%ql2300i.DriverDesc%;QLogic Fibre Channel STOR Miniport Inbox Driver (wx64)
+  ImagePath = System32\drivers\ql2300i.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = ql40xx2i
+  Display   = @ql40xx2i.inf,%ql40xx2i.DriverDesc%;QLogic iSCSI Miniport Inbox Driver
+  ImagePath = System32\drivers\ql40xx2i.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = qlfcoei
+  Display   = @qlfcoei.inf,%qlfcoei.DriverDesc%;QLogic [FCoE] STOR Miniport Inbox Driver (wx64)
+  ImagePath = System32\drivers\qlfcoei.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = RasAcd
+  Display   = Remote Access Auto Connection Driver
+  ImagePath = System32\DRIVERS\rasacd.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Streams Drivers
+
+  Name      = RasAuto
+  Display   = @%Systemroot%\system32\rasauto.dll,-200
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = RasMan
+  Display   = @%Systemroot%\system32\rasmans.dll,-200
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = rdbss
+  Display   = @%systemroot%\system32\wkssvc.dll,-1000
+  ImagePath = system32\DRIVERS\rdbss.sys
+  Type      = File system driver
+  Start     = System Start
+  Group     = Network
+
+  Name      = RDMANDK
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = RDPDR
+  Display   = @%SystemRoot%\System32\DRIVERS\rdpdr.sys,-100
+  ImagePath = System32\drivers\rdpdr.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = RDPNP
+  Display   = @%systemroot%\system32\drprov.dll,-100
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = RDPUDD
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = RdpVideoMiniport
+  Display   = Remote Desktop Video Miniport Driver
+  ImagePath = System32\drivers\rdpvideominiport.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = ReFS
+  Display   = 
+  ImagePath = 
+  Type      = File system driver
+  Start     = Manual
+  Group     = Boot File System
+
+  Name      = RemoteAccess
+  Display   = @%Systemroot%\system32\mprdim.dll,-200
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Disabled
+  Group     = 
+
+  Name      = RemoteRegistry
+  Display   = @regsvc.dll,-1
+  ImagePath = %SystemRoot%\system32\svchost.exe -k localService
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = RpcEptMapper
+  Display   = @%windir%\system32\RpcEpMap.dll,-1001
+  ImagePath = %SystemRoot%\system32\svchost.exe -k RPCSS
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = COM Infrastructure
+
+  Name      = RpcLocator
+  Display   = @%systemroot%\system32\Locator.exe,-2
+  ImagePath = %SystemRoot%\system32\locator.exe
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = RpcSs
+  Display   = @combase.dll,-5010
+  ImagePath = %SystemRoot%\system32\svchost.exe -k rpcss
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = COM Infrastructure
+
+  Name      = RSoPProv
+  Display   = @gpapi.dll,-114
+  ImagePath = %SystemRoot%\system32\RSoPProv.exe
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = rspndr
+  Display   = @%SystemRoot%\system32\lltdres.dll,-5
+  ImagePath = \SystemRoot\system32\DRIVERS\rspndr.sys
+  Type      = Kernel driver
+  Start     = Auto Start
+  Group     = NDIS
+
+  Name      = s3cap
+  Display   = 
+  ImagePath = \SystemRoot\System32\drivers\vms3cap.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Video
+
+  Name      = sacdrv
+  Display   = sacdrv
+  ImagePath = system32\DRIVERS\sacdrv.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = EMS
+
+  Name      = sacsvr
+  Display   = @%systemroot%\system32\sacsvr.dll,-500
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = sbp2port
+  Display   = @sbp2.inf,%sbp2_ServiceDesc%;SBP-2 Transport/Protocol Bus Driver
+  ImagePath = System32\drivers\sbp2port.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = 
+
+  Name      = SCardSvr
+  Display   = @%SystemRoot%\System32\SCardSvr.dll,-1
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalServiceAndNoImpersonation
+  Type      = Share_Process
+  Start     = Disabled
+  Group     = SmartCardGroup
+
+  Name      = ScDeviceEnum
+  Display   = @%SystemRoot%\System32\ScDeviceEnum.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = scfilter
+  Display   = @%SystemRoot%\System32\drivers\scfilter.sys,-11
+  ImagePath = System32\DRIVERS\scfilter.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = PnP Filter
+
+  Name      = Schedule
+  Display   = @%SystemRoot%\system32\schedsvc.dll,-100
+  ImagePath = %systemroot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = SchedulerGroup
+
+  Name      = SCPolicySvc
+  Display   = @%SystemRoot%\System32\certprop.dll,-13
+  ImagePath = %SystemRoot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = sdbus
+  Display   = 
+  ImagePath = \SystemRoot\System32\drivers\sdbus.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = System Bus Extender
+
+  Name      = sdstor
+  Display   = @sdstor.inf,%sdstor_ServiceDesc%;SD Storage Port Driver
+  ImagePath = \SystemRoot\System32\drivers\sdstor.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = secdrv
+  Display   = Security Driver
+  ImagePath = 
+  Type      = Kernel driver
+  Start     = Auto Start
+  Group     = 
+
+  Name      = seclogon
+  Display   = @%SystemRoot%\system32\seclogon.dll,-7001
+  ImagePath = %windir%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = SENS
+  Display   = @%SystemRoot%\system32\Sens.dll,-200
+  ImagePath = %SystemRoot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = ProfSvc_Group
+
+  Name      = SerCx
+  Display   = Serial UART Support Library
+  ImagePath = system32\drivers\SerCx.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = SerCx2
+  Display   = Serial UART Support Library
+  ImagePath = system32\drivers\SerCx2.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = Serenum
+  Display   = @msports.inf,%Serenum.SVCDESC%;Serenum Filter Driver
+  ImagePath = \SystemRoot\System32\drivers\serenum.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = PNP Filter
+
+  Name      = Serial
+  Display   = @msports.inf,%Serial.SVCDESC%;Serial port driver
+  ImagePath = \SystemRoot\System32\drivers\serial.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended base
+
+  Name      = sermouse
+  Display   = @msmouse.inf,%sermouse.SvcDesc%;Serial Mouse Driver
+  ImagePath = \SystemRoot\System32\drivers\sermouse.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Pointer Port
+
+  Name      = SessionEnv
+  Display   = @%SystemRoot%\System32\SessEnv.dll,-1026
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = sfloppy
+  Display   = @flpydisk.inf,%sfloppy_devdesc%;High-Capacity Floppy Disk Drive
+  ImagePath = \SystemRoot\System32\drivers\sfloppy.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = SharedAccess
+  Display   = @%SystemRoot%\system32\ipnathlp.dll,-106
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Disabled
+  Group     = 
+
+  Name      = ShellHWDetection
+  Display   = @%SystemRoot%\System32\shsvcs.dll,-12288
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = ShellSvcGroup
+
+  Name      = SiSRaid2
+  Display   = 
+  ImagePath = System32\drivers\SiSRaid2.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = SiSRaid4
+  Display   = 
+  ImagePath = System32\drivers\sisraid4.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = smbdirect
+  Display   = 
+  ImagePath = System32\DRIVERS\smbdirect.sys
+  Type      = File system driver
+  Start     = Manual
+  Group     = Network
+
+  Name      = smphost
+  Display   = @%SystemRoot%\System32\smphost.dll,-102
+  ImagePath = %SystemRoot%\System32\svchost.exe -k smphost
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = SMSvcHost 4.0.0.0
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = SNMPTRAP
+  Display   = @%SystemRoot%\system32\snmptrap.exe,-3
+  ImagePath = %SystemRoot%\System32\snmptrap.exe
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = SpbCx
+  Display   = Simple Peripheral Bus Support Library
+  ImagePath = system32\drivers\SpbCx.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = Spooler
+  Display   = @%systemroot%\system32\spoolsv.exe,-1
+  ImagePath = %SystemRoot%\System32\spoolsv.exe
+  Type      = 0x0
+  Start     = Auto Start
+  Group     = SpoolerGroup
+
+  Name      = sppsvc
+  Display   = @%SystemRoot%\system32\sppsvc.exe,-101
+  ImagePath = %SystemRoot%\system32\sppsvc.exe
+  Type      = Own_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = srv
+  Display   = @%systemroot%\system32\srvsvc.dll,-102
+  ImagePath = System32\DRIVERS\srv.sys
+  Type      = File system driver
+  Start     = Auto Start
+  Group     = Network
+
+  Name      = srv2
+  Display   = @%systemroot%\system32\srvsvc.dll,-104
+  ImagePath = System32\DRIVERS\srv2.sys
+  Type      = File system driver
+  Start     = Manual
+  Group     = Network
+
+  Name      = srvnet
+  Display   = 
+  ImagePath = System32\DRIVERS\srvnet.sys
+  Type      = File system driver
+  Start     = Manual
+  Group     = Network
+
+  Name      = SSDPSRV
+  Display   = @%systemroot%\system32\ssdpsrv.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalServiceAndNoImpersonation
+  Type      = Share_Process
+  Start     = Disabled
+  Group     = 
+
+  Name      = SstpSvc
+  Display   = @%SystemRoot%\system32\sstpsvc.dll,-200
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalService
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = stexstor
+  Display   = 
+  ImagePath = System32\drivers\stexstor.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = storflt
+  Display   = @%SystemRoot%\system32\vmstorfltres.dll,-1000
+  ImagePath = system32\DRIVERS\vmstorfl.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Extended Base
+
+  Name      = stornvme
+  Display   = @stornvme.inf,%StorNVMe_ServiceDesc%;Microsoft Standard NVM Express Driver
+  ImagePath = System32\drivers\stornvme.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = storvsc
+  Display   = 
+  ImagePath = System32\drivers\storvsc.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = Base
+
+  Name      = storvsp
+  Display   = 
+  ImagePath = \SystemRoot\System32\drivers\storvsp.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = svsvc
+  Display   = @%SystemRoot%\system32\svsvc.dll,-101
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = swprv
+  Display   = @%SystemRoot%\System32\swprv.dll,-103
+  ImagePath = %SystemRoot%\System32\svchost.exe -k swprv
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = SysMain
+  Display   = @%SystemRoot%\system32\sysmain.dll,-1000
+  ImagePath = %systemroot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = SystemEventsBroker
+  Display   = @%windir%\system32\SystemEventsBrokerServer.dll,-1001
+  ImagePath = %SystemRoot%\system32\svchost.exe -k DcomLaunch
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = TapiSrv
+  Display   = @%SystemRoot%\system32\tapisrv.dll,-10100
+  ImagePath = %SystemRoot%\System32\svchost.exe -k tapisrv
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = Tcpip
+  Display   = @%SystemRoot%\system32\tcpipcfg.dll,-50003
+  ImagePath = System32\drivers\tcpip.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = PNP_TDI
+
+  Name      = TCPIP6
+  Display   = @netip6.inf,%MS_TCPIP6.TCPIP6.ServiceDescription%;Microsoft IPv6 Protocol Driver
+  ImagePath = \SystemRoot\system32\DRIVERS\tcpip.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = TCPIP6TUNNEL
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = tcpipreg
+  Display   = TCP/IP Registry Compatibility
+  ImagePath = System32\drivers\tcpipreg.sys
+  Type      = Kernel driver
+  Start     = Auto Start
+  Group     = 
+
+  Name      = TCPIPTUNNEL
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = tdx
+  Display   = @%SystemRoot%\system32\tcpipcfg.dll,-50004
+  ImagePath = \SystemRoot\system32\DRIVERS\tdx.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = PNP_TDI
+
+  Name      = TermService
+  Display   = @%SystemRoot%\System32\termsrv.dll,-268
+  ImagePath = %SystemRoot%\System32\svchost.exe -k termsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = Themes
+  Display   = @%SystemRoot%\System32\themeservice.dll,-8192
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = ProfSvc_Group
+
+  Name      = THREADORDER
+  Display   = @%systemroot%\system32\mmcss.dll,-102
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalService
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = TieringEngineService
+  Display   = @%SystemRoot%\system32\TieringEngineService.exe,-702
+  ImagePath = %SystemRoot%\system32\TieringEngineService.exe
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = TPM
+  Display   = @tpm.inf,%TPM%;TPM
+  ImagePath = \SystemRoot\system32\drivers\tpm.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Boot Bus Extender
+
+  Name      = TrkWks
+  Display   = @%SystemRoot%\system32\trkwks.dll,-1
+  ImagePath = %SystemRoot%\System32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = TSDDD
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = TsUsbFlt
+  Display   = 
+  ImagePath = system32\drivers\tsusbflt.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = base
+
+  Name      = TsUsbGD
+  Display   = @tsgenericusbdriver.inf,%TsUsbGD.DeviceDesc.Generic%;Remote Desktop Generic USB Device
+  ImagePath = \SystemRoot\System32\drivers\TsUsbGD.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = tsusbhub
+  Display   = @tsusbhub.inf,%tsusbhub.SVCDESC%;Remote Desktop USB Hub
+  ImagePath = \SystemRoot\System32\drivers\tsusbhub.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = uagp35
+  Display   = @machine.inf,%uagp35_svcdesc%;Microsoft AGPv3.5 Filter
+  ImagePath = System32\drivers\uagp35.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = PnP Filter
+
+  Name      = UALSVC
+  Display   = @%systemroot%\system32\ualsvc.dll,-102
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = UASPStor
+  Display   = @uaspstor.inf,%UASPortName%;USB Attached SCSI (UAS) Driver
+  ImagePath = \SystemRoot\System32\drivers\uaspstor.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = UCX01000
+  Display   = USB Controller Extension
+  ImagePath = \SystemRoot\System32\drivers\ucx01000.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Base
+
+  Name      = udfs
+  Display   = udfs
+  ImagePath = system32\DRIVERS\udfs.sys
+  Type      = File system driver
+  Start     = Disabled
+  Group     = Boot File System
+
+  Name      = UEFI
+  Display   = @uefi.inf,%UEFI.SvcDesc%;Microsoft UEFI Driver
+  ImagePath = \SystemRoot\System32\drivers\UEFI.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = UI0Detect
+  Display   = @%SystemRoot%\system32\ui0detect.exe,-101
+  ImagePath = %SystemRoot%\system32\UI0Detect.exe
+  Type      = 0x0
+  Start     = Manual
+  Group     = 
+
+  Name      = uliagpkx
+  Display   = @machine.inf,%uliagpkx_svcdesc%;Uli AGP Bus Filter
+  ImagePath = System32\drivers\uliagpkx.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = PnP Filter
+
+  Name      = UmPass
+  Display   = @umpass.inf,%UmPass.SVCDESC%;Microsoft UMPass Driver
+  ImagePath = \SystemRoot\System32\drivers\umpass.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = UmRdpService
+  Display   = @%SystemRoot%\system32\umrdp.dll,-1000
+  ImagePath = %SystemRoot%\System32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = upnphost
+  Display   = @%systemroot%\system32\upnphost.dll,-213
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalServiceAndNoImpersonation
+  Type      = Share_Process
+  Start     = Disabled
+  Group     = 
+
+  Name      = usbohci
+  Display   = @usbport.inf,%OHCIMP.SvcDesc%;Microsoft USB Open Host Controller Miniport Driver
+  ImagePath = \SystemRoot\System32\drivers\usbohci.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Base
+
+  Name      = usbprint
+  Display   = @usbprint.inf,%USBPRINT.SvcDesc%;Microsoft USB PRINTER Class
+  ImagePath = \SystemRoot\System32\drivers\usbprint.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = extended base
+
+  Name      = USBSTOR
+  Display   = @usbstor.inf,%USBSTOR.SvcDesc%;USB Mass Storage Driver
+  ImagePath = \SystemRoot\System32\drivers\USBSTOR.SYS
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = VaultSvc
+  Display   = @%SystemRoot%\system32\vaultsvc.dll,-1003
+  ImagePath = %SystemRoot%\system32\lsass.exe
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = vds
+  Display   = @%SystemRoot%\system32\vds.exe,-100
+  ImagePath = %SystemRoot%\System32\vds.exe
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = VerifierExt
+  Display   = @%SystemRoot%\system32\drivers\VerifierExt.sys,-1000
+  ImagePath = system32\drivers\VerifierExt.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = WdfLoadGroup
+
+  Name      = VGAuthService
+  Display   = VMware Alias Manager and Ticket Service
+  ImagePath = "C:\Program Files\VMware\VMware Tools\VMware VGAuth\VGAuthService.exe"
+  Type      = Own_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = vhdmp
+  Display   = 
+  ImagePath = \SystemRoot\System32\drivers\vhdmp.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = SCSI miniport
+
+  Name      = viaide
+  Display   = 
+  ImagePath = System32\drivers\viaide.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = Vid
+  Display   = 
+  ImagePath = \SystemRoot\System32\drivers\Vid.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = vm3dmp
+  Display   = 
+  ImagePath = \SystemRoot\system32\DRIVERS\vm3dmp.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Video
+
+  Name      = vm3dmp-debug
+  Display   = 
+  ImagePath = \SystemRoot\system32\DRIVERS\vm3dmp-debug.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Video
+
+  Name      = vm3dmp-stats
+  Display   = 
+  ImagePath = \SystemRoot\system32\DRIVERS\vm3dmp-stats.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Video
+
+  Name      = vmbus
+  Display   = @%SystemRoot%\system32\vmbusres.dll,-1000
+  ImagePath = System32\drivers\vmbus.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = VMBusHID
+  Display   = 
+  ImagePath = \SystemRoot\System32\drivers\VMBusHID.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = vmbusr
+  Display   = @%SystemRoot%\system32\drivers\vmbusr.sys,-1001
+  ImagePath = \SystemRoot\System32\drivers\vmbusr.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = vmhgfs
+  Display   = VMware Host Guest Client Redirector
+  ImagePath = system32\DRIVERS\vmhgfs.sys
+  Type      = File system driver
+  Start     = Manual
+  Group     = NetworkProvider
+
+  Name      = vmicguestinterface
+  Display   = @%systemroot%\system32\vmicres.dll,-801
+  ImagePath = %systemroot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = vmicheartbeat
+  Display   = @%systemroot%\system32\vmicres.dll,-101
+  ImagePath = %systemroot%\system32\svchost.exe -k ICService
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = vmickvpexchange
+  Display   = @%systemroot%\system32\vmicres.dll,-201
+  ImagePath = %systemroot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = vmicrdv
+  Display   = @%systemroot%\system32\vmicres.dll,-601
+  ImagePath = %systemroot%\system32\svchost.exe -k ICService
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = vmicshutdown
+  Display   = @%systemroot%\system32\vmicres.dll,-301
+  ImagePath = %systemroot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = vmictimesync
+  Display   = @%systemroot%\system32\vmicres.dll,-401
+  ImagePath = %systemroot%\system32\svchost.exe -k LocalServiceNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = vmicvss
+  Display   = @%systemroot%\system32\vmicres.dll,-501
+  ImagePath = %systemroot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = VMMemCtl
+  Display   = Memory Control Driver
+  ImagePath = \SystemRoot\system32\DRIVERS\vmmemctl.sys
+  Type      = Kernel driver
+  Start     = Auto Start
+  Group     = Extended Base
+
+  Name      = vmvss
+  Display   = VMware Snapshot Provider
+  ImagePath = C:\Windows\system32\dllhost.exe /Processid:{74A92729-66BB-44D4-A280-1097A0FC087A}
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = vmwefifw
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = vmxnet3ndis6
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = volmgrx
+  Display   = @%SystemRoot%\system32\drivers\volmgrx.sys,-100
+  ImagePath = System32\drivers\volmgrx.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = vpci
+  Display   = @wvpci.inf,%vpci.SVCDESC%;Microsoft Hyper-V Virtual PCI Bus
+  ImagePath = \SystemRoot\System32\drivers\vpci.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = System Bus Extender
+
+  Name      = vpcivsp
+  Display   = @wvpcivsp.inf,%vpcivsp.SVCDESC%;Microsoft Hyper-V PCI Server
+  ImagePath = \SystemRoot\System32\drivers\vpcivsp.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = vsmraid
+  Display   = 
+  ImagePath = System32\drivers\vsmraid.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = vsock
+  Display   = vSockets Virtual Machine Communication Interface Sockets driver
+  ImagePath = system32\DRIVERS\vsock.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = System Bus Extender
+
+  Name      = VSS
+  Display   = @%systemroot%\system32\vssvc.exe,-102
+  ImagePath = %systemroot%\system32\vssvc.exe
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = VSTXRAID
+  Display   = @vstxraid.inf,%Driver.DeviceDesc%;VIA StorX Storage RAID Controller Windows Driver
+  ImagePath = System32\drivers\vstxraid.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = SCSI Miniport
+
+  Name      = W32Time
+  Display   = @%SystemRoot%\system32\w32time.dll,-200
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalService
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = WacomPen
+  Display   = @hiddigi.inf,%WacomPen.SVCDESC%;Wacom Serial Pen HID Driver
+  ImagePath = \SystemRoot\System32\drivers\wacompen.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = Wanarp
+  Display   = @%systemroot%\system32\rascfg.dll,-32011
+  ImagePath = \SystemRoot\system32\DRIVERS\wanarp.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = Wanarpv6
+  Display   = @%systemroot%\system32\rascfg.dll,-32012
+  ImagePath = \SystemRoot\system32\DRIVERS\wanarp.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = 
+
+  Name      = Wcmsvc
+  Display   = @%SystemRoot%\System32\wcmsvc.dll,-4097
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalServiceNetworkRestricted
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = TDI
+
+  Name      = WcsPlugInService
+  Display   = @%SystemRoot%\system32\WcsPlugInService.dll,-200
+  ImagePath = %SystemRoot%\system32\svchost.exe -k wcssvc
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = WdiServiceHost
+  Display   = @%systemroot%\system32\wdi.dll,-502
+  ImagePath = %SystemRoot%\System32\svchost.exe -k LocalService
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = WdiSystemHost
+  Display   = @%systemroot%\system32\wdi.dll,-500
+  ImagePath = %SystemRoot%\System32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = Wecsvc
+  Display   = @%SystemRoot%\system32\wecsvc.dll,-200
+  ImagePath = %SystemRoot%\system32\svchost.exe -k NetworkService
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = WEPHOSTSVC
+  Display   = @%systemroot%\system32\wephostsvc.dll,-100
+  ImagePath = %systemroot%\system32\svchost.exe -k WepHostSvcGroup
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = wercplsupport
+  Display   = @%SystemRoot%\System32\wercplsupport.dll,-101
+  ImagePath = %SystemRoot%\System32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = WerSvc
+  Display   = @%SystemRoot%\System32\wersvc.dll,-100
+  ImagePath = %SystemRoot%\System32\svchost.exe -k WerSvcGroup
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = WFPLWFS
+  Display   = @%SystemRoot%\System32\drivers\wfplwfs.sys,-6000
+  ImagePath = system32\DRIVERS\wfplwfs.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = NDIS
+
+  Name      = WIMMount
+  Display   = WIMMount
+  ImagePath = system32\drivers\wimmount.sys
+  Type      = File system driver
+  Start     = Manual
+  Group     = FSFilter Infrastructure
+
+  Name      = Windows Workflow Foundation 4.0.0.0
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = WinHttpAutoProxySvc
+  Display   = @%SystemRoot%\system32\winhttp.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalService
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = WinMad
+  Display   = @mlx4_bus.inf,%WinMad.ServiceDesc%;WinMad Service
+  ImagePath = System32\drivers\winmad.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = PNP Filter
+
+  Name      = Winmgmt
+  Display   = @%Systemroot%\system32\wbem\wmisvc.dll,-205
+  ImagePath = %systemroot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = WinNat
+  Display   = @%SystemRoot%\system32\drivers\winnat.sys,-10001
+  ImagePath = system32\drivers\winnat.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = 
+
+  Name      = WinRM
+  Display   = @%Systemroot%\system32\wsmsvc.dll,-101
+  ImagePath = %SystemRoot%\System32\svchost.exe -k NetworkService
+  Type      = Share_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = Winsock
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = WinSock2
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = WinVerbs
+  Display   = @mlx4_bus.inf,%WinVerbs.ServiceDesc%;WinVerbs Service
+  ImagePath = System32\drivers\winverbs.sys
+  Type      = Kernel driver
+  Start     = Boot Start
+  Group     = PNP Filter
+
+  Name      = WLMS
+  Display   = @%SystemRoot%\system32\wlms\wlms.exe,-1
+  ImagePath = %SystemRoot%\system32\wlms\wlms.exe
+  Type      = Own_Process
+  Start     = Auto Start
+  Group     = 
+
+  Name      = WmiAcpi
+  Display   = @wmiacpi.inf,%WMIMAP.SvcDesc%;Microsoft Windows Management Interface for ACPI
+  ImagePath = \SystemRoot\System32\drivers\wmiacpi.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = Extended Base
+
+  Name      = WmiApRpl
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = wmiApSrv
+  Display   = @%Systemroot%\system32\wbem\wmiapsrv.exe,-110
+  ImagePath = %systemroot%\system32\wbem\WmiApSrv.exe
+  Type      = Own_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = workerdd
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = WPDBusEnum
+  Display   = @%SystemRoot%\system32\wpdbusenum.dll,-100
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = ws2ifsl
+  Display   = Windows Socket 2.0 Non-IFS Service Provider Support Environment
+  ImagePath = \SystemRoot\system32\drivers\ws2ifsl.sys
+  Type      = Kernel driver
+  Start     = System Start
+  Group     = PNP_TDI
+
+  Name      = WSService
+  Display   = @%SystemRoot%\system32\WSService.dll,-103
+  ImagePath = %SystemRoot%\System32\svchost.exe -k wsappx
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = wtlmdrv
+  Display   = @wtlmdrv.inf,%WTLMDrv.DisplayName%;Microsoft iSCSI Target LocalMount Adapter
+  ImagePath = \SystemRoot\System32\drivers\wtlmdrv.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = SCSI miniport
+
+  Name      = wuauserv
+  Display   = @%systemroot%\system32\wuaueng.dll,-105
+  ImagePath = %systemroot%\system32\svchost.exe -k netsvcs
+  Type      = Share_Process
+  Start     = Manual
+  Group     = 
+
+  Name      = WudfPf
+  Display   = @%SystemRoot%\system32\drivers\Wudfpf.sys,-1000
+  ImagePath = system32\drivers\WudfPf.sys
+  Type      = Kernel driver
+  Start     = Manual
+  Group     = base
+
+  Name      = wudfsvc
+  Display   = @%SystemRoot%\system32\wudfsvc.dll,-1000
+  ImagePath = %SystemRoot%\system32\svchost.exe -k LocalSystemNetworkRestricted
+  Type      = Share_Process
+  Start     = Manual
+  Group     = PlugPlay
+
+  Name      = xmlprov
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = {791D93FB-6EDF-4C65-B1B9-F8E46CFFEA73}
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
+  Name      = {C7568B63-C424-48B3-AB9B-6D1F004D5AFC}
+  Display   = 
+  ImagePath = 
+  Type      = 
+  Start     = 
+  Group     = 
+
