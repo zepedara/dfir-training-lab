@@ -47,21 +47,22 @@ A registry hive that was copied while Windows was still using it is **"dirty"** 
 
 ## 2. What the tool does — AppCompatCacheParser
 
-**AppCompatCacheParser** (Eric Zimmerman, an EZ Tool — on the Windows VM at `C:\DFIR\tools`) reads a `SYSTEM` hive, finds the `AppCompatCache` blob, decodes its binary format (which differs by Windows version), automatically replays the transaction logs if the hive is dirty, and writes a clean CSV: one row per cached executable with its path, last-modified time, cache position, and the (Win10-unreliable) executed flag. It runs identically in the container and on Windows.
+**AppCompatCacheParser** (Eric Zimmerman, an EZ Tool — on the Windows VM at `C:\DFIR\tools`) reads a `SYSTEM` hive, finds the `AppCompatCache` blob, decodes its binary format (which differs by Windows version), automatically replays the transaction logs if the hive is dirty, and writes a clean CSV: one row per cached executable with its path, last-modified time, cache position, and the (Win10-unreliable) executed flag. It is installed natively on the lab VM and on your `PATH`.
 
 **Data for this module (multiple files):**
 - `SYSTEM`, `SYSTEM.LOG1`, `SYSTEM.LOG2` — the **real** `SYSTEM` hive (+ its two transaction logs) from the **DFIR Madness Case 001** desktop `DESKTOP-SDN1RPT`. That's already four input files working together (hive + 2 logs), and the hive holds **266** cached executables to triage.
-- `shimcache.csv` — a **pre-parsed copy** of the output, committed so you can read/sort the results even without running the container. See `data/README.md` for provenance/licensing.
+- `shimcache.csv` — a **pre-parsed copy** of the output, committed so you can read/sort the results even without running the parser yourself. See `data/README.md` for provenance/licensing.
 
 ---
 
 ## 3. Setup
 
+Open **Git Bash** on the lab VM and change into this module's data directory:
+
 ```bash
 cd module-02-shimcache-appcompatcache/data     # SYSTEM, SYSTEM.LOG1, SYSTEM.LOG2, shimcache.csv
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ```
-(For what each `docker run` flag means — `-it`, `--rm`, `--network none`, `-v` — see Module 1 §3. Short version: interactive shell, throwaway container, no network, and your `data` folder mounted at `/data`.)
+(Every command in this module is run **from inside this `data/` folder**; all forensic tools are installed natively and already on your `PATH`, so you call them directly by name — no container, no Docker. See Module 1 §3.)
 
 ---
 
@@ -69,11 +70,11 @@ docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 
 ### Step 1 — Parse the ShimCache out of the hive
 ```bash
-AppCompatCacheParser -f /data/SYSTEM --csv /data --csvf shimcache.csv
+AppCompatCacheParser -f SYSTEM --csv . --csvf shimcache.csv
 ```
 - `AppCompatCacheParser` — the tool.
-- `-f /data/SYSTEM` — the input **f**ile: the `SYSTEM` hive. (The tool finds `SYSTEM.LOG1/.LOG2` automatically because they sit beside it.)
-- `--csv /data` — the **folder** to drop the CSV report into (here, back into `/data` so it appears in your host folder).
+- `-f SYSTEM` — the input **f**ile: the `SYSTEM` hive. (The tool finds `SYSTEM.LOG1/.LOG2` automatically because they sit beside it.)
+- `--csv .` — the **folder** to drop the CSV report into (here, `.` = the current `data/` folder, so the report lands right beside the evidence).
 - `--csvf shimcache.csv` — the CSV **f**ilename to use.
 
 **Expected output (real, Case 001):**
@@ -92,7 +93,7 @@ Found 266 cache entries for Windows10C_11 in ControlSet001
 The CSV columns are: `ControlSet, CacheEntryPosition, Path, LastModifiedTimeUTC, Executed, Duplicate, SourceFile`.
 
 ```bash
-head -13 /data/shimcache.csv | awk -F, '{printf "%-3s %-58s %-20s %s\n",$2,$3,$4,$5}'
+head -13 shimcache.csv | awk -F, '{printf "%-3s %-58s %-20s %s\n",$2,$3,$4,$5}'
 ```
 - `head -13` — first 13 lines (header + the 12 most-recent entries).
 - `awk -F, '{printf ...}'` — print the four key columns (cache position, path, last-modified time, executed flag) in aligned fields. (`-F,` sets the comma as the field separator. This container image has no `column` utility, so we format with `awk`.)
@@ -119,7 +120,7 @@ CacheEntryPosition Path                                                       La
 ### Step 3 — Hunt for staging-location paths
 Attacker tools often live outside the usual `System32`/`Program Files`. Sweep the cache for the classic staging directory names:
 ```bash
-grep -iE 'Temp|AppData|ProgramData|Public|PerfLogs' /data/shimcache.csv | awk -F, '{printf "%-3s %-58s %-20s %s\n",$2,$3,$4,$5}'
+grep -iE 'Temp|AppData|ProgramData|Public|PerfLogs' shimcache.csv | awk -F, '{printf "%-3s %-58s %-20s %s\n",$2,$3,$4,$5}'
 ```
 - `grep -iE` — search, **i**gnoring case, with **E**xtended regex so `|` means "or".
 - The pattern matches any path that mentions `Temp`, `AppData`, `ProgramData`, `Public`, or `PerfLogs` — the folders malware tends to stage in. (We match the folder *name* rather than `\Temp\` with backslashes, because a literal backslash in a shell regex is fiddly to type; the trade-off is you may catch the word inside a longer name, which is fine for a first-pass sweep.)
@@ -129,7 +130,7 @@ grep -iE 'Temp|AppData|ProgramData|Public|PerfLogs' /data/shimcache.csv | awk -F
 ### Step 4 — The Triad gap: find what ShimCache *didn't* catch
 Here's the teaching payoff. The Case 001 malware is `coreupdater.exe`. Ask whether ShimCache saw it:
 ```bash
-grep -i coreupdater /data/shimcache.csv ; echo "exit=$? (1 = no match)"
+grep -i coreupdater shimcache.csv ; echo "exit=$? (1 = no match)"
 ```
 - `grep -i coreupdater` — case-insensitive search for the name.
 - `echo "exit=$?"` — print grep's exit status; `$?` is the last command's result. `1` means **no match found**.
