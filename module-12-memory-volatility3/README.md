@@ -28,16 +28,16 @@ A RAM capture is a **freeze-frame of the live machine**. With it you can prove:
 - **what was executing** and its full parent→child ancestry (process injection, masquerading);
 - **what it was connected to** (C2, exfiltration);
 - **what it typed** (recovered command lines and console buffers);
-- **what it hid** (unlinked processes, injected code) — and you can **carve the live payload back out** of RAM to feed `capa`, FLOSS, and YARA (other tools in the lab's container).
+- **what it hid** (unlinked processes, injected code) — and you can **carve the live payload back out** of RAM to feed `capa`, FLOSS, and YARA (other tools on the lab VM).
 
 ---
 
 ## 2. What the tool does — Volatility 3
 
-**Volatility 3** is the open-source **framework for memory forensics**, maintained by the Volatility Foundation. It is a complete rewrite of the older Volatility 2. In the container it is on the `PATH` as **`vol`**. It does three things:
+**Volatility 3** is the open-source **framework for memory forensics**, maintained by the Volatility Foundation. It is a complete rewrite of the older Volatility 2. On the lab VM it is on the `PATH` as **`vol`**. It does three things:
 
 1. **Rebuilds the operating system's view of RAM.** A dump is just billions of unlabelled bytes. The CPU uses *page tables* to translate the virtual addresses programs see into physical RAM addresses; Volatility finds the kernel's master page table (the **DTB**, Directory Table Base) and reconstructs that same translation, so it can read memory the way Windows did.
-2. **Uses symbol tables to find structures.** To know that "in this Windows build, a process's name is at offset X inside the `_EPROCESS` structure," Volatility ships **symbol tables** — JSON maps of every kernel structure for every Windows build, in *Intermediate Symbol Format (ISF)*. These live in `windows.zip` inside the container, so **Windows analysis works fully offline**. (Volatility 3 replaced Volatility 2's old `--profile` system with these auto-detected symbols — there is **no `--profile` flag** any more.)
+2. **Uses symbol tables to find structures.** To know that "in this Windows build, a process's name is at offset X inside the `_EPROCESS` structure," Volatility ships **symbol tables** — JSON maps of every kernel structure for every Windows build, in *Intermediate Symbol Format (ISF)*. These ship with the lab VM's Volatility install (in `windows.zip`), so **Windows analysis works fully offline**. (Volatility 3 replaced Volatility 2's old `--profile` system with these auto-detected symbols — there is **no `--profile` flag** any more.)
 3. **Runs plugins that walk the kernel's own data structures.** For example `windows.pslist` walks the same linked list of processes that Task Manager uses; `windows.psscan` instead *scans* the whole dump for the fingerprint of a process structure, so it finds processes even after they were hidden or have exited.
 
 > **Plain-language summary:** Volatility teaches itself the layout of the captured Windows version from bundled symbol maps, rebuilds how the OS saw its own memory, and then lets you ask focused questions ("list the processes," "show injected code," "show network connections") with one short command each.
@@ -61,25 +61,17 @@ This image is a real, publicly-published forensics-challenge capture (see `data/
 
 ## 4. Setup
 
+Open **Git Bash** on the lab VM, change into this module's data directory, and fetch the image:
+
 ```bash
 cd module-12-memory-volatility3/data
 sh get-data.sh        # one-time: downloads Challenge.raw (~1.5 GB). Online host only.
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ```
-- **`get-data.sh`** — fetches and unpacks the memory image into `data/` (it is far too big to commit). Run it on a machine with internet; the analysis itself is offline.
-- **`docker run`** — start a container from an image.
-- **`-it`** — interactive terminal (a shell inside the container).
-- **`--rm`** — delete the container on exit (keeps your machine clean).
-- **`--network none`** — give the container **no network at all**. Forensics should be offline by default; this proves the evidence cannot phone home, and Volatility's Windows symbols are bundled so nothing needs downloading.
-- **`-v "$PWD":/data`** — **mount** the current folder into the container at `/data` so `vol` can read the image and write dumps back out.
-- **`dfir-aio:v2`** — the all-in-one DFIR container; Volatility 3 is inside it as `vol`.
+- **`cd module-12-memory-volatility3/data`** — move into the folder holding this module's evidence. **Every command below is run from inside this folder**, so the image is named with a simple relative path (`Challenge.raw`).
+- **`get-data.sh`** — fetches and unpacks the memory image into this folder (it is far too big to commit). Run it once on a machine with internet; the analysis itself is offline.
+- All forensic tools — **Volatility 3 (on your `PATH` as `vol`)**, plus `yara`, `capa`, FLOSS and the rest — are installed **natively on the lab VM and already on your `PATH`**, so you call `vol` directly by name in Git Bash; there is no container or Docker. The VM is kept **offline** (no network), which is exactly how forensics should run: the evidence can never phone home, and Volatility's Windows symbols are **bundled** (`windows.zip`) so nothing needs downloading.
 
-Every command below is run **inside** that container, where the image is at `/data/Challenge.raw`.
-
-> **One-shot form (no interactive shell):** you can also run a single plugin per `docker run`, which is handy for scripting:
-> ```bash
-> docker run --rm --network none -v "$PWD":/data dfir-aio:v2 vol -f /data/Challenge.raw windows.info
-> ```
+Every command below is run from inside this folder, where the image is `Challenge.raw`.
 
 > **A note on speed.** The **first** plugin you run on a fresh image is slow — Volatility scans the whole file to locate the kernel and build a cache. Every later plugin on the same image is much faster.
 
@@ -91,7 +83,7 @@ Every command below is run **inside** that container, where the image is at `/da
 
 ### Step 1 — Identify the image (`windows.info`), always first
 ```bash
-vol -q -f /data/Challenge.raw windows.info
+vol -q -f Challenge.raw windows.info
 ```
 - **`windows.info`** confirms Volatility found a valid kernel and matched its symbols. If this works, every other plugin will too.
 
@@ -110,7 +102,7 @@ KeNumberProcessors  1
 
 ### Step 2 — List the processes (`windows.pslist`)
 ```bash
-vol -q -f /data/Challenge.raw windows.pslist
+vol -q -f Challenge.raw windows.pslist
 ```
 - **`windows.pslist`** walks the kernel's **doubly-linked list of active processes** (`ActiveProcessLinks`) — the same list Task Manager shows.
 
@@ -134,7 +126,7 @@ PID   PPID  ImageFileName    Threads Handles CreateTime (UTC)
 
 ### Step 3 — See the parentage as a tree (`windows.pstree`)
 ```bash
-vol -q -f /data/Challenge.raw windows.pstree
+vol -q -f Challenge.raw windows.pstree
 ```
 - **`windows.pstree`** prints the *same* processes but **indented by parent→child** (each `*` = one level deeper), and — very usefully — it includes the **full command line** (`Cmd`) and on-disk **Path** of each process. Masquerading and suspicious ancestry jump out visually here.
 
@@ -149,21 +141,21 @@ vol -q -f /data/Challenge.raw windows.pstree
 
 ### Step 4 — Hunt for hidden processes (`windows.psscan`, then diff)
 ```bash
-vol -q -f /data/Challenge.raw windows.psscan
+vol -q -f Challenge.raw windows.psscan
 ```
 - **`windows.psscan`** does **pool-tag scanning**: instead of trusting the linked list, it carves the *entire* dump for the memory signature of a process structure (the `Proc` pool tag). Because it does not rely on the list, it finds processes that a rootkit has **unlinked** (DKOM hiding) or that have already **exited**.
 
 **The classic hidden-process hunt is to diff `psscan` against `pslist`** — anything `psscan` sees that `pslist` does not is a candidate hidden process:
 ```bash
-vol -q -r csv -f /data/Challenge.raw windows.pslist | cut -d, -f1 | sort -u > /data/seen_list.txt
-vol -q -r csv -f /data/Challenge.raw windows.psscan | cut -d, -f1 | sort -u > /data/seen_scan.txt
-comm -13 /data/seen_list.txt /data/seen_scan.txt     # PIDs in scan but NOT in list
+vol -q -r csv -f Challenge.raw windows.pslist | cut -d, -f1 | sort -u > seen_list.txt
+vol -q -r csv -f Challenge.raw windows.psscan | cut -d, -f1 | sort -u > seen_scan.txt
+comm -13 seen_list.txt seen_scan.txt     # PIDs in scan but NOT in list
 ```
 **Real result:** both plugins return the **same 53 processes**, and the diff is **empty**. **Read it:** no process is hidden or unlinked on this host — the visible list is the true list. (On a rootkit-infected host this diff is where the hidden implant falls out.)
 
 ### Step 5 — Read how each process was launched (`windows.cmdline`)
 ```bash
-vol -q -f /data/Challenge.raw windows.cmdline
+vol -q -f Challenge.raw windows.cmdline
 ```
 - **`windows.cmdline`** pulls the **full command line** of every process out of its **PEB** (Process Environment Block). This is one of the highest-value plugins: it exposes encoded PowerShell (`-enc …`), `rundll32` exports, download cradles, and the exact arguments a binary ran with.
 
@@ -178,7 +170,7 @@ vol -q -f /data/Challenge.raw windows.cmdline
 
 ### Step 6 — Inspect a suspect process's modules (`windows.dlllist`)
 ```bash
-vol -q -f /data/Challenge.raw windows.dlllist --pid 3716
+vol -q -f Challenge.raw windows.dlllist --pid 3716
 ```
 - **`--pid 3716`** focuses the plugin on just WinRAR. **`windows.dlllist`** lists every **DLL loaded** into a process, with its **load path** and **load time**. You use it to spot **DLL side-loading** — a trusted EXE tricked into loading a *malicious* DLL from an unusual directory.
 
@@ -194,7 +186,7 @@ vol -q -f /data/Challenge.raw windows.dlllist --pid 3716
 
 ### Step 7 — See what the process has open (`windows.handles`)
 ```bash
-vol -q -f /data/Challenge.raw windows.handles --pid 3716
+vol -q -f Challenge.raw windows.handles --pid 3716
 ```
 - **`windows.handles`** lists every **handle** a process holds open — files, registry keys, mutexes (`Mutant`), events, tokens. It reveals **the files and keys a process was actually touching**, which is gold for tying a process to an artifact.
 
@@ -208,7 +200,7 @@ vol -q -f /data/Challenge.raw windows.handles --pid 3716
 
 ### Step 8 — Hunt for injected / hidden code (`windows.malfind`)
 ```bash
-vol -q -f /data/Challenge.raw windows.malfind
+vol -q -f Challenge.raw windows.malfind
 ```
 - **`windows.malfind`** is the **#1 "is there injected malware?" plugin.** It scans every process's *private* memory for regions that are **committed, executable, and not backed by any file on disk**, with **`PAGE_EXECUTE_READWRITE`** (RWX) protection — the signature of **code injection, process hollowing, and reflective DLL loading**. For each hit it prints a hex + disassembly preview.
 
@@ -230,7 +222,7 @@ vol -q -f /data/Challenge.raw windows.malfind
 
 ### Step 9 — Find network connections (`windows.netscan`)
 ```bash
-vol -q -f /data/Challenge.raw windows.netscan
+vol -q -f Challenge.raw windows.netscan
 ```
 - **`windows.netscan`** pool-scans the dump for **TCP/UDP endpoint and listener objects**. For each it shows **local and remote IP:port, state, the owning PID and process name**, and (for listeners/UDP) a creation time. This is how you find **C2 connections and data exfiltration** — and then map a foreign IP straight back to the process responsible.
 
@@ -251,37 +243,37 @@ UDPv4  0.0.0.0     5353   *                0                   2124  chrome.exe
 
 ### Step 10 — (Tool note) `windows.netstat` vs `windows.netscan`
 ```bash
-vol -q -f /data/Challenge.raw windows.netstat
+vol -q -f Challenge.raw windows.netstat
 ```
 `windows.netstat` is the **linked-list** equivalent of `netscan` (it follows live network structures rather than carving). On **this** image, **offline**, it fails with:
 ```
 ERROR  volatility3.plugins.windows.netstat: Unable to locate symbols for the memory image's tcpip module
 ```
-**Why:** `netstat` needs symbols for the network driver **`tcpip.sys`**, which are *not* in the bundled `windows.zip` (that pack covers the kernel, not every third-party/driver module). With internet, Volatility could fetch the matching PDB from Microsoft; in our **offline** container it cannot, so `netstat` cannot run. **This is expected, and it is exactly why you use `windows.netscan`** for offline work — `netscan` carves the objects directly and does not need the `tcpip.sys` symbols. (If you ever *must* run `netstat` offline, you would add the `tcpip.sys` ISF to the symbol pack — note the gap and flag it to the lab maintainers.)
+**Why:** `netstat` needs symbols for the network driver **`tcpip.sys`**, which are *not* in the bundled `windows.zip` (that pack covers the kernel, not every third-party/driver module). With internet, Volatility could fetch the matching PDB from Microsoft; on the **offline** lab VM it cannot, so `netstat` cannot run. **This is expected, and it is exactly why you use `windows.netscan`** for offline work — `netscan` carves the objects directly and does not need the `tcpip.sys` symbols. (If you ever *must* run `netstat` offline, you would add the `tcpip.sys` ISF to the symbol pack — note the gap and flag it to the lab maintainers.)
 
 ### Step 11 — Look for persistence in services (`windows.svcscan`)
 ```bash
-vol -q -f /data/Challenge.raw windows.svcscan
+vol -q -f Challenge.raw windows.svcscan
 ```
 - **`windows.svcscan`** enumerates Windows **services** out of memory — name, state, type, and the **binary** each service runs. Services are a favourite **persistence** mechanism (a malicious service silently relaunches the implant at every boot), so this is a standard persistence sweep.
 
 **Real result:** **863 service entries**, every one of them a normal Windows service whose binary lives under `C:\Windows\system32\…` or `system32\drivers\…` (e.g. `Power`→`umpo.dll`, `PlugPlay`→`umpnpmgr.dll`, `nsi`→`nsisvc.dll`). A quick filter for the tell-tale of a rogue service — a binary path under a **user-writable** folder — returns nothing:
 ```bash
-vol -q -f /data/Challenge.raw windows.svcscan | grep -Ei 'Users|Temp|AppData|ProgramData'   # -> no rows
+vol -q -f Challenge.raw windows.svcscan | grep -Ei 'Users|Temp|AppData|ProgramData'   # -> no rows
 ```
 **Read it:** no service runs from a user directory, no oddly-named service, nothing pointing at `pr0t3ct3d`. **There is no service persistence** on this host. **What suspicious looks like:** a `SERVICE_AUTO_START` service whose binary is `C:\Users\…\AppData\Local\Temp\svc.exe`, or a random-looking service name created minutes before capture.
 
 ### Step 12 — Carve the suspect binary out of RAM (`--dump`)
 ```bash
-vol -q -o /data/dump -f /data/Challenge.raw windows.pslist --pid 3716 --dump
+vol -q -o dump -f Challenge.raw windows.pslist --pid 3716 --dump
 ```
-- **`--pid 3716`** targets WinRAR; **`--dump`** reconstructs that process's executable image from memory and writes it to the **`-o /data/dump`** output directory. (Make sure `data/dump/` exists first: `mkdir -p dump`.)
+- **`--pid 3716`** targets WinRAR; **`--dump`** reconstructs that process's executable image from memory and writes it to the **`-o dump`** output directory. (Make sure `dump/` exists first: `mkdir -p dump`.)
 
 **Real output:**
 ```
 3716  1944  WinRAR.exe  ...  3716.WinRAR.exe.0x13fdf0000-1.dmp
 ```
-…and on the host, `data/dump/3716.WinRAR.exe.0x13fdf0000.dmp` (~2.9 MB) now exists. **Read it:** you have extracted the *live* binary as it sat in RAM — even if the file had been deleted from disk, you would still have it. From here you hand it to the lab's other tools: `capa` to infer its capabilities, FLOSS to pull obfuscated strings, and YARA to match known-bad signatures. (For a process where you only want the injected region, `windows.malfind --dump` writes just the suspicious RWX memory instead of the whole image.)
+…and in this folder, `dump/3716.WinRAR.exe.0x13fdf0000.dmp` (~2.9 MB) now exists. **Read it:** you have extracted the *live* binary as it sat in RAM — even if the file had been deleted from disk, you would still have it. From here you hand it to the lab's other tools: `capa` to infer its capabilities, FLOSS to pull obfuscated strings, and YARA to match known-bad signatures. (For a process where you only want the injected region, `windows.malfind --dump` writes just the suspicious RWX memory instead of the whole image.)
 
 ---
 
@@ -323,7 +315,7 @@ Reconstructed from the RAM capture of user `Jaffa`'s workstation, frozen at **20
 3. `windows.malfind` flagged `explorer.exe`, `chrome.exe`, and `WmiPrvSE.exe`. For each, give the reason that process legitimately holds RWX memory, and state the single byte-pattern you would look for to call a region *actually* injected.
 4. Use `windows.handles --pid 3716` and find the **one** handle that ties WinRAR to the suspect folder. Why is an *open handle* stronger evidence than just seeing the path on the command line?
 5. `windows.netstat` failed but `windows.netscan` worked. Explain the difference in how the two plugins get their data, and why that makes `netscan` the right choice for **offline** analysis.
-6. Dump WinRAR with `--dump`, then (outside the offline container, using the lab's other tools) run `capa` and `strings`/FLOSS over the `.dmp`. Does anything point at the archive contents or the files being staged?
+6. Dump WinRAR with `--dump`, then (using the lab's other tools) run `capa` and `strings`/FLOSS over the `.dmp`. Does anything point at the archive contents or the files being staged?
 
 ---
 
