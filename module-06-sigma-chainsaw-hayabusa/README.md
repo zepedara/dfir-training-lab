@@ -10,13 +10,13 @@ Attackers leave fingerprints in the event logs (especially **Sysmon**). You *cou
 - **Hayabusa** — builds one **ranked timeline**: every notable event with a severity, fast. Good for "what happened, in order?"
 - **Chainsaw** — **hunts** with the full Sigma rule set and prints *which rule matched which event*. Good for "show me the named detections."
 
-This module's data is a **PsExec lateral-movement** capture (Sysmon logs from `MSEDGEWIN10`). Your job: let the tools prove the lateral movement.
+This module's `data/` folder bundles **23 curated attack-technique `.evtx`** (a subset of the Yamato `hayabusa-sample-evtx` / EVTX-ATTACK-SAMPLES sets). The **guided walkthrough below uses one of them** — `sysmon_privesc_psexec_dwell.evtx`, a **PsExec lateral-movement** capture (Sysmon logs from `MSEDGEWIN10`) — so the numbers are reproducible. The other 22 feed the exercises. Your job: let the tools prove the lateral movement.
 
 ---
 
 ## Setup
 ```bash
-cd module-06-sigma-chainsaw-hayabusa/data        # contains the sample .evtx
+cd module-06-sigma-chainsaw-hayabusa/data        # 23 curated .evtx samples
 docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 # (--network none proves it's fully offline)
 ```
@@ -24,12 +24,14 @@ docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ---
 
 ## Step 1 — Hayabusa timeline
+Run it against the single PsExec sample (point at the whole folder with `-d /data` for the exercises):
 ```bash
-hayabusa csv-timeline -d /data -o /data/timeline.csv -w
+hayabusa csv-timeline -f /data/sysmon_privesc_psexec_dwell.evtx -o /data/timeline.csv -w
 ```
 > **`-w`** = no-wizard (use all rules; required when not in an interactive terminal).
+> Add **`-C`** (`--clobber`) to overwrite `timeline.csv` on a re-run, or `rm /data/timeline.csv` first.
 
-**Expected output:**
+**Expected output** (exact on the lab's Windows VM; the container's Hayabusa build reports a few rules' difference — `4,628 / 2,280` — but the hit counts below are identical):
 ```
 Total detection rules: 4,636
 Detection rules enabled after channel filter: 2,284
@@ -49,11 +51,11 @@ Timestamp                       RuleTitle      Computer      Channel
 
 ## Step 2 — Chainsaw hunt (named detections)
 ```bash
-chainsaw hunt /data -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
+chainsaw hunt /data/sysmon_privesc_psexec_dwell.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
 ```
-**Expected output (trimmed):**
+**Expected output (trimmed)** (the rule count varies with the bundled Sigma version — the current container reports `Loaded 3383 detection rules (378 not loaded)`; the single-artefact load is exact):
 ```
-[!] Loaded 3613 detection rules
+[!] Loaded 3383 detection rules (378 not loaded)
 [+] Loaded 1 forensic artefacts (68.0 KiB)
 [+] Group: Sigma
  timestamp            detections                              Event ID  Computer      Event Data
@@ -69,7 +71,7 @@ chainsaw hunt /data -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings
 You took raw Sysmon logs and, in two commands, established **lateral movement via PsExec** with the supporting evidence (the `\PSEXESVC` pipe, the process execution, the timing). That's the whole point of Sigma hunting: rules do the pattern-matching; you confirm and pivot.
 
 ## Exercises
-1. Run both tools against other samples in `EVTX-ATTACK-SAMPLES/Lateral Movement/` — can you spot **WMI** (`wmic`/`Win32_Process`) and **DCOM** executions?
+1. Run both tools across the **whole folder** (`hayabusa csv-timeline -d /data -o /data/all.csv -w -C` and `chainsaw hunt /data ...`). The 23 bundled samples include Mimikatz hash-dumps, PowerSploit, Invoke-Obfuscation PowerShell, password-spray, and a UACME bypass — can you name each from its detections? (Pure **WMI**/**DCOM** lateral movement lives in **Module 8**.)
 2. In `timeline.csv`, sort by timestamp and write the 3-line story of what the attacker did.
 3. Re-run chainsaw with `--level high` — how does narrowing severity change the noise?
 

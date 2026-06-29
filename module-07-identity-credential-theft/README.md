@@ -24,15 +24,14 @@ docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ```bash
 chainsaw hunt /data -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
 ```
-**Expected output:**
+**Expected output** (the exact number of named rules depends on the bundled Sigma version; the current container fires the **Potential Credential Dumping** rule on Sysmon Event 10):
 ```
-[+] 3 Detections found on 1 documents
- timestamp            detections                          Event ID  Computer   Event Data
- 2019-05-02 14:50:17  ‣ Accessing WinAPI in PowerShell    10        IEWIN7     TargetProcessId: 484
-                      ‣ Credential Dumping Tools
-                      ‣ Potential Credential Dumping
+[+] 1 Detections found on 1 documents
+ timestamp            detections                       Event ID  Computer   Event Data
+ 2019-05-02 14:50:17  ‣ Potential Credential Dumping   10        IEWIN7     TargetProcessId: 484
+                                                                            UtcTime: 2019-05-02 14:49:37.100
 ```
-**Read it:** Sysmon **Event 10 (ProcessAccess)** — PowerShell (Invoke-Mimikatz) is **accessing another process via WinAPI**, and the `TargetProcessId` resolves to **LSASS**. Three independent rules agree: this is credential dumping.
+**Read it:** Sysmon **Event 10 (ProcessAccess)** — PowerShell (Invoke-Mimikatz) is **accessing another process via WinAPI**, and the `TargetProcessId` (484) resolves to **LSASS**. That single rule on Event 10 against `lsass` is credential dumping; older/larger Sigma sets add companion rules (*Accessing WinAPI in PowerShell*, *Credential Dumping Tools*) on the same event.
 
 ## Step 2 — Hunt the logons (concept + commands)
 On a real Security log you'd then chase how the stolen creds were used:
