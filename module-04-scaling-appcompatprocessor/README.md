@@ -74,14 +74,20 @@ awk -F, 'FNR>1{print tolower($7)}' amcache_host-*_UnassociatedFileEntries.csv \
       1 coreupdater.exe        <-- the malware: rare AND on the real host
       1 firefox.exe
       1 ftk imager.exe
+      1 msiexec.exe
       1 outlook.exe
       1 teams.exe
       3 compattelrunner.exe
       3 csrss.exe
+      3 devicecensus.exe
+      3 drvinst.exe
+      3 mousocoreworker.exe
+      3 msmpeng.exe
+      3 sihclient.exe
       3 svchost.exe
+      3 tiworker.exe
       3 winlogon.exe
       4 onedrivesetup.exe
-      ...
 ```
 **Read it:** ubiquitous Microsoft binaries (`csrss`, `svchost`, `winlogon`) show **Count = 3** — present on all three hosts → noise. The **Count = 1** band is your lead list. Note the honest lesson from §1: `coreupdater.exe` is there, but so are benign `chrome.exe`, `firefox.exe`, `code.exe`. **LFO surfaced the candidates; now you triage them.**
 
@@ -89,13 +95,20 @@ awk -F, 'FNR>1{print tolower($7)}' amcache_host-*_UnassociatedFileEntries.csv \
 Filenames can be reused; the **SHA1 hash is exact**. Stack on it:
 ```bash
 awk -F, 'FNR>1 && $4!=""{print $4}' amcache_host-*_UnassociatedFileEntries.csv \
-  | sort | uniq -c | sort -n | head
+  | sort | uniq -c | sort -n
 ```
-- Same idea, but printing column 4 (`SHA1`) and skipping blanks.
+- Same idea, but printing column 4 (`SHA1`) and skipping blanks. (We drop the `| head` here: with only 21 distinct hashes the whole list is short, and dropping it keeps the **Count = 3** band visible instead of only the rarest rows.)
 
 **Expected:**
 ```
+      1 32756b3a319340c4b7fead410d3f36e503b30da2
+      1 5d6102f5a170e982c7735bfc2b9c1a0a0d435fd1
+      ...
       1 fd153c66386ca93ec9993d66a84d6f0d129a3a5c   <-- coreupdater, on ONE host
+      1 fe0affa6c25ae39d12f2e59c14f65b8957168953
+      3 2b0390dd4520dd77258bf52ad96692538c4de6d3
+      3 53e696941b2a5fa304100cd0011f9478f282dab7
+      ...
       3 66f5e6dade65d7dba979602830d58e53e60fdffb   <-- svchost, on all three
       3 69a1dcf6a41bc750cacec3185c99839c079275bd   <-- csrss, on all three
       ...
