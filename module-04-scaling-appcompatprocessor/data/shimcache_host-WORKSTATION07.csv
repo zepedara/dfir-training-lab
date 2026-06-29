@@ -1,0 +1,15 @@
+ControlSet,CacheEntryPosition,Path,LastModifiedTimeUTC,Executed,Duplicate,SourceFile
+1,0,c:\windows\system32\compattelrunner.exe,1971-06-05 00:00:00,No,False,/in/WORKSTATION-07/SYSTEM
+1,1,c:\windows\system32\csrss.exe,2022-05-26 00:00:00,No,False,/in/WORKSTATION-07/SYSTEM
+1,2,c:\windows\system32\devicecensus.exe,1988-04-21 00:00:00,No,False,/in/WORKSTATION-07/SYSTEM
+1,3,c:\windows\system32\drvinst.exe,2024-06-26 00:00:00,No,False,/in/WORKSTATION-07/SYSTEM
+1,4,c:\windows\system32\mousocoreworker.exe,2049-11-10 00:00:00,No,False,/in/WORKSTATION-07/SYSTEM
+1,5,c:\program files\windows defender\msmpeng.exe,1993-01-18 00:00:00,No,False,/in/WORKSTATION-07/SYSTEM
+1,6,c:\windows\syswow64\onedrivesetup.exe,2019-04-23 00:00:00,No,False,/in/WORKSTATION-07/SYSTEM
+1,7,c:\windows\system32\sihclient.exe,2047-03-07 00:00:00,No,False,/in/WORKSTATION-07/SYSTEM
+1,8,c:\windows\system32\svchost.exe,2037-07-18 00:00:00,No,False,/in/WORKSTATION-07/SYSTEM
+1,9,c:\windows\winsxs\amd64_microsoft-windows-servicingstack_31bf3856ad364e35_10.0.19041.262_none_e73f0197262d9fec\tiworker.exe,2017-10-19 00:00:00,No,False,/in/WORKSTATION-07/SYSTEM
+1,10,c:\windows\system32\winlogon.exe,2077-10-24 00:00:00,No,False,/in/WORKSTATION-07/SYSTEM
+1,11,c:\program files\google\chrome\application\chrome.exe,2023-12-05 11:02:14,No,False,/in/WORKSTATION-07/SYSTEM
+1,12,c:\program files\microsoft office\root\office16\outlook.exe,2024-01-19 08:44:51,No,False,/in/WORKSTATION-07/SYSTEM
+1,13,c:\users\jdoe\appdata\local\microsoft\teams\current\teams.exe,2023-11-22 14:30:09,No,False,/in/WORKSTATION-07/SYSTEM

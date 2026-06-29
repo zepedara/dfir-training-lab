@@ -1,78 +1,153 @@
 # Module 4 — Scaling the Hunt with AppCompatProcessor
 
 **Deck mapping:** *Windows Execution Forensics* → "Scaling Execution Analysis" / "Stacking & Least-Frequency-of-Occurrence" · *Advanced Intrusion Forensic Hunting* → "Hunting at Enterprise Scale."
-**Goal:** stop looking at **one** host. Take the **Triad artifacts (Amcache/ShimCache) from many hosts**, pile them together, and let the **rarest** thing float to the top — that single weird binary that exists on *one* box out of hundreds.
+**Goal:** stop looking at **one** host. Take the Triad artifacts (Amcache/ShimCache) from **many** hosts, pile them together, and let the **rarest** thing float to the top — that single weird binary that exists on *one* box out of hundreds.
+
+> **The shift in thinking:** Modules 1-3 taught you to *read* artifacts on a single machine. At enterprise scale you can't read 5,000 machines by hand. Instead you **count**. This module teaches the counting method on real data, then shows the tool that automates it.
 
 ---
 
-## Concept (from the deck)
-On a single host you *read* artifacts. Across an enterprise you **stack** them. Two ideas:
+## 1. Background — stacking and Least-Frequency-of-Occurrence (LFO)
 
-- **Stacking:** group an attribute (filename, path, SHA1, parent directory…) across every host and **count** how often each value occurs.
-- **Least-Frequency-of-Occurrence (LFO):** attacker tooling is, by definition, **rare** — it lives on the few boxes they touched. Sort the stack ascending and the **Count = 1** rows are your leads. Microsoft-signed binaries that exist on 5,000 hosts are noise; the unsigned 7 KB `coreupdater.exe` that exists on **one** host is the hunt.
+### Why counting beats reading at scale
+On one host you study each entry. Across an enterprise you **stack**: pick one attribute (filename, path, SHA1, parent directory…), group every host's entries by that attribute, and **count** how many times each value appears. Then you read the *counts*, not the rows.
 
-**AppCompatProcessor (ACP)** (Matías Bevilacqua) is the purpose-built tool: it ingests AppCompat/Amcache from a folder of hosts into one SQLite DB, then runs `stack`, `search` (known-bad regex sweep), `leven` (typosquat detection like `svch0st.exe`), `tstomp` (timestomp candidates) and `tcorr` (temporal correlation: dropper → payload) across the whole set.
+**Least-Frequency-of-Occurrence (LFO)** is the hunting principle that makes stacking pay off:
 
-**Data (real, Case 001):** the parsed Triad output for one host — `DESKTOP-SDN1RPT` (the same host you worked in Modules 1–3):
-- `shimcache_host-DESKTOP.csv` — 266 ShimCache entries (`AppCompatCacheParser` output).
-- `amcache_host-DESKTOP_*.csv` — the full `AmcacheParser` set; the one you'll live in is `..._UnassociatedFileEntries.csv` (the file entries **with SHA1, Size, ProductName, Version, LinkDate**).
+> Attacker tooling is, by definition, **rare** — it lives only on the few machines the attacker touched. Microsoft-signed binaries that exist on 5,000 hosts are **noise**. The unsigned 7 KB `coreupdater.exe` that exists on **one** host is the **hunt**.
 
-> **Why one host here?** The lab ships the one fully-documented intrusion (Case 001) so the exercise has *answers*. Stacking's payoff scales with host count — so this module teaches the **method** on real data you can verify, then shows the exact ACP commands you'd run when you have 50 or 5,000 hosts. `get-data.sh` documents how to add more hosts.
+So you sort the stack **ascending by count** and look at the top: the `Count = 1` and `Count = 2` rows are your leads.
+
+### The honest caveat (so you don't over-trust LFO)
+Rarity is a *lead generator*, not a verdict. Plenty of perfectly benign things are also rare — a developer's `code.exe`, one user's `firefox.exe`, an admin tool on a single workstation. **LFO narrows thousands of rows to a handful; you still apply the single-host skills (metadata, path, signing, SHA1 reputation) to each survivor.** You'll see exactly this in the data: `coreupdater.exe` *and* several benign apps all come back with Count = 1, and it's the metadata that separates them.
 
 ---
 
-## Setup
+## 2. What the tool does — AppCompatProcessor (ACP)
+
+**AppCompatProcessor** (Matías Bevilacqua) is the purpose-built scaling tool. It ingests AppCompat/Amcache from a folder of hosts into **one SQLite database**, then runs analytics across the whole set:
+
+- **`stack`** — the LFO engine: count any attribute, sorted rarest-first.
+- **`search`** — a known-bad regex sweep (130+ methodology terms) with a hit histogram.
+- **`leven`** — typosquat/masquerade finder using **Levenshtein distance** (how many single-character edits separate two strings) — catches `svch0st.exe`, `lssas.exe`.
+- **`tstomp`** — timestomp candidates (files wearing a timestamp that doesn't fit their location).
+- **`tcorr`** — temporal correlation (dropper → payload sequences).
+
+**Data for this module (multiple hosts):**
+- **`amcache_host-DESKTOP_*.csv`** + **`shimcache_host-DESKTOP.csv`** — the **real** parsed Triad for `DESKTOP-SDN1RPT` (DFIR Madness Case 001), the same host you worked in Modules 1-3. This is the host that has the malware.
+- **`amcache_host-WORKSTATION07_*.csv`** / **`shimcache_host-WORKSTATION07.csv`** and **`...WORKSTATION12...`** — **two synthetic benign peer workstations** added so stacking has something to count against. They share the real host's common Microsoft System32 binaries (same names, same SHA1s — because identical files really do share a hash) and each has a few unique benign apps (Chrome, Firefox, Teams, VS Code…). **They contain no malware.** Their purpose is to make the `Count` column meaningful so LFO actually demonstrates. See `data/README.md` for exactly how they were generated and labelled synthetic.
+
+> **Why mix real + synthetic?** Stacking's payoff *requires* multiple hosts, but there is no clean, license-clear public "multi-host Amcache" set, and the lab's one fully-documented intrusion is a single host. So we keep the **real** host for verifiable answers and add two **synthetic benign** peers purely as a counting baseline — clearly labelled so no one mistakes them for evidence.
+
+---
+
+## 3. Setup
+
 ```bash
 cd module-04-scaling-appcompatprocessor/data
 docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
 ```
+(`docker run` flags explained in Module 1 §3.)
 
 ---
 
-## Part 1 — Stacking by hand (works today, real data)
-Stacking is just **group-and-count**. You already have the parsed CSVs, so the container's shell tools *are* a stacking engine. This is exactly what ACP automates — doing it by hand once makes the tool obvious.
+## 4. Part 1 — Stacking by hand across multiple hosts (works today, real data)
 
-### Stack 1 — "Which System32 executables have NO Microsoft metadata?"
-Every genuine `C:\Windows\System32\*.exe` carries a `ProductName` (*"Microsoft® Windows® Operating System"*) and a `Version` (`10.0.19041.x`). Attacker binaries dropped into System32 usually don't. Stack the file entries and look at columns `FullPath` (6), `ProductName` (10), `Size` (11), `Version` (12):
+Stacking is just **group-and-count**. You already have parsed CSVs for three hosts, so the container's shell tools *are* a stacking engine. Doing it by hand once makes the tool obvious.
 
+### Stack 1 — count filenames across ALL hosts (the core LFO move)
 ```bash
 cd /data
-awk -F, 'NR>1 && tolower($6) ~ /system32/ && tolower($6) ~ /\.exe/ \
-  {print $7"  | prod="$10" | size="$11" | ver="$12}' \
-  amcache_host-DESKTOP_UnassociatedFileEntries.csv
+awk -F, 'FNR>1{print tolower($7)}' amcache_host-*_UnassociatedFileEntries.csv \
+  | sort | uniq -c | sort -n
 ```
-**Expected output (real, Case 001):**
+- `awk -F, 'FNR>1{print tolower($7)}'` — for **every** host file matched by the wildcard, print column 7 (`Name`) in lowercase. `FNR>1` skips each file's header (FNR = line number *within the current file*, so it resets per file — important when reading many files).
+- `amcache_host-*_UnassociatedFileEntries.csv` — the shell expands the `*` to all three hosts' files, so we count across the whole "enterprise."
+- `sort | uniq -c` — sort the names, then `uniq -c` collapses duplicates and **prefixes each with its count**.
+- `sort -n` — sort **n**umerically by that count, so the **rarest float to the top**.
+
+**Expected output (real + synthetic peers):**
 ```
-CompatTelRunner.exe  | prod=microsoft® windows® operating system | size=172184 | ver=10.0.19041.1
-coreupdater.exe      | prod=                                     | size=7168   | ver=
-csrss.exe            | prod=microsoft® windows® operating system | size=17592  | ver=10.0.19041.1
-DeviceCensus.exe     | prod=microsoft® windows® operating system | size=37688  | ver=10.0.19041.1
-svchost.exe          | prod=microsoft® windows® operating system | size=57368  | ver=10.0.19041.1
-winlogon.exe         | prod=microsoft® windows® operating system | size=907776 | ver=10.0.19041.1
+      1 7zfm.exe
+      1 chrome.exe
+      1 code.exe
+      1 coreupdater.exe        <-- the malware: rare AND on the real host
+      1 firefox.exe
+      1 ftk imager.exe
+      1 outlook.exe
+      1 teams.exe
+      3 compattelrunner.exe
+      3 csrss.exe
+      3 svchost.exe
+      3 winlogon.exe
+      4 onedrivesetup.exe
+      ...
+```
+**Read it:** ubiquitous Microsoft binaries (`csrss`, `svchost`, `winlogon`) show **Count = 3** — present on all three hosts → noise. The **Count = 1** band is your lead list. Note the honest lesson from §1: `coreupdater.exe` is there, but so are benign `chrome.exe`, `firefox.exe`, `code.exe`. **LFO surfaced the candidates; now you triage them.**
+
+### Stack 2 — stack on SHA1 (the strongest pivot)
+Filenames can be reused; the **SHA1 hash is exact**. Stack on it:
+```bash
+awk -F, 'FNR>1 && $4!=""{print $4}' amcache_host-*_UnassociatedFileEntries.csv \
+  | sort | uniq -c | sort -n | head
+```
+- Same idea, but printing column 4 (`SHA1`) and skipping blanks.
+
+**Expected:**
+```
+      1 fd153c66386ca93ec9993d66a84d6f0d129a3a5c   <-- coreupdater, on ONE host
+      3 66f5e6dade65d7dba979602830d58e53e60fdffb   <-- svchost, on all three
+      3 69a1dcf6a41bc750cacec3185c99839c079275bd   <-- csrss, on all three
+      ...
+```
+**Read it:** because identical files share a hash, genuine OS binaries collapse to **Count = 3**; the malware's hash `fd153c66…` is **Count = 1**. **This is LFO at its purest** — in a real 500-host hunt, this exact query names every infected box.
+
+### Stack 3 — triage the survivors: "which System32 exe has NO Microsoft metadata?"
+Now apply single-host skill to the Count=1 band. Every genuine `C:\Windows\System32\*.exe` carries a Microsoft `ProductName`. Attacker drops usually don't:
+```bash
+awk -F, 'FNR>1 && tolower($6) ~ /system32/ && tolower($6) ~ /\.exe/ \
+  {print $7"  | prod="$10" | size="$11" | host="FILENAME}' \
+  amcache_host-*_UnassociatedFileEntries.csv | sort
+```
+- `tolower($6) ~ /system32/` — keep only rows whose `FullPath` (col 6) is in System32.
+- `host="FILENAME` — `FILENAME` is an awk built-in holding the current input file, so each row is tagged with which host it came from.
+
+**Expected (real, Case 001):**
+```
+coreupdater.exe  | prod=                                     | size=7168   | host=amcache_host-DESKTOP_...
+csrss.exe        | prod=microsoft® windows® operating system | size=17592  | host=amcache_host-DESKTOP_...
+svchost.exe      | prod=microsoft® windows® operating system | size=57368  | host=amcache_host-DESKTOP_...
+winlogon.exe     | prod=microsoft® windows® operating system | size=907776 | host=amcache_host-DESKTOP_...
 ...
 ```
-**Read it:** one row is naked — **`coreupdater.exe`**: empty `ProductName`, empty `Version`, **7,168 bytes** (every real System32 binary is bigger and signed), with a fake **2010-04-14** LinkDate. That's the **LFO outlier**. It is the Case 001 malware.
+**Read it:** one row is naked — **`coreupdater.exe`**: empty `ProductName`, **7,168 bytes** (every real System32 binary is bigger and signed), on the real host. That's the LFO outlier *confirmed by metadata*.
 
-### Stack 2 — pull its identity (SHA1) for the cross-host hunt
+### Stack 4 — pull its identity for the cross-host hunt
 ```bash
 grep -i coreupdater amcache_host-DESKTOP_UnassociatedFileEntries.csv | cut -d, -f4,6,9,11
 ```
+- `cut -d, -f4,6,9,11` — print just columns 4,6,9,11 = `SHA1, FullPath, LinkDate, Size`.
 ```
 fd153c66386ca93ec9993d66a84d6f0d129a3a5c,c:\windows\system32\coreupdater.exe,2010-04-14 22:06:53,7168
 ```
-**SHA1 `fd153c66386ca93ec9993d66a84d6f0d129a3a5c`** is now your hunt key. In a real enterprise you'd stack *every host's* Amcache on `SHA1` and ask "how many hosts have this hash?" — LFO says the answer (a handful) names your victims.
+**SHA1 `fd153c66386ca93ec9993d66a84d6f0d129a3a5c`** is your hunt key. Across a real enterprise you'd stack *every* host's Amcache on `SHA1` (Stack 2) and the handful of hosts holding this hash are your victim list.
 
-### Stack 3 — where do executables live? (path stacking)
+> **A correction worth internalising:** an earlier telling of this case flagged `coreupdater.exe`'s **2010 LinkDate** as the tell. Don't lean on that. In this very dataset, genuine Microsoft binaries carry absurd LinkDates too (`MoUsoCoreWorker.exe` → 2049, `winlogon.exe` → 2077, `OneDriveSetup.exe` → 2090). **LinkDate alone proves nothing.** The real signal is the *convergence*: System32 path + empty ProductName/Version + 7 KB size + `IsOsComponent=False` + Count=1 across hosts.
+
+### Stack 5 — where do executables live? (path stacking)
 ```bash
-awk -F, 'NR>1{n=split($6,a,"\\"); $0=""; p=""; for(i=1;i<n;i++)p=p a[i]"\\"; print p}' \
-  amcache_host-DESKTOP_UnassociatedFileEntries.csv | sort | uniq -c | sort -n
+awk -F, 'FNR>1{n=split($6,a,"\\"); p=""; for(i=1;i<n;i++)p=p a[i]"\\"; print p}' \
+  amcache_host-*_UnassociatedFileEntries.csv | sort | uniq -c | sort -n
 ```
-**Read it:** most executables sit in `C:\Windows\System32\` or `Program Files`. Anything in `Users\Public`, `ProgramData`, `Temp`, `AppData` with a **Count of 1** is a staging-location lead — the same instinct from Modules 2–3, now mechanised.
+- `split($6,a,"\\")` — split the full path on backslashes into array `a`; rebuild everything *except* the filename to get the **directory**, then count directories across hosts.
+
+**Read it:** most executables sit in `System32` or `Program Files`. A directory like `Users\Public`, `ProgramData`, `Temp`, or `AppData` with a low count is a staging-location lead — the same instinct from Modules 2-3, now mechanised across hosts.
 
 ---
 
-## Part 2 — AppCompatProcessor (the at-scale tool)
-With many hosts you don't `awk` — you load everything into ACP once and query. The real commands:
+## 5. Part 2 — AppCompatProcessor (the at-scale tool)
+
+With many hosts you don't `awk` by hand — you load everything into ACP once and query. The real commands:
 
 ```bash
 # Load a folder of hosts (raw SYSTEM/Amcache hives, ShimCacheParser CSVs, or zips) into one DB:
@@ -94,27 +169,43 @@ python2 .../AppCompatProcessor.py hosts.db leven
 # Timestomp candidates (entries outside System32 wearing a System32 timestamp; AmCache 0-microsecond entries):
 python2 .../AppCompatProcessor.py hosts.db tstomp
 ```
-The `stack` sort is ascending-by-count, so **the top rows are the rarest** — LFO, automated. `search` prints a histogram so you triage the loudest known-bad hits first; `leven` and `tstomp` are zero-knowledge anomaly finders that need no IOCs.
+The `stack` sort is ascending-by-count, so **the top rows are the rarest** — LFO, automated. `search` prints a histogram so you triage the loudest known-bad hits first; `leven` and `tstomp` are zero-knowledge anomaly finders that need no prior IOCs.
 
-> **Container note (dfir-aio:v2):** ACP is Python 2 and its hive/Amcache ingest depends on `libregf`/`pyregf` + `Registry.py`, and `load` computes per-file MD5 instance IDs. The current `dfir-aio:v2` build is missing those native bits (and its py2 `hashlib` has no working `md5`), so `load` registers a host but ingests **0 entries** — i.e. ACP's loader is **not yet functional in this image**. That's why Part 1 above is the hands-on path. The commands in Part 2 are the correct production workflow; they run once the container ships `libregf`/`pyregf` + a working py2 `hashlib`. This is tracked against the **[dfir-aio container](https://github.com/zepedara/dfir-drop)**, not this lab. Until then, do your stacking with Part 1's shell recipes (or load the data on a host with a working ACP install).
+> **Container note (dfir-aio:v2):** ACP is Python 2 and its hive/Amcache ingest depends on `libregf`/`pyregf` + `Registry.py`, and `load` computes per-file MD5 instance IDs. The current `dfir-aio:v2` build is missing those native bits (and its py2 `hashlib` has no working `md5`), so `load` registers a host but ingests **0 entries** — i.e. ACP's loader is **not yet functional in this image**. That's why Part 1 above is the hands-on path, and it now runs across **three** hosts so you feel the `Count` column work. The Part 2 commands are the correct production workflow; they run once the container ships `libregf`/`pyregf` + a working py2 `hashlib`. Tracked against the **[dfir-aio container](https://github.com/zepedara/dfir-drop)**, not this lab.
 
 ---
 
-## Exercises
-1. **Find the outlier** with Stack 1 and explain *every* reason `coreupdater.exe` is suspicious (metadata, size, path, LinkDate). Confirm its SHA1.
-2. **Triad gap:** `grep -i coreupdater shimcache_host-DESKTOP.csv` — is it in ShimCache? (It isn't.) It's in **Amcache (identity) but not ShimCache (seen)**. Explain what that tells you about how it got there, using the Module 3 triad table.
-3. **Plan the cross-host hunt:** you now have SHA1 `fd153c66…`. Write the one-sentence LFO hypothesis and the ACP `stack "FileName,Sha1" ...` command you'd run across 500 hosts to surface every infected box.
-4. **(Stretch)** Use `get-data.sh` to add a second host's Amcache CSV, re-run Stack 1/3, and watch a `Count` column become meaningful — that's stacking earning its keep.
+## 6. Investigative narrative
+
+In Modules 1-3 you proved, on a single host, that `coreupdater.exe` ran (Prefetch), was inventoried with SHA1 `fd153c66…` (Amcache), and slipped past ShimCache (the gap). Module 4 changes the question from *"is this host compromised?"* to *"which hosts in my fleet are?"* Stacked across three machines, the malware's **name and hash both come back Count = 1** while every Microsoft binary is Count = 3 — and that single fact, run across 500 real hosts, is how a responder turns one confirmed infection into a complete victim list in seconds.
+
+---
+
+## 7. Try-it-yourself exercises
+
+1. **Find the outlier, the right way.** Run Stack 1 then Stack 3. List *every* reason `coreupdater.exe` is suspicious (metadata, size, path, `IsOsComponent`, rarity) — and explain why its **LinkDate is *not* on that list**. Confirm its SHA1.
+2. **Hash beats name.** Run Stack 2. Why is stacking on SHA1 stronger than stacking on filename? Give one way an attacker could beat a *name* stack that a *hash* stack would still catch.
+3. **The benign Count=1 trap.** Stack 1 returns `chrome.exe`, `firefox.exe`, `code.exe`, and `coreupdater.exe` all at Count = 1. Explain, in two sentences, why rarity alone didn't solve the case and what *did*.
+4. **Triad gap, mechanised.** `grep -i coreupdater shimcache_host-DESKTOP.csv` — is it in ShimCache? (It isn't.) Using the Module 3 Triad table, explain what "in Amcache, not in ShimCache" tells you.
+5. **Plan the fleet hunt.** You hold SHA1 `fd153c66…`. Write the one-sentence LFO hypothesis and the ACP `stack "FileName,Sha1" ...` command you'd run across 500 hosts to surface every infected box.
+6. **(Stretch) Add a host, watch Count move.** Use `get-data.sh` (or copy a `WORKSTATION` CSV under a new name) to add a fourth host, re-run Stack 1, and watch a `Count` change. That's stacking earning its keep.
 
 ## Answers / what to find
-- The outlier is **`coreupdater.exe`** in `C:\Windows\System32\`: empty `ProductName`/`Version`, **7,168 bytes**, fake **2010-04-14** LinkDate, **SHA1 `fd153c66386ca93ec9993d66a84d6f0d129a3a5c`** — the Case 001 malware.
-- It appears in **Amcache** (Module 3) but **not ShimCache** (Module 2): identity without a "seen-by-shim" record — consistent with a dropped/executed binary the OS inventoried but never shimmed.
-- The LFO principle: across hosts you'd `stack` on `SHA1`; this hash on a tiny number of hosts is the lead list. Microsoft-signed System32 binaries with thousands of hits are noise.
+- The outlier is **`coreupdater.exe`** in `C:\Windows\System32\`: empty `ProductName`/`Version`, **7,168 bytes**, `IsOsComponent=False`, **SHA1 `fd153c66386ca93ec9993d66a84d6f0d129a3a5c`**, and **Count = 1** across hosts — the Case 001 malware. Its 2010 LinkDate is **not** a reliable indicator (genuine MS files here have wilder dates).
+- It appears in **Amcache** (Module 3) and **Prefetch** (Module 1) but **not ShimCache** (Module 2): identity + execution without a "seen-by-shim" record.
+- The LFO principle: across hosts you `stack` on `SHA1`; a hash on a tiny number of hosts is the lead list. Microsoft-signed System32 binaries with high counts are noise. Rarity finds candidates; metadata convicts.
+
+## Sources & further reading
+- **AppCompatProcessor** (the tool, by Matías Bevilacqua / formerly Mandiant): https://github.com/mbevilacqua/appcompatprocessor
+- **Mandiant — "Caching Out: The Value of Shimcache for Investigators"** (the stacking/LFO mindset for AppCompat data): https://cloud.google.com/blog/topics/threat-intelligence/caching-out-the-value-of-shimcache-for-investigators/
+- **SANS DFIR — frequency analysis / stacking** (the least-frequency-of-occurrence method) and the FOR508 curriculum: https://www.sans.org/cyber-security-courses/advanced-incident-response-threat-hunting/
+- **Eric Zimmerman EZ Tools** (AppCompatCacheParser/AmcacheParser that produce ACP's input): https://ericzimmerman.github.io/
+- **DFIR Madness — Case 001** (the real host's data): https://dfirmadness.com/the-stolen-szechuan-sauce/
 
 ## Pivot
 - The SHA1 → drop into threat-intel / hunt every host's Amcache.
 - The execution proof for this binary → **Module 1 (Prefetch)** shows `COREUPDATER.EXE` ran on this host.
-- From "what ran" to "what the attacker *did*" → **Part B (Modules 5–10)**, the event logs.
+- From "what ran" to "what the attacker *did*" → **Part B (Modules 5-10)**, the event logs.
 
 ---
 *Next: [Module 5 — Event Logs](../module-05-evtx-evtxecmd).*
