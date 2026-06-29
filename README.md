@@ -42,4 +42,4 @@ All data is bundled in each module's `data/` folder (or fetched by a per-module 
 ## Suggested path
 Work **1 → 10**. Part A teaches you to prove execution on a single host; Part B teaches you to hunt an intrusion across the logs. By module 10 you can take a triage collection and build a full incident timeline — exactly the decks' goal: *"Master the Triad. Close the Gap."*
 
-*(Modules are being filled in with full walkthroughs + exercises — check back as they land.)*
+*All 10 modules are complete — each has a full walkthrough from the source decks, real bundled data, 2–4 guided exercises, and an **answers / what to find** section. Work them in order, **1 → 10**.*
