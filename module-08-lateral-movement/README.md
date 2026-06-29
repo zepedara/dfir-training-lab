@@ -65,14 +65,14 @@ Inside the container the prompt changes; `/data` is your evidence folder. The co
 Before chasing any single technique, dump every file to CSV so you can see what is here.
 
 ```bash
-EvtxECmd -f /data --csv /data/_out --csvf all_events.csv
+EvtxECmd -d /data --csv /data/_out --csvf all_events.csv
 ```
 - `EvtxECmd` — the parser.
-- `-f /data` — **input**. Pointed at a *folder*, EvtxECmd parses every `.evtx` inside it. (Point it at a single file to parse just that one.)
+- `-d /data` — **input directory**. Pointed at a *folder*, EvtxECmd parses every `.evtx` inside it. (Use `-f /data/one.evtx` to parse a single file instead — that `-f` form is what the per-technique steps below use.)
 - `--csv /data/_out` — write CSV output into `/data/_out` (created if missing). Because `/data` is mounted, the result appears in your real `data/_out/` folder too.
 - `--csvf all_events.csv` — the **f**ilename for that CSV (otherwise EvtxECmd auto-names it with a timestamp).
 
-**Expected output (tail):** a per-file line for each `.evtx`, then a combined run summary ("Processed 27 files..."). Open `all_events.csv` in any spreadsheet. The columns you will live in for this module:
+**Expected output (tail):** a per-file line for each `.evtx`, then a combined run summary ("Processed 26 files..."). Open `all_events.csv` in any spreadsheet. The columns you will live in for this module:
 - **`EventId`** — the numeric event ID (7045, 5145, 4624...).
 - **`MapDescription`** — EvtxECmd's plain-English label for that event ("A new service was installed", "A network share object was checked for access").
 - **`PayloadData1..6`** — the important fields lifted out of the event XML (service name, pipe name, account).
