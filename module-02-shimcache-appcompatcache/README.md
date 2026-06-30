@@ -28,7 +28,7 @@ HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatCache\AppCompatCa
 - On older Windows (7/8), an **"executed" flag**; on Windows 10/11 that flag exists in the data but is **unreliable** (see below).
 
 ### Why investigators love it (what you can prove)
-ShimCache is the **"existence"** corner of the Triad. Its superpower: Windows adds an entry when it merely **evaluates** a file — which can happen when the file is **browsed in Explorer, scanned, or otherwise touched**, not only when it's run. So ShimCache can preserve a record of a malicious tool that:
+ShimCache is the **"existence"** corner of the Triad. Its superpower: the **application-compatibility subsystem** adds an entry when Windows **examines a file's metadata to decide whether it needs a compatibility shim** — which it does at (or just before) execution, but historically could also be driven by other interactions. So an entry proves the OS *evaluated* the file, **not** that it ran. The **exact triggers have changed across Windows versions** — on Win7/8 a broader range of file interactions could insert an entry (which is where the old "merely browsing a file in Explorer adds it" rule of thumb came from), and on Win10/11 the triggers narrowed and the per-row "executed" flag became unreliable (see below). The takeaway holds regardless of version: ShimCache can preserve a record of a malicious tool that:
 
 - was **dropped but never executed**, or
 - ran once and was then **deleted** (the registry entry survives the file).
@@ -173,7 +173,7 @@ The desktop `DESKTOP-SDN1RPT` (users `mortysmith` and `administrator` — the ca
 
 ## 8. Key takeaways
 
-- **ShimCache = existence/awareness, not execution.** Windows caches files it *evaluates for compatibility*, which can include files merely browsed — and the Win10 "executed" flag is unreliable.
+- **ShimCache = existence/awareness, not execution.** The app-compat subsystem caches files whose metadata it *evaluates for compatibility* (the exact triggers vary by Windows version) — and the Win10 "executed" flag is unreliable.
 - It lives **in the `SYSTEM` registry hive** and is **flushed only on shutdown**; a live grab can lag. **Always collect `SYSTEM.LOG1/.LOG2`** so the parser can replay them.
 - **CacheEntryPosition 0 = most recent**; the cache is capped (~1024), so absence can mean "aged out."
 - It can preserve a record of a **deleted** tool — great for staging/anti-forensics hunts — but it also has gaps (`coreupdater` isn't here), which is the whole argument for the Triad.

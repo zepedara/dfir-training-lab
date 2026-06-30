@@ -160,6 +160,8 @@ Then read the `PayloadData` columns for **LogonType**. **What a hunter looks for
 ### Step 5 — Build the chain
 The investigative payoff is correlation. On a real case you'd line up the **dump time** (Step 2's Sysmon 10) against the **abnormal logon time** (Step 4's 4624 Type 9/3). When the harvested account shows up in a NewCredentials or Network logon minutes after its LSASS was read, you've connected *theft* to *use* — and you can name the next host the attacker reached.
 
+> **What you can and can't demonstrate on the shipped data (read this).** This `dump → abnormal logon` chain is **illustrative of the technique**, not a worked example you can run end-to-end on the six bundled files. Those samples are **independent public captures from different hosts and clocks** (each isolates one technique), so the dump in one file and the logon in another **don't share a timeline** — the timestamps and account names won't line up. Learn the *shape* of the correlation here; you exercise the real time-and-LogonId stitching on a single shared host in the **capstone (Module 11)**, and the exercise below lets you hunt a matching logon in extra `Credential Access` samples pulled with `get-data.sh`.
+
 ---
 
 ## 6. Reading the output — suspicious vs. benign

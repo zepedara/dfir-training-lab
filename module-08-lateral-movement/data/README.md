@@ -7,7 +7,7 @@ Windows event logs published for detection research and education. Upstream lice
 IDs it contains. Use `../get-data.sh` to pull the full upstream *Lateral Movement* / *Execution*
 categories for extra practice.
 
-Real contents (verified by parsing in the `dfir-aio:v2` container):
+Real contents (verified by parsing the files):
 
 | File | Technique | Key event IDs (counts) |
 |---|---|---|
@@ -39,4 +39,4 @@ Real contents (verified by parsing in the `dfir-aio:v2` container):
 | `LM_regsvc_DirectoryServiceExtPt_Lsass_NTDS_AdamXpn.evtx` | regsvc / directory-service abuse | Sysmon 3 ×3,12,13,18 |
 
 > These are real attacker techniques captured for defensive training. They are inert event logs
-> (no executable payloads) and safe to parse; analysis runs offline (`--network none`).
+> (no executable payloads) and safe to parse; all analysis runs offline in the lab VM (the tools are already on your `PATH` — no network needed).

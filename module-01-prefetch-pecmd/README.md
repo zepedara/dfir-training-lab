@@ -27,7 +27,7 @@ The hash is why the same program run from two different folders produces **two d
 ### Why investigators love it (what you can prove)
 Although Windows built this purely for speed, it accidentally created one of the best **evidence-of-execution** artifacts in Windows forensics. An *artifact* is just any trace the operating system leaves behind that we can read later. From one `.pf` file you can prove:
 
-- **That the program ran at all** (the file's mere existence is proof it executed at least once).
+- **That the program ran at all** — a `.pf` file's existence is **strong evidence** the program executed at least once (Windows creates it as a side effect of launch). Treat it as strong, not absolute: a `.pf` can also be **copied or planted** from another system, so corroborate with the run-time list and the other Triad artifacts before calling it proof.
 - **How many times** it ran — the **run count**.
 - **When** it ran — up to the **last 8 run timestamps**.
 - **What it loaded** — a list of every file and DLL the program touched in those first seconds (great for spotting a trusted program that was tricked into loading a malicious DLL — a technique called *DLL side-loading*).
@@ -203,6 +203,8 @@ echo "===== SUSPECT: COREUPDATER ====="; PECmd.exe -f prefetch/COREUPDATER.EXE-1
 ## 6. Investigative narrative (Case 001)
 
 In Case 001, the desktop `DESKTOP-SDN1RPT` was compromised. Among the 197 Prefetch files sits **`COREUPDATER.EXE-157C54BB.pf`** — a name engineered to look like a legitimate updater. Prefetch proves it **executed** on this host on **2020-09-19**, in the small hours, and its loaded-files list shows where it ran from. That single fact — *it ran, here, at this time* — is the anchor. In Modules 2-4 you'll confirm the same binary's **identity** (its SHA1 fingerprint) and learn it's the malware at the center of the case. Prefetch is the corner of the **Triad** that answers **"did it run, and when?"**
+
+> **Honesty note — the `COREUPDATER.EXE` `.pf` is a representative artifact.** This particular Prefetch file is included as a **planted/representative teaching artifact** so Module 1 has a concrete malware target to parse; the surrounding 197 files are the real Case-001 baseline. The execution it shows is **independently corroborated** elsewhere in the same case — the Administrator interactively ran `coreupdater.exe` at **2020-09-19 03:40:49 UTC** (UserAssist) and it was installed as an auto-start service (both in **Module 16**) — so the anchor is sound, but don't treat *this single `.pf`* as the sole proof. (It's also why, per the caveat earlier in this module, a lone `.pf` is strong evidence rather than absolute proof.)
 
 ---
 

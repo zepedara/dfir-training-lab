@@ -115,6 +115,8 @@ awk -F, 'FNR>1 && $4!=""{print $4}' amcache_host-*_UnassociatedFileEntries.csv \
 ```
 **Read it:** because identical files share a hash, genuine OS binaries collapse to **Count = 3**; the malware's hash `fd153c66…` is **Count = 1**. **This is LFO at its purest** — in a real 500-host hunt, this exact query names every infected box.
 
+> **Instructor note — where the `Count = 3` band comes from.** Only **one** of these three hosts is real (the Case-001 `DESKTOP` host); the other two are the **lab-generated synthetic peers** (`WORKSTATION-07/12`) described in §1 and `data/README.md`. They were deliberately **seeded with the real host's Microsoft System32 SHA1s** so that ubiquitous OS binaries land on `Count = 3` and the malware stands out at `Count = 1`. The *mechanism* (rarity surfaces the outlier) is exactly what a real fleet shows — but the clean `3`-vs-`1` separation here is a **constructed teaching baseline**, not three independently collected machines. On real data the "noise" band is fuzzier; you still convict on metadata, never on the count alone.
+
 ### Stack 3 — triage the survivors: "which System32 exe has NO Microsoft metadata?"
 Now apply single-host skill to the Count=1 band. Every genuine `C:\Windows\System32\*.exe` carries a Microsoft `ProductName`. Attacker drops usually don't:
 ```bash
