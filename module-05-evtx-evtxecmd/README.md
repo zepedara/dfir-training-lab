@@ -37,7 +37,7 @@ Module 6 will let detection *rules* automatically flag the suspicious events for
 
 **EvtxECmd** is a free, open-source command-line parser written by **Eric Zimmerman** (a well-known DFIR tool author; his tools are often called "the EZ Tools"). It does three things:
 
-1. **Reads the binary `.evtx` format directly** — it does not need Windows or Event Viewer, so it runs fine inside our Linux container.
+1. **Reads the binary `.evtx` format directly** — it does not need Windows or Event Viewer to read them — it runs natively on the lab VM in Git Bash.
 2. **Flattens every event into one row** of a CSV (or JSON), no matter which channel it came from. Point it at a whole folder and it merges *all* the logs into a single sortable timeline.
 3. **Applies "Maps"** to make the cryptic fields readable. A **Map** is a small community-written blueprint (a YAML file) that says, for a given provider + Event ID, "pull *this* XML field and label it `PayloadData1`, pull *that* one and call it `RemoteHost`," and so on. Without Maps you would get raw XML blobs; with them you get tidy columns like `LogonType`, `ExecutableInfo`, and `UserName`. The Maps are crowd-sourced and ship with the tool.
 

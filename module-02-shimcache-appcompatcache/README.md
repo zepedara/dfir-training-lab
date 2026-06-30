@@ -96,7 +96,7 @@ The CSV columns are: `ControlSet, CacheEntryPosition, Path, LastModifiedTimeUTC,
 head -13 shimcache.csv | awk -F, '{printf "%-3s %-58s %-20s %s\n",$2,$3,$4,$5}'
 ```
 - `head -13` — first 13 lines (header + the 12 most-recent entries).
-- `awk -F, '{printf ...}'` — print the four key columns (cache position, path, last-modified time, executed flag) in aligned fields. (`-F,` sets the comma as the field separator. This container image has no `column` utility, so we format with `awk`.)
+- `awk -F, '{printf ...}'` — print the four key columns (cache position, path, last-modified time, executed flag) in aligned fields. (`-F,` sets the comma as the field separator. The lab VM's Git Bash has no `column` utility, so we format with `awk`.)
 
 **Expected (real, Case 001) — the first few rows:**
 ```
