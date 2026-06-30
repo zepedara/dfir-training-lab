@@ -1,0 +1,46 @@
+Last Modified,Last Update,Path,File Size,Exec Flag
+2021-03-15 09:14:22,N/A,C:\Windows\System32\kernel32.dll,1114112,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\ntdll.dll,1990656,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\svchost.exe,55320,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\services.exe,731136,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\lsass.exe,83768,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\winlogon.exe,830136,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\csrss.exe,17944,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\smss.exe,144664,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\conhost.exe,841728,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\dllhost.exe,21816,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\RuntimeBroker.exe,1233920,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\taskhostw.exe,100864,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\cmd.exe,289792,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\WindowsPowerShell\v1.0\powershell.exe,452608,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\notepad.exe,201216,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\rundll32.exe,69632,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\regsvr32.exe,24064,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\schtasks.exe,230400,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\wbem\WmiPrvSE.exe,496640,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\mmc.exe,1413120,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\mstsc.exe,1265664,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\net.exe,55808,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\net1.exe,50176,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\ipconfig.exe,33792,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\tasklist.exe,78848,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\whoami.exe,63488,True
+2021-03-15 09:14:22,N/A,C:\Windows\explorer.exe,4296072,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\SearchIndexer.exe,893952,True
+2021-03-15 09:14:22,N/A,C:\Program Files\Windows Defender\MsMpEng.exe,129024,True
+2021-03-15 09:14:22,N/A,C:\Program Files\Microsoft Office\root\Office16\OUTLOOK.EXE,34603008,True
+2021-03-15 09:14:22,N/A,C:\Program Files\Microsoft Office\root\Office16\EXCEL.EXE,57344000,True
+2021-03-15 09:14:22,N/A,C:\Program Files\Microsoft Office\root\Office16\WINWORD.EXE,1959936,True
+2021-03-15 09:14:22,N/A,C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe,3258560,True
+2021-03-15 09:14:22,N/A,C:\Program Files\Google\Chrome\Application\chrome.exe,2723024,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\MicrosoftEdgeUpdate.exe,175208,True
+2021-03-15 09:14:22,N/A,C:\Program Files\7-Zip\7zFM.exe,1050624,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\SnippingTool.exe,1372672,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\mspaint.exe,6536704,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\calc.exe,27648,True
+2021-03-15 09:14:22,N/A,C:\Windows\System32\dwm.exe,111616,True
+2021-03-15 09:14:22,N/A,C:\Program Files\Adobe\Acrobat DC\Acrobat\Acrobat.exe,2842624,True
+2021-03-15 09:14:22,N/A,C:\Program Files\Microsoft Teams\current\Teams.exe,127512576,True
+2024-09-13 22:47:11,N/A,C:\ProgramData\palantir.exe,412672,True
+2024-09-14 02:09:48,N/A,C:\Windows\Temp\nazgul.exe,151552,True
+2024-09-13 22:47:11,N/A,C:\Users\saruman.white\AppData\Roaming\mordor-update.exe,208896,True

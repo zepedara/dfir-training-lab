@@ -2,13 +2,15 @@
 
 > **The final exam.** Everything you learned in Modules 1-10 — the Triad, event-log parsing, Sigma hunting, credential theft, lateral movement, PowerShell, Sysmon — comes together here on **one** intrusion. You're handed a triage collection, you work the case, and you produce a **timeline + findings report**. Guiding questions first; then a walkthrough; then the full solution. **Try the questions before you read the solution.**
 
+> **Middle-earth framing.** This is the whole realm's story in one case: **SAURON / APT-MORDOR** versus **Middle-earth Holdings**, end to end (canon: [`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The narrative wrapper (the client, the domain, the operation name) is themed; the **evidence keeps its real names** wherever the data is a real capture — notably patient zero `DESKTOP-SDN1RPT` and the malware `coreupdater.exe` (Case 001), and the public-capture IOCs (`a.uguu.se`, `desktopimgdownldr.exe`). When the report finally calls for help, that's your cue: *"The eagles are coming."*
+
 > **Read me first — how this case is built (be honest about your evidence).** This capstone is a **composite teaching scenario**. It does **not** ship a new gigabyte of data — it *reuses the real sample data already in Modules 1-10*, woven into one narrative so you can practise an end-to-end investigation without new downloads. The Part A host (`DESKTOP-SDN1RPT`) artifacts are a single real intrusion (DFIR Madness Case 001); the Part B `.evtx` are real attack-technique captures from public libraries (EVTX-ATTACK-SAMPLES, hayabusa-sample-evtx) that represent the *techniques* an intruder would use — they come from different captures and **do not share one wall-clock**. So you build the timeline as an **attack-phase narrative** (ordered by the intrusion kill-chain), pinning real timestamps where the host data provides them and ordering the Part B techniques logically. Full provenance, the artifact→module map, and licences are in [`data/README.md`](data/README.md). This is exactly how real composite training ranges (and many tabletop exercises) work — and naming that openly is itself a DFIR lesson: *know what your evidence is and isn't.*
 
 ---
 
 ## 1. The scenario
 
-**Client:** *Harmon Foods*, a mid-size food manufacturer. **Domain:** `harmonfoods.local`.
+**Client:** *Middle-earth Holdings*, the realm ("Harmon Foods" in the un-themed original). **Domain:** `middle-earth.local`.
 
 **The call.** At 09:12 local time, the SOC pages you. Two days ago an employee on the front-office desktop `DESKTOP-SDN1RPT` reported that "Windows kept popping a weird update window in the middle of the night." IT shrugged it off. Last night, the **EDR flagged a credential-dumping alert on a Domain Controller**, and this morning a **finance workstation logged a remote logon from the front-office desktop at 03:00** — a path that should never exist. Management fears an intruder is moving toward the finance systems. You're given a **triage collection** pulled from the affected hosts and told: *find out what happened, how far it spread, and whether the domain's credentials are burned.*
 

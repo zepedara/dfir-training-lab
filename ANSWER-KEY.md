@@ -3,6 +3,8 @@
 > **⚠️ Instructor / self-check material — spoilers ahead.** Each module's README keeps its "what to find" section deliberately light so learners discover the answers themselves. This file consolidates the *try-it-yourself* exercises from all modules with **worked answers grounded in the real bundled data**. Try every exercise first; read this only to check.
 >
 > Command-based answers were verified by running each tool on the lab VM against each module's `data/` folder. Real values (hashes, timestamps, event-ID counts) are quoted from that data; where a value is a reasoning point rather than a fixed output, the answer explains the principle.
+>
+> **Theme note.** The lab is narrated as **SAURON / APT-MORDOR** vs **Middle-earth Holdings** ([`THEME-MIDDLE-EARTH.md`](THEME-MIDDLE-EARTH.md)). Because these answers quote **real** evidence and real tool output, the names here are the ground-truth ones (`DESKTOP-SDN1RPT`, `coreupdater.exe`, `MSEDGEWIN10`, …), which we never alter — the theme is the framing, not the data.
 
 **Shared facts about the Part A host** (used across Modules 1-4): host `DESKTOP-SDN1RPT`, from DFIR Madness *Case 001 — "The Stolen Szechuan Sauce."* The case malware is `coreupdater.exe`:
 - **SHA1** `fd153c66386ca93ec9993d66a84d6f0d129a3a5c`

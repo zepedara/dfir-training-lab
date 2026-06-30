@@ -5,6 +5,8 @@
 
 > **Prerequisite:** Modules 5 and 6 (parsing `.evtx`, running Chainsaw). Every event ID, count, and Chainsaw detection name below was produced by parsing the bundled files on the lab VM.
 
+> **Middle-earth framing.** PowerShell is the "living-off-the-land" tradecraft **SAURON / APT-MORDOR** leans on inside **Middle-earth Holdings** ([`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The captures are **real public attack samples** (EVTX-ATTACK-SAMPLES) from other hosts; baked-in names (e.g. `MSEDGEWIN10`, the `C:\Users\Public\…` script paths) appear in the output **exactly as recorded** — we theme the story, not the evidence.
+
 ---
 
 ## 1. Background — why this matters

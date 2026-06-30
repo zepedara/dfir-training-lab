@@ -3,6 +3,8 @@
 **Deck mapping:** *Intrusion Hunting Playbook* → "Evidence of Execution, Persistence & User Activity" / host-triage foundations.
 **Goal:** learn to pull court-ready evidence — **persistence, program execution, user activity, accounts, and network/device history** — out of the **Windows Registry** using **RegRipper**, the plugin-driven hive parser. You will triage two machines from the same real intrusion and watch the registry give up the attacker's foothold from several angles at once.
 
+> **Middle-earth framing (and the evidence rule).** This module reaches the crown jewel — the domain controller — in the breach of **Middle-earth Holdings** by **SAURON / APT-MORDOR** (canon: [`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The hives are the **real** DFIR-Madness Case 001 evidence, and *we never alter evidence*, so tool output shows the real baked-in names. **In our narrative this DC is `MINAS-TIRITH-DC01`; its real evidence name — which you'll see throughout the `rip` output, and which we never change — is `CITADEL-DC01`, fittingly the very "Citadel" that crowns Minas Tirith.** Likewise the desktop stays `DESKTOP-SDN1RPT` (user `mortysmith`) and the malware stays `coreupdater.exe`. Theme the lens; the registry keeps its real names.
+
 ---
 
 ## 1. Background — why this matters
@@ -219,6 +221,8 @@ LastWrite Time 2020-09-19 03:30:01Z
 2. base64-decodes it and **`iex`**-executes it (Invoke-Expression runs it in memory).
 
 This is **fileless / registry-resident persistence (T1547.001 — Registry Run Key, plus T1059.001 — PowerShell)**: the actual payload never sits on disk as a file, it lives *inside the registry*, so a file-scanning AV walks right past it. Two independent footholds — the **service** (Step 3) and this **Run key** — is classic "belt and suspenders" attacker tradecraft so that killing one doesn't evict them.
+
+> **Theme aside.** In the lab's **synthetic** Module-04 fleet, SAURON's planted persistence wears on-the-nose joke names — a Run value `myprecious`, a scheduled task `second-breakfast`. Here you're in **real** evidence, so the names are the genuine ones: a `coreupdater` service and a `coreupdate` Run key. The skill is identical — *judge persistence by behaviour, not by a friendly name* — but only the synthetic data gets to be funny.
 
 ### Step 8 — Installed programs (SOFTWARE)
 ```bash

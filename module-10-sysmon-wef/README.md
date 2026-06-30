@@ -5,6 +5,8 @@
 
 > **Prerequisite:** Modules 5 and 6. This module ties the whole of Part B together, so it helps to have seen the earlier samples. Every event ID and count below was produced by parsing the bundled files on the lab VM.
 
+> **Middle-earth framing.** This is the sensor layer that would let **Middle-earth Holdings**' defenders see **SAURON / APT-MORDOR** across the whole realm at once ([`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The samples are **real public captures** (EVTX-ATTACK-SAMPLES, hayabusa-sample-evtx) from other hosts; their baked-in names are shown in tool output **unaltered**.
+
 ---
 
 ## 1. Background — why this matters

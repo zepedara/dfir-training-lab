@@ -5,6 +5,8 @@
 
 > **Reading order:** Module 1 (Prefetch) answered *"did it run?"*. ShimCache answers a different, sometimes more useful question: *"did Windows ever lay eyes on this file at all?"* The two together are stronger than either alone.
 
+> **Middle-earth framing (and the evidence rule).** Same realm, same victim — **Middle-earth Holdings**, breached by **SAURON / APT-MORDOR** ([`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). This module reads the **real** Case-001 `SYSTEM` hive, so every name in the output is ground truth we **never alter**: the host is `DESKTOP-SDN1RPT` and the case malware is `coreupdater.exe`. The theme is the lens; the evidence keeps its real names.
+
 ---
 
 ## 1. Background — what ShimCache is and why Windows creates it

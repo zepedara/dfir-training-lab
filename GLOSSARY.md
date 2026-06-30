@@ -4,6 +4,8 @@ Plain-language definitions of the key terms, artifacts, tools, and event IDs use
 
 > Where a definition makes a factual claim, a **Sources** line points to the authoritative reference.
 
+> **Theme note.** The lab's narrative casts the victim as **Middle-earth Holdings** and the adversary as **SAURON / APT-MORDOR** (canon: [`THEME-MIDDLE-EARTH.md`](THEME-MIDDLE-EARTH.md)). These definitions are the un-themed technical ground truth; the theme never changes a tool, an event ID, or a real evidence name.
+
 ---
 
 ## Core concepts

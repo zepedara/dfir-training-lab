@@ -1,226 +1,303 @@
-# Module 4 — Scaling the Hunt with AppCompatProcessor
+# Module 04 — Scaling the Hunt with AppCompatProcessor
 
-**Deck mapping:** *Windows Execution Forensics* → "Scaling Execution Analysis" / "Stacking & Least-Frequency-of-Occurrence" · *Advanced Intrusion Forensic Hunting* → "Hunting at Enterprise Scale."
-**Goal:** stop looking at **one** host. Take the Triad artifacts (Amcache/ShimCache) from **many** hosts, pile them together, and let the **rarest** thing float to the top — that single weird binary that exists on *one* box out of hundreds.
-
-> **The shift in thinking:** Modules 1-3 taught you to *read* artifacts on a single machine. At enterprise scale you can't read 5,000 machines by hand. Instead you **count**. This module teaches the counting method on real data, then shows the tool that automates it.
-
----
-
-## 1. Background — stacking and Least-Frequency-of-Occurrence (LFO)
-
-### Why counting beats reading at scale
-On one host you study each entry. Across an enterprise you **stack**: pick one attribute (filename, path, SHA1, parent directory…), group every host's entries by that attribute, and **count** how many times each value appears. Then you read the *counts*, not the rows.
-
-**Least-Frequency-of-Occurrence (LFO)** is the hunting principle that makes stacking pay off:
-
-> Attacker tooling is, by definition, **rare** — it lives only on the few machines the attacker touched. Microsoft-signed binaries that exist on 5,000 hosts are **noise**. The unsigned 7 KB `coreupdater.exe` that exists on **one** host is the **hunt**.
-
-So you sort the stack **ascending by count** and look at the top: the `Count = 1` and `Count = 2` rows are your leads.
-
-### The honest caveat (so you don't over-trust LFO)
-Rarity is a *lead generator*, not a verdict. Plenty of perfectly benign things are also rare — a developer's `code.exe`, one user's `firefox.exe`, an admin tool on a single workstation. **LFO narrows thousands of rows to a handful; you still apply the single-host skills (metadata, path, signing, SHA1 reputation) to each survivor.** You'll see exactly this in the data: `coreupdater.exe` *and* several benign apps all come back with Count = 1, and it's the metadata that separates them.
+> **Tool spotlight.** This is the lab's deep-dive on **AppCompatProcessor (ACP)** by Matías Bevilacqua /
+> Mandiant — the single most powerful way to turn *Application Compatibility* evidence (ShimCache +
+> Amcache) from one box into a **fleet-wide hunt**. Earlier modules taught you to read ShimCache on one
+> host (Module 02) and Amcache on one host (Module 03). Here you scale that to the whole enterprise and
+> let the *frequency of execution across hosts* surface the intruder for you.
+>
+> **Scenario:** the realm of **Middle-earth Holdings** has been breached by **SAURON (APT-MORDOR)**. You
+> have AppCompat collections from eight hosts. You do not yet know which are compromised. ACP will tell
+> you. (Theme reference: [`THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md).)
 
 ---
 
-## 2. What the tool does — AppCompatProcessor (ACP)
+## 1. Why this artifact, and why stacking
 
-**AppCompatProcessor** (Matías Bevilacqua) is the purpose-built scaling tool. It ingests AppCompat/Amcache from a folder of hosts into **one SQLite database**, then runs analytics across the whole set:
+**Application Compatibility Cache (ShimCache / AppCompatCache)** and **Amcache** are two registry-borne
+records of *programs that were present and/or executed* on a Windows host. They are gold for DFIR because
+they survive deletion of the binary, and they record things attackers run. Their weakness on a *single*
+host is noise: hundreds of legitimate entries surround the few malicious ones.
 
-- **`stack`** — the LFO engine: count any attribute, sorted rarest-first.
-- **`search`** — a known-bad regex sweep (130+ methodology terms) with a hit histogram.
-- **`leven`** — typosquat/masquerade finder using **Levenshtein distance** (how many single-character edits separate two strings) — catches `svch0st.exe`, `lssas.exe`.
-- **`tstomp`** — timestomp candidates (files wearing a timestamp that doesn't fit their location).
-- **`tcorr`** — temporal correlation (dropper → payload sequences).
+**The core idea ACP industrializes is frequency analysis ("stacking").** Across an enterprise, the same
+software is everywhere — `explorer.exe`, `svchost.exe`, your EDR, Office — so it **stacks high**. An
+intruder's tooling runs on one or a few hosts, so it **stacks low**. Sort the fleet's execution evidence
+by how many hosts each program appears on, and the **rare tail is where the evil lives**. ACP adds the
+plumbing to do this at scale: ingest many hosts, normalize, and run stacking, temporal correlation,
+known-bad search, recon scoring, and timestomp detection on top.
 
-**Data for this module (multiple hosts):**
-- **`amcache_host-DESKTOP_*.csv`** + **`shimcache_host-DESKTOP.csv`** — the **real** parsed Triad for `DESKTOP-SDN1RPT` (DFIR Madness Case 001), the same host you worked in Modules 1-3. This is the host that has the malware.
-- **`amcache_host-WORKSTATION07_*.csv`** / **`shimcache_host-WORKSTATION07.csv`** and **`...WORKSTATION12...`** — **two synthetic benign peer workstations** added so stacking has something to count against. They share the real host's common Microsoft System32 binaries (same names, same SHA1s — because identical files really do share a hash) and each has a few unique benign apps (Chrome, Firefox, Teams, VS Code…). **They contain no malware.** Their purpose is to make the `Count` column meaningful so LFO actually demonstrates. See `data/README.md` for exactly how they were generated and labelled synthetic.
-
-> **Why mix real + synthetic?** Stacking's payoff *requires* multiple hosts, but there is no clean, license-clear public "multi-host Amcache" set, and the lab's one fully-documented intrusion is a single host. So we keep the **real** host for verifiable answers and add two **synthetic benign** peers purely as a counting baseline — clearly labelled so no one mistakes them for evidence.
-
----
-
-## 3. Setup
-
-Open **Git Bash** on the lab VM and change into this module's data directory:
-
-```bash
-cd module-04-scaling-appcompatprocessor/data
-```
-(Every command in this module is run **from inside this `data/` folder**; all forensic tools are installed natively and already on your `PATH`, so you call them directly by name — no container, no Docker. See Module 1 §3.)
+> **Teaching caveat baked into this module:** *rare is not automatically evil.* A domain controller's
+> `ntdsutil.exe` is rare across a workstation fleet but perfectly legitimate. Stacking **focuses** your
+> attention; it does not make the judgement for you. You will see both legitimate-rare and malicious-rare
+> in the same Count=1 band below, on purpose.
 
 ---
 
-## 4. Part 1 — Stacking by hand across multiple hosts (works today, real data)
+## 2. A note on running ACP on Windows (important)
 
-Stacking is just **group-and-count**. You already have parsed CSVs for three hosts, so Git Bash's shell tools *are* a stacking engine. Doing it by hand once makes the tool obvious.
+ACP is written for Python 2 and was authored on Linux; upstream explicitly disabled Windows support
+because its parallel loader and bundled multiprocessing logging **deadlock under Windows' `spawn`
+process model**. This lab ships a **Windows-native build of ACP** so you can run the entire showcase in
+the VM with no container and no Linux box. Two minimal, well-contained changes make it work (both applied
+by [`tools/setup-acp-windows.ps1`](./tools/setup-acp-windows.ps1), and both leave the Linux behavior
+untouched):
 
-### Stack 1 — count filenames across ALL hosts (the core LFO move)
-```bash
-awk -F, 'FNR>1{print tolower($7)}' amcache_host-*_UnassociatedFileEntries.csv \
-  | sort | uniq -c | sort -n
-```
-- `awk -F, 'FNR>1{print tolower($7)}'` — for **every** host file matched by the wildcard, print column 7 (`Name`) in lowercase. `FNR>1` skips each file's header (FNR = line number *within the current file*, so it resets per file — important when reading many files).
-- `amcache_host-*_UnassociatedFileEntries.csv` — the shell expands the `*` to all three hosts' files, so we count across the whole "enterprise."
-- `sort | uniq -c` — sort the names, then `uniq -c` collapses duplicates and **prefixes each with its count**.
-- `sort -n` — sort **n**umerically by that count, so the **rarest float to the top**.
+1. **Serial loader (`appLoadSerial`).** On Windows the loader runs its producer (parse) and consumer
+   (DB insert) **inline in one process** instead of via the fork-based `mpEngineProdCons` engine. Same
+   parsing, same SQL — no `spawn`/pickle deadlock.
+2. **In-process search.** `appSearch`'s `Producer`/`Consumer` are `multiprocessing.Process` subclasses;
+   on Windows we invoke their `.run()` **directly** (no child spawn, no cross-process pickling) — their
+   queues all live in one process, so it just works.
 
-**Expected output (real + synthetic peers):**
-```
-      1 7zfm.exe
-      1 chrome.exe
-      1 code.exe
-      1 coreupdater.exe        <-- the malware: rare AND on the real host
-      1 firefox.exe
-      1 ftk imager.exe
-      1 msiexec.exe
-      1 outlook.exe
-      1 teams.exe
-      3 compattelrunner.exe
-      3 csrss.exe
-      3 devicecensus.exe
-      3 drvinst.exe
-      3 mousocoreworker.exe
-      3 msmpeng.exe
-      3 sihclient.exe
-      3 svchost.exe
-      3 tiworker.exe
-      3 winlogon.exe
-      4 onedrivesetup.exe
-```
-**Read it:** ubiquitous Microsoft binaries (`csrss`, `svchost`, `winlogon`) show **Count = 3** — present on all three hosts → noise. The **Count = 1** band is your lead list. Note the honest lesson from §1: `coreupdater.exe` is there, but so are benign `chrome.exe`, `firefox.exe`, `code.exe`. **LFO surfaced the candidates; now you triage them.**
-
-### Stack 2 — stack on SHA1 (the strongest pivot)
-Filenames can be reused; the **SHA1 hash is exact**. Stack on it:
-```bash
-awk -F, 'FNR>1 && $4!=""{print $4}' amcache_host-*_UnassociatedFileEntries.csv \
-  | sort | uniq -c | sort -n
-```
-- Same idea, but printing column 4 (`SHA1`) and skipping blanks. (We drop the `| head` here: with only 21 distinct hashes the whole list is short, and dropping it keeps the **Count = 3** band visible instead of only the rarest rows.)
-
-**Expected:**
-```
-      1 32756b3a319340c4b7fead410d3f36e503b30da2
-      1 5d6102f5a170e982c7735bfc2b9c1a0a0d435fd1
-      ...
-      1 fd153c66386ca93ec9993d66a84d6f0d129a3a5c   <-- coreupdater, on ONE host
-      1 fe0affa6c25ae39d12f2e59c14f65b8957168953
-      3 2b0390dd4520dd77258bf52ad96692538c4de6d3
-      3 53e696941b2a5fa304100cd0011f9478f282dab7
-      ...
-      3 66f5e6dade65d7dba979602830d58e53e60fdffb   <-- svchost, on all three
-      3 69a1dcf6a41bc750cacec3185c99839c079275bd   <-- csrss, on all three
-      ...
-```
-**Read it:** because identical files share a hash, genuine OS binaries collapse to **Count = 3**; the malware's hash `fd153c66…` is **Count = 1**. **This is LFO at its purest** — in a real 500-host hunt, this exact query names every infected box.
-
-> **Instructor note — where the `Count = 3` band comes from.** Only **one** of these three hosts is real (the Case-001 `DESKTOP` host); the other two are the **lab-generated synthetic peers** (`WORKSTATION-07/12`) described in §1 and `data/README.md`. They were deliberately **seeded with the real host's Microsoft System32 SHA1s** so that ubiquitous OS binaries land on `Count = 3` and the malware stands out at `Count = 1`. The *mechanism* (rarity surfaces the outlier) is exactly what a real fleet shows — but the clean `3`-vs-`1` separation here is a **constructed teaching baseline**, not three independently collected machines. On real data the "noise" band is fuzzier; you still convict on metadata, never on the count alone.
-
-### Stack 3 — triage the survivors: "which System32 exe has NO Microsoft metadata?"
-Now apply single-host skill to the Count=1 band. Every genuine `C:\Windows\System32\*.exe` carries a Microsoft `ProductName`. Attacker drops usually don't:
-```bash
-awk -F, 'FNR>1 && tolower($6) ~ /system32/ && tolower($6) ~ /\.exe/ \
-  {print $7"  | prod="$10" | size="$11" | host="FILENAME}' \
-  amcache_host-*_UnassociatedFileEntries.csv | sort
-```
-- `tolower($6) ~ /system32/` — keep only rows whose `FullPath` (col 6) is in System32.
-- `host="FILENAME` — `FILENAME` is an awk built-in holding the current input file, so each row is tagged with which host it came from.
-
-**Expected (real, Case 001):**
-```
-coreupdater.exe  | prod=                                     | size=7168   | host=amcache_host-DESKTOP_...
-csrss.exe        | prod=microsoft® windows® operating system | size=17592  | host=amcache_host-DESKTOP_...
-svchost.exe      | prod=microsoft® windows® operating system | size=57368  | host=amcache_host-DESKTOP_...
-winlogon.exe     | prod=microsoft® windows® operating system | size=907776 | host=amcache_host-DESKTOP_...
-...
-```
-**Read it:** one row is naked — **`coreupdater.exe`**: empty `ProductName`, **7,168 bytes** (every real System32 binary is bigger and signed), on the real host. That's the LFO outlier *confirmed by metadata*.
-
-### Stack 4 — pull its identity for the cross-host hunt
-```bash
-grep -i coreupdater amcache_host-DESKTOP_UnassociatedFileEntries.csv | cut -d, -f4,6,9,11
-```
-- `cut -d, -f4,6,9,11` — print just columns 4,6,9,11 = `SHA1, FullPath, LinkDate, Size`.
-```
-fd153c66386ca93ec9993d66a84d6f0d129a3a5c,c:\windows\system32\coreupdater.exe,2010-04-14 22:06:53,7168
-```
-**SHA1 `fd153c66386ca93ec9993d66a84d6f0d129a3a5c`** is your hunt key. Across a real enterprise you'd stack *every* host's Amcache on `SHA1` (Stack 2) and the handful of hosts holding this hash are your victim list.
-
-> **A correction worth internalising:** an earlier telling of this case flagged `coreupdater.exe`'s **2010 LinkDate** as the tell. Don't lean on that. In this very dataset, genuine Microsoft binaries carry absurd LinkDates too (`MoUsoCoreWorker.exe` → 2049, `winlogon.exe` → 2077, `OneDriveSetup.exe` → 2090). **LinkDate alone proves nothing.** The real signal is the *convergence*: System32 path + empty ProductName/Version + 7 KB size + `IsOsComponent=False` + Count=1 across hosts.
-
-### Stack 5 — where do executables live? (path stacking)
-```bash
-awk -F, 'FNR>1{n=split($6,a,"\\"); p=""; for(i=1;i<n;i++)p=p a[i]"\\"; print p}' \
-  amcache_host-*_UnassociatedFileEntries.csv | sort | uniq -c | sort -n
-```
-- `split($6,a,"\\")` — split the full path on backslashes into array `a`; rebuild everything *except* the filename to get the **directory**, then count directories across hosts.
-
-**Read it:** most executables sit in `System32` or `Program Files`. A directory like `Users\Public`, `ProgramData`, `Temp`, or `AppData` with a low count is a staging-location lead — the same instinct from Modules 2-3, now mechanised across hosts.
+It also needs the pure-Python **`python-registry`** package (the hive parser ACP's ShimCache/Amcache
+readers rely on): `pip install python-registry`. The setup script installs it. In the prebuilt VM this is
+already done; the commands below run as-is.
 
 ---
 
-## 5. Part 2 — AppCompatProcessor (the at-scale tool)
+## 3. The data: an eight-host fleet
 
-With many hosts you don't `awk` by hand — you load everything into ACP once and query. The real commands:
+`data/fleet/` holds one ShimCacheParser-style CSV per host (the format ACP's `appcompat_csv` ingest
+plugin reads; **the filename is the hostname**). The fleet:
 
-```bash
-# Load a folder of hosts (raw SYSTEM/Amcache hives, ShimCacheParser CSVs, or zips) into one DB:
-python2 /opt/appcompatprocessor/AppCompatProcessor.py hosts.db load .
+| Host | Role | State |
+|---|---|---|
+| `RIVENDELL-WS01`, `GONDOR-WS02`, `ROHAN-WS03` | Workstations | clean baseline |
+| `LOTHLORIEN-FS01` | File server | clean baseline |
+| `EREBOR-SQL01` | SQL server | clean baseline |
+| `ISENGARD-WS04` | Workstation | **compromised** — the insider `saruman.white`; lateral-movement launch point |
+| `BAG-END-LT01` | Laptop | **compromised** — patient zero (`frodo.baggins`, phished) |
+| `MINAS-TIRITH-DC01` | Domain controller | **compromised** — the crown jewel |
 
-python2 /opt/appcompatprocessor/AppCompatProcessor.py hosts.db status   # host / entry counts
-python2 /opt/appcompatprocessor/AppCompatProcessor.py hosts.db list     # hosts + recon scoring
+> **Instructor disclosure:** this fleet is a **synthetic teaching construct**. The benign baseline is a
+> realistic common-software set; the SAURON toolkit is planted with a clear 2024-09-13/14 incident-window
+> timestamp. It is generated reproducibly by [`tools/build_fleet_csvs.py`](./tools/build_fleet_csvs.py) —
+> read it; it is documented and is itself part of the lesson (it shows exactly what "normal vs intrusion"
+> looks like in this artifact). It is **not** the real case evidence used elsewhere in the lab.
 
-# Stacking — the LFO engine. 'what' to count, 'from' = SQL filter:
-python2 .../AppCompatProcessor.py hosts.db stack "FileName" "FilePath LIKE '%System32'"
-python2 .../AppCompatProcessor.py hosts.db stack "FileName,Sha1" "FilePath LIKE '%System32' AND length(FileName) < 10"
+---
 
-# Known-bad regex sweep (130+ methodology terms, with a hit histogram):
-python2 .../AppCompatProcessor.py hosts.db search
+## 4. Walkthrough
 
-# Typosquat / masquerade finder (Levenshtein distance 1 from real System32 names: svch0st.exe, lssas.exe):
-python2 .../AppCompatProcessor.py hosts.db leven
+All commands run from the lab VM (Git Bash or PowerShell) in this module's folder. `vol`-style, ACP takes
+a **database file** argument first, then a subcommand. We build a fresh DB from the fleet:
 
-# Timestomp candidates (entries outside System32 wearing a System32 timestamp; AmCache 0-microsecond entries):
-python2 .../AppCompatProcessor.py hosts.db tstomp
 ```
-The `stack` sort is ascending-by-count, so **the top rows are the rarest** — LFO, automated. `search` prints a histogram so you triage the loudest known-bad hits first; `leven` and `tstomp` are zero-knowledge anomaly finders that need no prior IOCs.
+cd module-04-scaling-appcompatprocessor
+python C:\DFIR\tools\appcompatprocessor\AppCompatProcessor.py acp.db load data/fleet
+```
 
-> **ACP loader note:** ACP is a **Python 2** tool, and its hive/Amcache ingest depends on `libregf`/`pyregf` + `Registry.py`, with `load` computing per-file MD5 instance IDs (so it also needs a working py2 `hashlib` `md5`). The `load` step is historically the fragile part: where those native bits are missing, `load` registers a host but ingests **0 entries**. That's why **Part 1 above is the hands-on path** — and it now runs across **three** hosts so you feel the `Count` column work. The Part 2 commands are the correct production workflow; run them once you've confirmed ACP's loader (Python 2 + `libregf`/`pyregf` + working py2 `hashlib`) on your VM. **Adjust the `AppCompatProcessor.py` path** below to wherever ACP is installed on your lab VM.
+> On the VM a convenience wrapper `acp` is on PATH, so you can also just run `acp acp.db load data/fleet`.
+
+### 4.1 Status — what did we ingest?
+
+```
+acp acp.db status
+```
+```
+DB version: 0.9.1
+Total hosts: 8
+Total instances: 8
+Total entries: 352
+```
+Eight hosts ingested. Now make the data work for you.
+
+### 4.2 `stack` — the headline technique
+
+```
+acp acp.db stack FileName
+```
+Output (trimmed — read it bottom-up and top-down):
+```
+Count  What
+1      netdom.exe            <- legit (DC tooling)        \
+1      repadmin.exe          <- legit (DC replication)     |  the RARE TAIL:
+1      ntdsutil.exe          <- legit (DC AD database)     |  legitimate-rare
+1      dns.exe / dsac.exe / ismserv.exe / srmhost.exe ...  |  AND malicious-rare
+1      sqlservr.exe / SQLCMD.EXE / Ssms.exe  <- legit (SQL)|  share this band --
+1      putty.exe             <- legit-ish                  |  you must triage it
+1      balrog.exe            <- EVIL (DC payload)          |
+1      morgul.dll            <- EVIL (NTDS theft)          |
+1      mordor-update.exe     <- EVIL (fake updater)        |
+1      theonering.exe        <- EVIL (dropper)             |
+1      gollum.exe            <- EVIL (temp stager)        /
+2      dfsrs.exe             <- legit (DC + file server)
+2      nazgul.exe            <- EVIL, on TWO hosts  ... lateral movement
+2      palantir.exe          <- EVIL, on TWO hosts  ... C2 spread ISENGARD -> MINAS-TIRITH
+4      Acrobat.exe
+5      Teams.exe
+8      explorer.exe / svchost.exe / kernel32.dll / msedge.exe / ...  <- the benign WALL
+9      lsass.exe
+```
+**Read this like an analyst:**
+- The **Count=8 wall** is your enterprise baseline — present everywhere, almost certainly fine.
+- The **Count=1/2 tail** is your worklist. Here it contains both legitimate role-specific tools (the DC
+  and SQL utilities) **and** the entire SAURON toolkit. You triage the tail; you don't trust it.
+- **`palantir.exe` and `nazgul.exe` at Count=2 are a gift:** a non-baseline binary on *exactly two* hosts
+  is the classic signature of **lateral movement** — something spread from one box to another. That is
+  your thread to pull.
+
+### 4.3 `search` — ACP's built-in known-bad intel
+
+ACP ships a curated known-bad signature set (`AppCompatSearch.txt`, ~98 patterns: staging dirs, LOLBins
+in odd places, recon tools, etc.). Run it with no regex:
+
+```
+acp acp.db search
+```
+```
+Searching for known bad list: AppCompatSearch.txt (98 search terms)
+Search hits: 1
+[Staging perf.] MINAS-TIRITH-DC01  2024-09-14 02:09:48  C:\PerfLogs\balrog.exe  1340416  True
+```
+With **zero IOCs from you**, ACP flagged `C:\PerfLogs\balrog.exe` on the DC — its rule for *executables
+staged in `C:\PerfLogs\`* (a well-known attacker drop spot) fired. This is the "free win" of the bundled
+intel.
+
+### 4.4 `search -f` — hunt your own IOCs
+
+Once you have a lead (the Count=2 outliers, the PerfLogs hit), sweep the fleet for the whole toolkit:
+
+```
+acp acp.db search -f "palantir|nazgul|theonering|gollum|balrog|morgul|mordor-update"
+```
+```
+Search hits: 18
+BAG-END-LT01      ... C:\Users\frodo.baggins\Downloads\theonering.exe
+BAG-END-LT01      ... C:\Users\frodo.baggins\AppData\Local\Temp\gollum.exe
+ISENGARD-WS04     ... C:\ProgramData\palantir.exe
+ISENGARD-WS04     ... C:\Windows\Temp\nazgul.exe
+ISENGARD-WS04     ... C:\Users\saruman.white\AppData\Roaming\mordor-update.exe
+MINAS-TIRITH-DC01 ... C:\Windows\Temp\palantir.exe / nazgul.exe / NTDS\morgul.dll / PerfLogs\balrog.exe
+```
+Now the **scope of compromise** is concrete: three hosts, with paths that tell the story (Downloads →
+Temp on patient zero; ProgramData/AppData on the insider; Temp/NTDS/PerfLogs on the DC).
+
+### 4.5 `filehitcount` — how widespread is one file?
+
+```
+acp acp.db filehitcount evilnames.txt    # evilnames.txt contains: palantir.exe
+```
+```
+FileName      HitCount
+palantir.exe  4
+```
+Four execution records of the C2 beacon across the fleet — a quick prevalence check for any indicator.
+
+### 4.6 `tcorr` — temporal correlation (the pivot that finds what you missed)
+
+Given one known-bad file, **what else executed around the same time on the same hosts?** This is how you
+discover tooling you didn't have an IOC for.
+
+```
+acp acp.db tcorr palantir.exe
+```
+```
+AppCompat temporal execution correlation candidates for palantir.exe:
+nazgul.exe          Before:4  ...  <- the rest of the toolkit
+morgul.dll          Before:2
+balrog.exe          Before:2
+mordor-update.exe   Before:2
+repadmin.exe        After:2   ...  <- DC recon/replication abused right after
+dsac.exe            After:2
+netdom.exe          After:2
+```
+Pivoting from one beacon, ACP surfaces the **entire kill chain clustered in time**: the other implants
+*and* the legitimate DC tools (`repadmin`, `dsac`, `netdom`) the attacker abused for recon/DCSync right
+after landing. That `repadmin`/`netdom` burst immediately after `palantir` is your DCSync story.
+
+### 4.7 `tstack` — stack a time window (the intrusion timeline)
+
+Stack only what executed inside the incident window:
+
+```
+acp acp.db tstack 2024-09-13 2024-09-15
+```
+```
+FullPath          Hits In  Hits Out  Ratio
+nazgul.exe        4        0         40.000
+palantir.exe      4        0         40.000
+balrog.exe        2        0         20.000
+gollum.exe        2        0         20.000
+mordor-update.exe 2        0         20.000
+morgul.dll        2        0         20.000
+theonering.exe    2        0         20.000
+```
+Every binary whose execution is **entirely inside** the window (Hits Out = 0) is, by construction,
+incident-relevant. The SAURON toolkit pops out cleanly; baseline software (which also ran on other days)
+does not. This is time-boxing the hunt.
+
+### 4.8 `reconscan` — which hosts did the most looking-around?
+
+```
+acp acp.db reconscan
+```
+```
+Total number of potential recon commands detected: 122
+Total number of hosts with potential recon activity: ... scored per host
+```
+`reconscan` tallies execution of reconnaissance-associated tools (`whoami`, `net`, `ipconfig`,
+`tasklist`, `nltest`, `dsquery`, …) and scores hosts so you can rank where an operator was actively
+enumerating. Combined with the stack, it points you at the hosts that had hands-on-keyboard.
 
 ---
 
-## 6. Investigative narrative
+## 5. The SAURON toolkit — what each file is and does
 
-In Modules 1-3 you proved, on a single host, that `coreupdater.exe` ran (Prefetch), was inventoried with SHA1 `fd153c66…` (Amcache), and slipped past ShimCache (the gap). Module 4 changes the question from *"is this host compromised?"* to *"which hosts in my fleet are?"* Stacked across three machines, the malware's **name and hash both come back Count = 1** while every Microsoft binary is Count = 3 — and that single fact, run across 500 real hosts, is how a responder turns one confirmed infection into a complete victim list in seconds.
+| File | What it actually is | Where it landed | LOTR rationale |
+|---|---|---|---|
+| `theonering.exe` | First-stage **dropper / persistence** ("always comes back") | `BAG-END-LT01` `\Downloads\` | The One Ring — the seed of it all |
+| `gollum.exe` | Stealthy **%TEMP% stager** | `BAG-END-LT01` `\AppData\Local\Temp\` | Gollum — creeps unseen, "my precious" |
+| `palantir.exe` | **Recon + C2 beacon** | `ISENGARD-WS04` → `MINAS-TIRITH-DC01` | The seeing-stone — see far, be tasked from afar |
+| `nazgul.exe` | **Lateral-movement / remote-exec** | `ISENGARD-WS04`, `MINAS-TIRITH-DC01` | The Nine — hunt host to host |
+| `mordor-update.exe` | Fake **"software updater" persistence** | `ISENGARD-WS04` `\AppData\Roaming\` | Mordor disguised as benign |
+| `morgul.dll` | **Credential / NTDS theft** (DCSync) | `MINAS-TIRITH-DC01` `\Windows\NTDS\` | The Morgul-blade — poisons the realm's keys |
+| `balrog.exe` | **Heavy end-objective payload** | `MINAS-TIRITH-DC01` `\PerfLogs\` | The Balrog — deep and powerful; "you shall not pass" (it did) |
+
+---
+
+## 6. How/why the techniques work (deeper)
+
+- **ShimCache stores a path, a last-modified time, and an "executed" flag** (and on older Windows, an
+  update time). It is written at shutdown, which is why it is a *presence* record more than a precise
+  execution clock. ACP's `stack`/`search` lean on the path+name; `tcorr`/`tstack`/`tstomp` lean on the
+  timestamps.
+- **Stacking works because attacker tooling is, by definition, not enterprise-standard software.** The
+  math is just "count of distinct hosts per program." Its power is entirely in having *many* hosts —
+  hence a *fleet* tool. One host can't stack.
+- **`tcorr` works because operators move fast:** the implants and the abused LOLBins execute within a
+  tight window, so "what ran near my known-bad" reconstructs the kill chain even for components you had
+  no signature for.
+- **`tstack` works because incidents are time-bounded:** restricting the stack to the window removes
+  years of benign history and leaves the intrusion.
+- **`tstomp`** (run `acp acp.db tstomp`) hunts **timestomping**: files *outside* `System32` whose
+  modified time matches a real `System32` binary on the same host — a classic evasion where malware
+  copies a system file's timestamps. It is validated and runs cleanly; on this CSV fleet it reports no
+  hits (ShimCache CSVs don't carry the secondary timestamps it keys on — feed it raw hives, e.g. the
+  Module 02 SYSTEM hive, to see it flag a planted timestomp).
 
 ---
 
-## 7. Try-it-yourself exercises
+## 7. Try it yourself
 
-1. **Find the outlier, the right way.** Run Stack 1 then Stack 3. List *every* reason `coreupdater.exe` is suspicious (metadata, size, path, `IsOsComponent`, rarity) — and explain why its **LinkDate is *not* on that list**. Confirm its SHA1.
-2. **Hash beats name.** Run Stack 2. Why is stacking on SHA1 stronger than stacking on filename? Give one way an attacker could beat a *name* stack that a *hash* stack would still catch.
-3. **The benign Count=1 trap.** Stack 1 returns `chrome.exe`, `firefox.exe`, `code.exe`, and `coreupdater.exe` all at Count = 1. Explain, in two sentences, why rarity alone didn't solve the case and what *did*.
-4. **Triad gap, mechanised.** `grep -i coreupdater shimcache_host-DESKTOP.csv` — is it in ShimCache? (It isn't.) Using the Module 3 Triad table, explain what "in Amcache, not in ShimCache" tells you.
-5. **Plan the fleet hunt.** You hold SHA1 `fd153c66…`. Write the one-sentence LFO hypothesis and the ACP `stack "FileName,Sha1" ...` command you'd run across 500 hosts to surface every infected box.
-6. **(Stretch) Add a host, watch Count move.** Use `get-data.sh` (or copy a `WORKSTATION` CSV under a new name) to add a fourth host, re-run Stack 1, and watch a `Count` change. That's stacking earning its keep.
-
-## Answers / what to find
-- The outlier is **`coreupdater.exe`** in `C:\Windows\System32\`: empty `ProductName`/`Version`, **7,168 bytes**, `IsOsComponent=False`, **SHA1 `fd153c66386ca93ec9993d66a84d6f0d129a3a5c`**, and **Count = 1** across hosts — the Case 001 malware. Its 2010 LinkDate is **not** a reliable indicator (genuine MS files here have wilder dates).
-- It appears in **Amcache** (Module 3) and **Prefetch** (Module 1) but **not ShimCache** (Module 2): identity + execution without a "seen-by-shim" record.
-- The LFO principle: across hosts you `stack` on `SHA1`; a hash on a tiny number of hosts is the lead list. Microsoft-signed System32 binaries with high counts are noise. Rarity finds candidates; metadata convicts.
-
-## Sources & further reading
-- **AppCompatProcessor** (the tool, by Matías Bevilacqua / formerly Mandiant): https://github.com/mbevilacqua/appcompatprocessor
-- **Mandiant — "Caching Out: The Value of Shimcache for Investigators"** (the stacking/LFO mindset for AppCompat data): https://cloud.google.com/blog/topics/threat-intelligence/caching-out-the-value-of-shimcache-for-investigators/
-- **SANS DFIR — frequency analysis / stacking** (the least-frequency-of-occurrence method) and the FOR508 curriculum: https://www.sans.org/cyber-security-courses/advanced-incident-response-threat-hunting/
-- **Eric Zimmerman EZ Tools** (AppCompatCacheParser/AmcacheParser that produce ACP's input): https://ericzimmerman.github.io/
-- **DFIR Madness — Case 001** (the real host's data): https://dfirmadness.com/the-stolen-szechuan-sauce/
-
-## Pivot
-- The SHA1 → drop into threat-intel / hunt every host's Amcache.
-- The execution proof for this binary → **Module 1 (Prefetch)** shows `COREUPDATER.EXE` ran on this host.
-- From "what ran" to "what the attacker *did*" → **Part B (Modules 5-10)**, the event logs.
+1. `acp acp.db load data/fleet` then `acp acp.db stack FileName` — find the Count=1/2 tail.
+2. Without peeking at Section 5, decide which Count=1 entries are *legitimate-rare* (role tools) vs
+   *malicious-rare*. Justify each by **path** (`\PerfLogs\`, `\Temp\`, `\Downloads\` vs `\System32\`).
+3. `tcorr palantir.exe` — list every file that correlates and label it implant vs abused-LOLBin.
+4. `tstack 2024-09-13 2024-09-15` — write the one-paragraph intrusion timeline.
+5. Bonus: regenerate the fleet with your own planted tool in `tools/build_fleet_csvs.py` and confirm it
+   falls into the rare tail.
 
 ---
-*Next: [Module 5 — Event Logs](../module-05-evtx-evtxecmd).*
+
+## 8. Sources & further reading
+
+- AppCompatProcessor — Bevilacqua / Mandiant: https://github.com/mbevilacqua/appcompatprocessor
+- Mandiant, *Leveraging the Application Compatibility Cache in Forensic Investigations* (ShimCache).
+- Microsoft / Eric Zimmerman, AppCompatCacheParser & AmcacheParser (single-host parsers, Modules 02–03).
+- MITRE ATT&CK: T1055-adjacent staging, **T1003.006** (DCSync), **T1070.006** (Timestomp), **T1021**
+  (Lateral Movement), **T1057/T1018** (Recon).
+
+> **Honesty note:** the Count=3-style baseline bands and the planted SAURON toolkit are a constructed
+> teaching dataset (Section 3). The ACP tool, its commands, and its outputs are **real** — everything
+> above was produced by running this exact build of ACP on this exact fleet in the lab VM.

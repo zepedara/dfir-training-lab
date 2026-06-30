@@ -3,6 +3,8 @@
 **Deck mapping:** *Intrusion Hunting Playbook* → "Centralized Hunting" + lateral-movement detection · *Advanced Intrusion Forensic Hunting* → "Phase 3: Lateral Movement."
 **Goal:** take raw Windows event logs and let **detection rules** surface the attacker for you — automatically — instead of reading thousands of events by hand.
 
+> **Middle-earth framing.** In the realm's story you're letting Sigma rules surface **SAURON / APT-MORDOR**'s moves against **Middle-earth Holdings** ([`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The bundled logs are **real public attack captures** (Yamato `hayabusa-sample-evtx` / EVTX-ATTACK-SAMPLES) from other hosts — names like `MSEDGEWIN10` are baked into the evidence and shown **unaltered**. Theme the lens, never the logs.
+
 ---
 
 ## 1. Background — why this matters

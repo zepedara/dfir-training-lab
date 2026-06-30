@@ -3,6 +3,8 @@
 **Deck mapping:** *Intrusion Hunting Playbook* → "Disk forensics & the super-timeline" (the filesystem spine under every other artifact).
 **Goal:** open a raw disk image with **no Windows and no mounting**, read its partition table, list every file *including deleted ones*, **recover** a deleted file, **inspect one file's metadata** down to its two separate timestamp sets, **parse the `$MFT`** with MFTECmd, and **build a filesystem timeline** — then read that timeline to catch an attacker who deleted his tools and **timestomped** his backdoor.
 
+> **Middle-earth framing.** Same realm, same villain — **SAURON / APT-MORDOR** against **Middle-earth Holdings** (canon: [`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The disk image is **synthetic** (built for this lesson), but it is deliberately stamped with the **same ground-truth names as the real Case-001 host** so it dovetails with Modules 1-4 — and because the tool output below is the real parse of those exact bytes, those names are shown **unaltered**: host `DESKTOP-SDN1RPT`, user `mortysmith`, backdoor `coreupdater.exe`. We theme the story, not the evidence.
+
 ---
 
 ## 1. Background — why this matters

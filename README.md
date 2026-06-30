@@ -4,6 +4,8 @@ A hands-on, **guided lab** that walks every tool from the source decks (*Windows
 
 > **How to use:** open **Git Bash** on the lab VM, `cd` into a module's `data/` folder, and follow that module's `README` — you call each tool directly by name from inside that folder. The VM is kept **offline** so evidence can never phone home. Each module = **theory (from the deck) → tool → guided exercises → what to find.**
 
+> **The story you're investigating (Middle-earth theme).** The whole lab is cast as one intrusion: the fictional victim is **Middle-earth Holdings** ("the realm") and the adversary is **SAURON / APT-MORDOR** ("the Eye"). Hosts follow a `LOCATION-ROLE##` scheme (e.g. `MINAS-TIRITH-DC01`, `ISENGARD-WS04`, `BAG-END-LT01`) and the planted SAURON toolkit (`theonering.exe`, `palantir.exe`, `nazgul.exe`, …) is hunted across the fleet (Module 4). **The hard rule of forensics still wins, though:** several modules analyse a **real** public case (DFIR-Madness Case 001) and real public attack captures whose artifacts carry ground-truth names baked into the evidence — we **never alter those** (e.g. the domain controller `CITADEL-DC01`, the malware `coreupdater.exe`); we map them to the theme in narration only and the tool output always shows the real names. The full canon is in **[`THEME-MIDDLE-EARTH.md`](THEME-MIDDLE-EARTH.md)**.
+
 ---
 
 ## Curriculum (in order)

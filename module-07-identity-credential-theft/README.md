@@ -3,6 +3,8 @@
 **Deck mapping:** *Intrusion Hunting Playbook* → "Detecting Credential Theft & Misuse" / "Identity Context" · *Advanced Intrusion Forensic Hunting* → "Phase 2: Identity Analysis."
 **Goal:** detect **credential dumping** (stealing passwords/hashes out of Windows) and read the **logon events** that reveal *who* used those credentials to move *where*.
 
+> **Middle-earth framing.** This is the hinge of **SAURON / APT-MORDOR**'s campaign against **Middle-earth Holdings** — stealing the realm's keys (ultimately the Domain-Admin `gandalf.grey`) on the road to the DC `MINAS-TIRITH-DC01` (see [`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The samples are **real public credential-theft captures** from other hosts (`PC04.example.corp`, `IEWIN7`, `DC1.insecurebank.local`, `IEUser`), and those baked-in names are shown in tool output **exactly as recorded** — we never alter evidence. *"Keep it secret, keep it safe."*
+
 ---
 
 ## 1. Background — why this matters
