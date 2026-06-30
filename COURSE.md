@@ -63,7 +63,7 @@ Module 4 then **scales** the Triad: instead of one host, you stack the same arti
 
 ### Part A — Evidence of Execution (the Triad)
 
-1. **[Module 1 — Prefetch](module-01-prefetch-pecmd)** · tool: `PECmd` / `prefetch`
+1. **[Module 1 — Prefetch](module-01-prefetch-pecmd)** · tool: `PECmd`
    *What ran, when, and how often.* You parse 197 real Prefetch files from a compromised desktop, build a mini-timeline, and meet the case malware `COREUPDATER.EXE` — proving it executed at **2020-09-19 03:40:49 UTC**. **You'll learn:** Prefetch fields, the filename-hash → path link, run counts, the 10-second rule, and DLL side-load hunting.
 
 2. **[Module 2 — ShimCache](module-02-shimcache-appcompatcache)** · tool: `AppCompatCacheParser`
@@ -163,7 +163,7 @@ Helpful but optional: a passing familiarity with [MITRE ATT&CK](https://attack.m
 
 ## 7. How to run the lab
 
-The lab runs on the prebuilt **Windows analysis VM** (the companion **dfir-lab-vm**). Every parser used in the course (`PECmd`/`prefetch`, `AppCompatCacheParser`, `AmcacheParser`, `EvtxECmd`, `Chainsaw`, `Hayabusa`, …) is **installed natively and already on your `PATH`** — nothing to install, no internet needed, no container or Docker.
+The lab runs on the prebuilt **Windows analysis VM** (the companion **dfir-lab-vm**). Every parser used in the course (`PECmd`, `AppCompatCacheParser`, `AmcacheParser`, `EvtxECmd`, `Chainsaw`, `Hayabusa`, …) is **installed natively and already on your `PATH`** — nothing to install, no internet needed, no container or Docker.
 
 You drive the tools from a **Git Bash** shell on the VM, so the Unix-style pipelines in the walkthroughs (`grep`, `awk`, `sort`, `head`, `less`, …) work exactly as written.
 

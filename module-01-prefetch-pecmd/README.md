@@ -48,13 +48,16 @@ Although Windows built this purely for speed, it accidentally created one of the
 
 ---
 
-## 2. What the tool does — PECmd / `prefetch`
+## 2. What the tool does — PECmd
 
-The deck's tool is **PECmd** ("Prefetch Explorer Command-line") by Eric Zimmerman — the standard Windows-native Prefetch parser. It decompresses each `.pf`, decodes the binary structure, and prints (or exports to CSV) the executable name, run count, all 8 run times, the volume/device info, and the full list of loaded files and directories. PECmd is one of the **EZ Tools**; on the lab's Windows VM it lives at `C:\DFIR\tools`.
+The deck's tool is **PECmd** ("Prefetch Explorer Command-line") by Eric Zimmerman — the standard Windows-native Prefetch parser. It decompresses each `.pf`, decodes the binary structure, and prints (or exports to CSV) the executable name, run count, all 8 run times, the volume/device info, and the full list of loaded files and directories. PECmd is one of the **EZ Tools**; on the lab's Windows VM it is installed natively and already on your `PATH` (it lives under `C:\DFIR\tools`), so you call it directly as `PECmd.exe`.
 
-For the hands-on steps this lab uses the open-source **`prefetch`** command (a wrapper around **libscca / `sccainfo`**): it reads the same `.pf` structure and prints the same core facts — fully offline. The one difference: `sccainfo` parses **one file at a time** and has **no CSV export**, so we add a small shell loop to summarize the whole folder. On the same VM you can also run PECmd's `--csv` for a timeline-ready spreadsheet (Step 5).
+PECmd has two modes you'll use constantly:
 
-**Data for this module (multiple files):** **197 real `.pf` files** extracted from the **DFIR Madness "Case 001"** desktop, hostname `DESKTOP-SDN1RPT` — a documented intrusion, so the exercises have real answers. The whole point of having 197 of them is that real triage means processing a *folder*, not one file: most are an ordinary Windows **baseline** (svchost, explorer, runtimebroker…) and a few are leads (`COREUPDATER.EXE`, plus LOLBins). You'll batch-process the directory, then compare a benign file against the suspect. For convenience the folder also ships a pre-parsed **`pf.csv`** (the same fields PECmd would export) you can open directly if you just want to read, not parse. See `data/README.md` for provenance and licensing of these files.
+- **`PECmd.exe -f <file.pf>`** — parse **one** `.pf` file and print a rich, human-readable summary **to the console** (run count, all run times, volume info, and the full files-loaded list). Use this when you want to read everything one artifact holds.
+- **`PECmd.exe -d <dir> --csv <outdir> --csvf <name.csv>`** — parse a whole **d**irectory of `.pf` files and write the results to a **CSV** (one row per `.pf`, plus a companion `*_Timeline.csv` with one row per individual run time). Use this for triage across a folder.
+
+**Data for this module (multiple files):** **197 real `.pf` files** extracted from the **DFIR Madness "Case 001"** desktop, hostname `DESKTOP-SDN1RPT` — a documented intrusion, so the exercises have real answers. The whole point of having 197 of them is that real triage means processing a *folder*, not one file: most are an ordinary Windows **baseline** (svchost, explorer, runtimebroker…) and a few are leads (`COREUPDATER.EXE`, plus LOLBins). You'll batch-process the directory, then compare a benign file against the suspect. For convenience the folder also ships a pre-parsed **`pf.csv`** (the same fields PECmd exports, with simple column names) you can open directly if you just want to read, not parse. See `data/README.md` for provenance and licensing of these files.
 
 ---
 
@@ -79,112 +82,105 @@ All forensic tools are installed **natively on the lab VM and already on your `P
 Start with one file so you can see the full detail Prefetch holds:
 
 ```bash
-prefetch prefetch/AM_DELTA.EXE-78CA83B0.pf
+PECmd.exe -f prefetch/AM_DELTA.EXE-78CA83B0.pf
 ```
 
-- `prefetch` — the lab VM's open-source Prefetch parser (libscca's `sccainfo`).
-- `prefetch/AM_DELTA.EXE-78CA83B0.pf` — the **single** `.pf` file to read. `sccainfo` takes exactly one file; name it precisely.
+- `PECmd.exe` — Eric Zimmerman's native Prefetch parser, already on your `PATH`.
+- `-f prefetch/AM_DELTA.EXE-78CA83B0.pf` — the `-f` (**f**ile) switch parses a **single** `.pf` and prints its full summary to the console. (Use `-d` for a whole directory; see Step 2.)
 
-**Expected output (real, from Case 001):**
+**Representative output (PECmd console, abbreviated):**
 ```
-Windows Prefetch File (PF) information:
-	Format version			: 30
-	Prefetch hash			: 0x78ca83b0
-	Executable filename		: AM_DELTA.EXE
-	Run count			: 1
-	Last run time: 1		: Sep 18, 2020 22:44:32.551352300 UTC
-	...
-	Number of filenames		: 13
-	Filename: 2			: \VOLUME{...}\WINDOWS\SOFTWAREDISTRIBUTION\DOWNLOAD\INSTALL\AM_DELTA.EXE
-	...
-```
+Source file: prefetch\AM_DELTA.EXE-78CA83B0.pf
+  Source created:  ...
+  Source modified: ...
 
-**Reading every field:**
-- **Format version: 30** — the internal Prefetch version. `30` = Windows 10/11. (`23` = Win7, `26` = Win8.x.) This confirms the OS family.
-- **Executable filename** — the program this `.pf` belongs to.
-- **Prefetch hash** — the path hash from the filename, confirmed from inside the file.
+  Executable name: AM_DELTA.EXE
+  Hash: 78CA83B0
+  Version: Windows 10 or Windows 11
+
+  Run count: 1
+  Last run: 2020-09-18 22:44:32
+
+  Volume information:
+  #0: Name: \VOLUME{...}  Serial: ...  Created: ...
+
+  Directories referenced: ...
+
+  Files referenced: 13
+  00: \VOLUME{...}\WINDOWS\SOFTWAREDISTRIBUTION\DOWNLOAD\INSTALL\AM_DELTA.EXE
+  ...
+```
+*(Exact spacing/field order varies by PECmd version; the fields themselves are what matter.)*
+
+**Reading the key fields:**
+- **Executable name** — the program this `.pf` belongs to.
+- **Hash** — the 8-character path hash from the filename (it fingerprints *where* the program ran from). Two copies of a program in different folders get two different hashes.
+- **Version** — PECmd reports the Prefetch format as an OS family in words: **`Windows 10 or Windows 11`** here. (Older formats show as Windows 8.x or Windows 7.) This confirms the OS family.
 - **Run count** — how many times this program has executed. `1` = ran exactly once.
-- **Last run time: 1** — the **most recent** execution time, in **UTC** (Coordinated Universal Time — the timezone forensics uses so everyone agrees on "when"). There can be up to 8 of these (`Last run time: 1` is newest).
-- **Number of filenames / Filename: N** — every file and DLL the program loaded in its first ~10 seconds. The `\VOLUME{...}` prefix is Windows' internal name for the disk volume. **This list is your DLL side-loading hunt** — it's always printed, no flag needed.
+- **Last run** — the **most recent** execution time, in **UTC** (Coordinated Universal Time — the timezone forensics uses so everyone agrees on "when"). PECmd also lists the earlier run times (up to 8 total) on their own lines.
+- **Files referenced** (and **Directories referenced**) — every file and DLL the program loaded in its first ~10 seconds. The `\VOLUME{...}` prefix is Windows' internal name for the disk volume. **This list is your DLL side-loading hunt** — `-f` always prints it in full.
 
-### Step 2 — Summarize ALL 197 files at once
-Reading 197 files one at a time is impractical. This loop runs `prefetch` on each file and pulls out the four facts that matter (name, run count, last run, files loaded):
+### Step 2 — Parse ALL 197 files at once (directory → CSV)
+Reading 197 files one at a time is impractical. PECmd's directory mode parses the whole folder and writes a single CSV you can triage:
 
 ```bash
-for f in prefetch/*.pf; do
-  prefetch "$f" 2>/dev/null | awk '
-    /Executable filename/    {n=$0; sub(/.*: /,"",n)}
-    /Run count/              {r=$0; sub(/.*: /,"",r)}
-    /Last run time: 1[^0-9]/ {l=$0; sub(/.*: /,"",l); sub(/\..*/,"",l)}
-    /Number of filenames/    {c=$0; sub(/.*: /,"",c);
-                              printf "%-28s runs=%-3s last=%s loaded=%s files\n", n, r, l, c}'
-done
+PECmd.exe -d prefetch --csv . --csvf prefetch.csv
+```
+
+- `-d prefetch` — parse every `.pf` in the `prefetch/` sub-folder (the **d**irectory mode).
+- `--csv .` — write the CSV report into the current folder (`.`).
+- `--csvf prefetch.csv` — name the main CSV `prefetch.csv`. (PECmd also writes a companion `prefetch_Timeline.csv` — one row per individual run time, handy for timelining.)
+
+PECmd processes all 197 files, printing a running tally to the console and noting any file it could **not** parse. The malformed `VSSVC.EXE-6C8F0C66.pf` is reported as a **parsing error** and flagged in the CSV's error column, while the other **196** parse cleanly — exactly how you handle a damaged artifact in a real case (document it, move on; see Exercise 3).
+
+The resulting `prefetch.csv` carries PECmd's native columns — among them **`SourceFilename, ExecutableName, Hash, Size, Version, RunCount, LastRun, PreviousRun0`…`PreviousRun6` (the earlier 7 run times), Volume info, Directories, FilesLoaded** (count of files referenced), and a parsing-error column. Open it in a spreadsheet to browse everything PECmd captured.
+
+**Quick scan without a spreadsheet.** For a fast read of the four facts that matter (name, run count, last run, files loaded), scan the committed **`pf.csv`** — a pre-parsed convenience copy whose columns are simple and stable: `SourceFile, Executable, RunCount, LastRun, AllRunTimes, FilesLoaded`. (It holds the same facts your fresh `prefetch.csv` does, just with friendlier column names.)
+
+```bash
+awk -F',' 'NR>1 {printf "%-28s runs=%-3s last=%s loaded=%s files\n", $2, $3, $4, $6}' pf.csv
 ```
 
 **What each part does, in plain English:**
-- `for f in prefetch/*.pf; do ... done` — repeat the body once for every `.pf` file; each time, `$f` holds the current filename.
-- `prefetch "$f"` — parse that one file.
-- `2>/dev/null` — **throw away error messages.** `2>` redirects "standard error" (the error channel); `/dev/null` is the system's trash can. We do this because one file is genuinely corrupt (see Exercise 3) and we don't want its error to clutter the report.
-- `| awk '...'` — pipe the text output into **awk**, a tiny text-processing tool. Each `/pattern/ {action}` says "when you see a line matching this pattern, do this."
-  - `sub(/.*: /,"",n)` — chop off everything up to and including the `": "`, leaving just the value (e.g. turn `Run count : 1` into `1`).
-  - `/Last run time: 1[^0-9]/` — match **only** the *first* (newest) run-time line, not lines 2-8. (`[^0-9]` means "followed by a non-digit," so it matches `1 ` but not `10`.)
-  - `sub(/\..*/,"",l)` — drop the fractional seconds for readability.
-  - `printf "%-28s runs=%-3s ..."` — print the fields in neat aligned columns (`%-28s` = left-justified 28-character text field).
+- `awk -F','` — process the file column-by-column, splitting on commas (`-F','` sets the comma as the field separator).
+- `NR>1` — skip the header row (`NR` is the current line number; row 1 is the column titles).
+- `$2, $3, $4, $6` — the `Executable`, `RunCount`, `LastRun`, and `FilesLoaded` columns of `pf.csv`.
+- `printf "%-28s runs=%-3s ..."` — print the fields in neat aligned columns (`%-28s` = left-justified 28-character text field).
 
-**Expected output (real, from Case 001):**
+**Representative output:**
 ```
-AM_DELTA.EXE                 runs=1   last=Sep 18, 2020 22:44:32 loaded=13 files
-APPLICATIONFRAMEHOST.EXE     runs=7   last=Sep 19, 2020 01:07:38 loaded=77 files
-AUDIODG.EXE                  runs=8   last=Sep 19, 2020 05:18:45 loaded=79 files
+AM_DELTA.EXE                 runs=1   last=2020-09-18 22:44:32 loaded=13 files
+APPLICATIONFRAMEHOST.EXE     runs=7   last=2020-09-19 01:07:38 loaded=77 files
+AUDIODG.EXE                  runs=8   last=2020-09-19 05:18:45 loaded=79 files
 ...
-COREUPDATER.EXE              runs=1   last=Sep 19, 2020 03:40:... loaded=... files
+COREUPDATER.EXE              runs=1   last=2020-09-19 03:40:49 loaded=51 files
 ...
 ```
-196 of the 197 files summarize cleanly; one (`VSSVC.EXE-6C8F0C66.pf`) is genuinely corrupt and is skipped by `2>/dev/null` (Exercise 3).
+196 of the 197 files summarise cleanly; the one corrupt file (`VSSVC.EXE-6C8F0C66.pf`) is the parsing error PECmd flagged above (Exercise 3).
 
 ### Step 3 — Put it in execution order (build a mini-timeline)
-Add a sort so the runs line up chronologically around the incident window:
+Sort the scan by run time so the activity lines up chronologically around the incident window. Because `LastRun` is in `YYYY-MM-DD HH:MM:SS` ISO order, a plain text sort on that column *is* a true chronological sort:
 
 ```bash
-for f in prefetch/*.pf; do
-  prefetch "$f" 2>/dev/null | awk '
-    /Executable filename/    {n=$0; sub(/.*: /,"",n)}
-    /Last run time: 1[^0-9]/ {l=$0; sub(/.*: /,"",l); sub(/\..*/,"",l)
-                              printf "%s | %s\n", l, n}'
-done | sort
+sort -t, -k4 pf.csv | awk -F',' 'NR>1 {printf "%-26s %-40s runs=%-3s\n", $4, $2, $3}' | less -S
 ```
-- `| sort` — orders the lines alphabetically; because the date format starts with the month/day, related events cluster together. (For a *true* chronological sort you'd use the `pf.csv` ISO timestamps; see the shortcut below.)
+- `sort -t, -k4 pf.csv` — sort the rows on **column 4** (`LastRun`); `-t,` tells `sort` the fields are comma-separated.
+- `awk -F',' '...'` — pretty-print the run time, executable, and run count into aligned columns.
+- `less -S` — scroll without wrapping long lines (`q` to quit).
 
-**Shortcut — just read the pre-parsed CSV.** The folder ships `pf.csv` with PECmd-style columns already extracted. To sort the whole host by real run time without any parsing:
-```bash
-sort -t, -k4 pf.csv | awk -F, '{printf "%-40s %-26s %-5s %s
-",$1,$2,$3,$4}' | less -S
-```
-- `-t,` — fields are separated by commas.
-- `-k4` — sort by **column 4** (`LastRun`, which is in `YYYY-MM-DD HH:MM:SS` ISO order, so it sorts correctly).
-- `awk -F, '{printf ...}'` — pretty-print the first four columns (source file, executable, run count, last run) into aligned columns; `-F,` sets the comma as the field separator and we skip the long `AllRunTimes` column for readability. `less -S` — scroll without wrapping long lines (`q` to quit).
+**Even simpler:** PECmd already wrote `prefetch_Timeline.csv` in Step 2 — one row per individual run time, so a program that ran 8 times appears 8 times. Sort that file by its timestamp column to get a per-run timeline of the whole host without any extra work.
 
 ### Step 4 — Compare a benign baseline file against the suspect (multi-file reasoning)
-A single file in isolation rarely looks "wrong." You judge it by comparison. Parse a known-good system binary and the suspect side by side:
+A single file in isolation rarely looks "wrong." You judge it by comparison. Parse a known-good system binary and the suspect side by side and pull the same fields from each:
 
 ```bash
-echo "===== BENIGN BASELINE: SVCHOST ====="; prefetch prefetch/SVCHOST.EXE-12871F9D.pf 2>/dev/null | grep -E "Executable filename|Run count|Last run time: 1|Number of filenames"
-echo "===== SUSPECT: COREUPDATER ====="; prefetch prefetch/COREUPDATER.EXE-157C54BB.pf 2>/dev/null | grep -E "Executable filename|Run count|Last run time: 1|Number of filenames"
+echo "===== BENIGN BASELINE: SVCHOST ====="; PECmd.exe -f prefetch/SVCHOST.EXE-12871F9D.pf | grep -iE "Executable name|Run count|Last run|referenced"
+echo "===== SUSPECT: COREUPDATER ====="; PECmd.exe -f prefetch/COREUPDATER.EXE-157C54BB.pf | grep -iE "Executable name|Run count|Last run|referenced"
 ```
-- `grep -E "...|..."` — print only the lines matching any of these labels (a quick way to line up the same four fields from two different files). `-E` enables the `|` ("or") syntax.
+- `PECmd.exe -f <file>` — print each file's full console summary.
+- `grep -iE "...|..."` — keep only the lines matching any of these labels (a quick way to line up the same few fields from two different files). `-E` enables the `|` ("or") syntax; `-i` makes it case-insensitive.
 
 **Read the comparison:** `svchost.exe` is a high-frequency OS service — many runs, many DLLs loaded from System32, unremarkable timing. `coreupdater.exe` is the opposite: it runs a handful of times, in the incident window, with a name that *imitates* a system updater. The contrast — not either file alone — is what flags it. This "baseline vs. outlier" instinct is the heart of every later module.
-
-### Step 5 (Windows VM) — the richer CSV with PECmd
-The `prefetch` parser has no CSV export. PECmd (also installed on the lab VM) does:
-```
-PECmd.exe -d C:\Windows\Prefetch --csv C:\DFIR\out --csvf prefetch.csv
-```
-- `-d <dir>` — parse a whole **d**irectory of `.pf` files (use `-f <file>` for a single one).
-- `--csv <dir>` — folder to write the CSV report into.
-- `--csvf <name>` — the CSV **f**ilename to use.
-
-This produces a timeline-ready spreadsheet (`ExecutableName, RunCount, LastRun, Volume..., FilesLoaded, ...`) — the same information you assembled by hand above, plus all 8 run times broken out. Use PECmd when you want the CSV; use the `prefetch` loop for quick offline parsing.
 
 ---
 
@@ -212,10 +208,10 @@ In Case 001, the desktop `DESKTOP-SDN1RPT` was compromised. Among the 197 Prefet
 
 ## 7. Try-it-yourself exercises
 
-1. **Find the LOLBins.** Run the Step-3 sorted loop. Which `POWERSHELL.EXE`, `RUNDLL32.EXE`, `CMD.EXE`, or `WSCRIPT.EXE` entries appear, and when did they last run? (All are present in this data.) Do any cluster around the `2020-09-19` early-morning window?
-2. **Inspect the malware's loaded files.** `prefetch prefetch/COREUPDATER.EXE-157C54BB.pf` — read its **Filenames** section. What paths did it touch? Any in `\Temp\`, `\AppData\`, or `\Users\Public\`? (You'll cross-check this binary's identity in Modules 3-4.)
-3. **Meet a real corrupt artifact.** Run `prefetch prefetch/VSSVC.EXE-6C8F0C66.pf` directly (no `2>/dev/null`). Note the `libscca` read error. In the loop, `2>/dev/null` skipped it so processing continued — exactly how you handle a damaged artifact in a real case (document it, move on).
-4. **Run-count reasoning.** Open `pf.csv` and find a program with `RunCount` far higher than the number of distinct timestamps shown. Explain why (only the last 8 runs are timestamped).
+1. **Find the LOLBins.** Run the Step-3 sorted scan. Which `POWERSHELL.EXE`, `RUNDLL32.EXE`, `CMD.EXE`, or `WSCRIPT.EXE` entries appear, and when did they last run? (All are present in this data.) Do any cluster around the `2020-09-19` early-morning window?
+2. **Inspect the malware's loaded files.** `PECmd.exe -f prefetch/COREUPDATER.EXE-157C54BB.pf` — read its **Files referenced** section. What paths did it touch? Any in `\Temp\`, `\AppData\`, or `\Users\Public\`? (You'll cross-check this binary's identity in Modules 3-4.)
+3. **Meet a real corrupt artifact.** Run `PECmd.exe -f prefetch/VSSVC.EXE-6C8F0C66.pf` on its own. Note that PECmd reports a **parsing error** — the file is genuinely corrupt. When you parsed the whole folder in Step 2 (`-d`), PECmd flagged that one file and kept going, so the other 196 still parsed — exactly how you handle a damaged artifact in a real case (document it, move on).
+4. **Run-count reasoning.** Open `pf.csv` (or your `prefetch.csv`) and find a program with `RunCount` far higher than the number of distinct timestamps shown. Explain why (only the last 8 runs are timestamped).
 5. **10-second rule.** Pick any entry's `LastRun`. If a teammate says "the file's creation time on disk is 10 seconds later — which is the real execution time?", what's your answer and why?
 
 ---
@@ -230,8 +226,8 @@ In Case 001, the desktop `DESKTOP-SDN1RPT` was compromised. Among the 197 Prefet
 
 ## Sources & further reading
 This module's structure follows the standard DFIR teaching of Prefetch. To go deeper:
-- **libscca — Windows Prefetch File (PF) format** (the open-source format spec the lab VM's `prefetch` tool implements): https://github.com/libyal/libscca/blob/main/documentation/Windows%20Prefetch%20File%20(PF)%20format.asciidoc
 - **PECmd / EZ Tools** (Eric Zimmerman's official tools + docs): https://ericzimmerman.github.io/ and the AboutDFIR EZ Tools manual: https://aboutdfir.com/toolsandartifacts/windows/eric-zimmermans-tools/
+- **libscca — Windows Prefetch File (PF) format** (an open-source spec documenting the Prefetch binary format PECmd parses): https://github.com/libyal/libscca/blob/main/documentation/Windows%20Prefetch%20File%20(PF)%20format.asciidoc
 - **Yogesh Khatri — "Windows Prefetch (.PF) files"** (the classic deep-dive on the format, hash, and timestamps): http://www.swiftforensics.com/2013/10/windows-prefetch-pf-files.html
 - **Magnet Forensics — "Forensic Analysis of Prefetch files in Windows"** (the 10-second rule, run counts, what you can prove): https://www.magnetforensics.com/blog/forensic-analysis-of-prefetch-files-in-windows/
 - **13Cubed — "Investigating Windows Prefetch"** (excellent free video walkthrough): https://www.youtube.com/c/13cubed

@@ -2,7 +2,7 @@
 
 ## Files
 - `prefetch/*.pf` — **197 real Windows Prefetch files** (`<NAME>-<HASH>.pf`).
-- `pf.csv` — a pre-parsed summary of those 197 files (PECmd-style columns: `SourceFile, Executable, RunCount, LastRun, AllRunTimes, FilesLoaded`), committed so the module can be read without running the container.
+- `pf.csv` — a pre-parsed summary of those 197 files (PECmd-style columns: `SourceFile, Executable, RunCount, LastRun, AllRunTimes, FilesLoaded`), committed so the module can be read without parsing the files yourself.
 
 ## Origin / scenario
 Extracted from `C:\Windows\Prefetch\` of the desktop **`DESKTOP-SDN1RPT`** in the **DFIR Madness "Case 001 — The Stolen Szechuan Sauce"** dataset — a publicly published, documented Windows intrusion scenario used for training. Because the case has a known, written-up storyline, the exercises have verifiable answers. Among the 197 files is the case malware `COREUPDATER.EXE-157C54BB.pf` and several abused LOLBins (`POWERSHELL.EXE`, `RUNDLL32.EXE`, `CMD.EXE`, `WSCRIPT.EXE`).
