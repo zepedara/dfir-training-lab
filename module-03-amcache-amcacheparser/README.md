@@ -5,6 +5,8 @@
 
 > **Where this fits:** Prefetch said *"it ran"* (Module 1). ShimCache said *"the OS saw it"* (Module 2). Amcache says *"here is exactly what it is"* — the fingerprint that lets you chase one specific file everywhere else.
 
+> **Middle-earth framing (and the evidence rule).** Still hunting **SAURON / APT-MORDOR** inside **Middle-earth Holdings** ([`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The hive here is the **real** Case-001 `Amcache.hve`, so its baked-in names are untouched: host `DESKTOP-SDN1RPT`, malware `coreupdater.exe`, and the real SHA1 you'll pivot on. We theme the story, never the evidence.
+
 ---
 
 ## 1. Background — what Amcache is and why Windows creates it

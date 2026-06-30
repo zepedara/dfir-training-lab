@@ -3,6 +3,8 @@
 **Deck mapping:** *Intrusion Hunting Playbook* → "The Investigation Lifecycle" / event-log foundations.
 **Goal:** turn raw, hard-to-read Windows `.evtx` log files into one clean spreadsheet (CSV) you can sort, filter, search, and build a timeline from — the foundation every later module builds on.
 
+> **Middle-earth framing.** Part B casts these as the techniques **SAURON / APT-MORDOR** used inside **Middle-earth Holdings** (see [`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The samples themselves are **real, public attack captures** from *other* hosts, so the hostnames, users, and URLs baked into them (e.g. `MSEDGEWIN10`, `IEUser`, `a.uguu.se`) are ground truth we **never alter** — they appear in the tool output exactly as recorded. You're learning the realm's *story* on real-world evidence; the names in the logs are the real ones.
+
 ---
 
 ## 1. Background — why this matters

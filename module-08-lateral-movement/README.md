@@ -5,6 +5,8 @@
 
 > **New to this lab?** Do Module 5 (EvtxECmd) and Module 6 (Chainsaw/Hayabusa) first. This module assumes you can already parse an `.evtx` file to CSV and run a Sigma sweep. Every event ID and count below was produced by parsing the bundled files on the lab VM, so what you read here is exactly what you will see on screen.
 
+> **Middle-earth framing.** This is how **SAURON / APT-MORDOR** spread host-to-host across **Middle-earth Holdings** — from the insider's `ISENGARD-WS04` toward the crown jewel `MINAS-TIRITH-DC01` (see [`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The `.evtx` are **real public attack captures** from other hosts (EVTX-ATTACK-SAMPLES), so the embedded host/service names you'll read in the output (e.g. `spoolfool`, `\PSEXESVC`, RDP source IPs) are ground truth, shown **unaltered**.
+
 ---
 
 ## 1. Background — why this matters
@@ -174,6 +176,8 @@ EvtxECmd -f lateral_movement_startup_3_11.evtx    --csv _out --csvf startup.csv
 - **`lateral_movement_startup_3_11.evtx`** (Sysmon 3 + **11**) — a **FileCreate in a Startup folder**, reached over an admin share = remote persistence drop. Whatever lands in Startup runs at next logon.
 
 ### Step 7 — RDP lateral movement (RdpCoreTS **131 / 98 / 140 / 104**, SharpRDP)
+> *One does not simply RDP into Mordor* — but SAURON's operators happily RDP **out** of it, and every hop leaves the trail below.
+
 **The mechanism:** RDP is the graphical "remote desktop" you already know, but attackers also abuse it for *non-interactive command execution* (tools like **SharpRDP** type commands into the login screen / run-box). On the **target**, RDP connection events live in `Microsoft-Windows-RemoteDesktopServices-RdpCoreTS/Operational`. The most useful IDs:
 - **131** — the server **accepted a new TCP connection** from a client IP. This fires *before* authentication, so it captures the **source IP of whoever is knocking** — even on failed attempts.
 - **98** — a connection was **successfully established** (the TCP/RDP session came up).

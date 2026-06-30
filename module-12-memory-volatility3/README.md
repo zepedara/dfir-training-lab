@@ -3,6 +3,8 @@
 **Deck mapping:** *Advanced Intrusion Forensic Hunting* → "Triage & live response" / memory analysis.
 **Goal:** take a snapshot of a Windows machine's **RAM** and reconstruct what was actually running, talking on the network, and hiding in memory **at the moment of capture** — the evidence that never touches the disk.
 
+> **Middle-earth framing.** In the realm's story, insider data-staging is **Saruman's** kind of betrayal (the turned insider, `saruman.white`) rather than SAURON's implants — a useful contrast to the rest of the lab (see [`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The image itself is a **real, publicly-published forensics-challenge capture**, so its ground-truth names are **never altered**: the user is `Jaffa`, the file is `Challenge.raw`. Theme the lens; the memory keeps its real names.
+
 ---
 
 ## 1. Background — why this matters
