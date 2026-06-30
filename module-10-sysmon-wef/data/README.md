@@ -9,7 +9,7 @@ Sysmon event-ID map across several techniques and compare **default Windows audi
   (public sample-log collection curated for testing Hayabusa/Sigma detection rules).
 
 Files are unmodified copies (the two Zerologon files were renamed for clarity only).
-Real contents (verified by parsing in the `dfir-aio:v2` container):
+Real contents (verified by parsing the files):
 
 | File | Source | Technique | Real event IDs (counts) |
 |---|---|---|---|
@@ -25,5 +25,5 @@ over default auditing. There is no separate "benign baseline" file: these captur
 busy hosts, so the ordinary Windows activity *within each file* is the benign background you learn
 to distinguish the anomaly from.
 
-> Inert event logs (no live payloads); safe to parse. Analysis runs offline (`--network none`).
+> Inert event logs (no live payloads); safe to parse. All analysis runs offline in the lab VM (tools on your `PATH`, no network needed).
 > Pull more Sysmon samples with `../get-data.sh`.

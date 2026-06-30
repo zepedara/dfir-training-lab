@@ -5,7 +5,7 @@ All `.evtx` in this folder are from **EVTX-ATTACK-SAMPLES** by @sbousseaden
 published for detection research and education. Upstream license: **GPL** (`LICENSE.GPL`).
 Files are unmodified; use `../get-data.sh` to pull the full upstream *Execution* category for more.
 
-Real contents (verified by parsing in the `dfir-aio:v2` container):
+Real contents (verified by parsing the files):
 
 | File | Technique | Key event IDs (counts) |
 |---|---|---|
@@ -20,4 +20,4 @@ Real contents (verified by parsing in the `dfir-aio:v2` container):
 | `LM_PowershellRemoting_sysmon_1_wsmprovhost.evtx` | PS-Remoting target process | Sysmon 1 (wsmprovhost.exe) |
 | `LM_sysmon_remote_task_src_powershell.evtx` | PowerShell as source of remote task | Sysmon 3 ×2,7 |
 
-> Inert event logs (no live payloads); safe to parse. Analysis runs offline (`--network none`).
+> Inert event logs (no live payloads); safe to parse. All analysis runs offline in the lab VM (tools on your `PATH`, no network needed).

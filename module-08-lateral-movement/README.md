@@ -261,7 +261,7 @@ That is lateral movement told as a story: *credential theft → network logon �
 
 - JPCERT/CC — *Detecting Lateral Movement through Tracking Event Logs* (the reference catalogue of which tool leaves which event): https://www.jpcert.or.jp/english/pub/sr/20170612ac-ir_research_en.pdf
 - Microsoft Learn — *4624: An account was successfully logged on* (logon types): https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10-security/auditing/event-4624
-- Microsoft Learn — *4697 / 7045: A service was installed in the system*: https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10-security/auditing/event-4697
+- Microsoft Learn — *4697: A service was installed in the system* (the **Security**-log audit event): https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10-security/auditing/event-4697 — note the event this module keys on, **7045**, is the equivalent **System**-log event written by the **Service Control Manager** (event source `Service Control Manager`); it has no dedicated MS-Learn page. 4697 is its audit-subsystem counterpart and must be explicitly enabled.
 - Cyber Triage — *DFIR Breakdown: Impacket Remote Execution (smbexec/psexec/atexec)*: https://www.cybertriage.com/blog/dfir-breakdown-impacket-remote-execution-activity-smbexec/
 - The DFIR Spot — *Lateral Movement: RDP Event Logs* (RdpCoreTS 131/140): https://www.thedfirspot.com/post/lateral-movement-remote-desktop-protocol-rdp-event-logs
 - Ponder The Bits — *Windows RDP-Related Event Logs: Identification, Tracking, and Investigation*: https://ponderthebits.com/2018/02/windows-rdp-related-event-logs-identification-tracking-and-investigation/

@@ -28,6 +28,8 @@ A hands-on, **guided lab** that walks every tool from the source decks (*Windows
 | 9 | [PowerShell tradecraft](module-09-powershell-tradecraft) | event-log analysis | Script Block Logging 4104, module 4103 | EVTX-ATTACK-SAMPLES › Execution |
 | 10 | [Sysmon + WEF](module-10-sysmon-wef) | concepts + Sysmon EVTX | the visibility layer | Sysmon sample EVTX |
 
+> **Part B data:** these modules teach each technique on **representative public attack captures** (EVTX-ATTACK-SAMPLES, hayabusa-sample-evtx) — real attacks, but on assorted hosts, **not** the Case-001 host that Part A follows. They teach the *method*; the **capstone (11)** fuses the method back onto Case-001. Each module's `data/README.md` gives exact provenance.
+
 ### Capstone
 | # | Module | Focus | Data |
 |---|---|---|---|
@@ -43,7 +45,7 @@ Deeper, self-contained modules that extend the lab below the artifact layer (raw
 | 15 | [Filesystem & timelines](module-15-filesystem-timeline) | The Sleuth Kit + `MFTECmd` | partition→file→bytes, recover deleted files, catch timestomping, build the filesystem timeline | synthetic NTFS image |
 | 16 | [Registry forensics](module-16-registry-regripper) | RegRipper (`rip`) | persistence, accounts, USB history & program execution recovered from the registry hives | DFIR-Madness Case 001 hives |
 
-> **Why the numbering jumps from 12 to 14:** there is **no Module 13** — the number is intentionally **reserved/held** for a future module and skipped, so the advanced track runs **12 → 14 → 15**. The gap is deliberate, not a missing file.
+> **Why the numbering jumps from 12 to 14:** there is **no Module 13** — the number is intentionally **reserved/held** for a future module and skipped, so the advanced track runs **12 → 14 → 15 → 16**. The gap is deliberate, not a missing file.
 
 ---
 
@@ -58,6 +60,6 @@ All data is bundled in each module's `data/` folder (or fetched by a per-module 
 ---
 
 ## Suggested path
-Work **1 → 11, in order**. Part A teaches you to prove execution on a single host; Part B teaches you to hunt an intrusion across the logs; the **capstone (11)** fuses both on one real case. Then take the **advanced add-on modules (12, 14, 15)** to go below the artifact layer — raw memory, raw disk — and out to the malicious-document front door. By the capstone you can take a triage collection and build a full incident timeline — exactly the decks' goal: *"Master the Triad. Close the Gap."*
+Work **1 → 11, in order**. Part A teaches you to prove execution on a single host (the real **DFIR-Madness Case-001** host); Part B teaches the intrusion-hunting techniques on **representative public attack captures**; the **capstone (11)** fuses both into one composite case — pinning Case-001's real timestamps and ordering the technique samples into a single kill-chain. Then take the **advanced add-on modules (12, 14, 15, 16)** to go below the artifact layer — raw memory, raw disk — out to the malicious-document front door, and into the registry. By the capstone you can take a triage collection and build a full incident timeline — exactly the decks' goal: *"Master the Triad. Close the Gap."*
 
 *Modules 1–12, 14, 15 and 16 are complete (there is **no Module 13** — see the note above). Each has a full walkthrough from the source decks, real bundled data, guided exercises, and an **answers / what to find** section. Work the core arc **1 → 11**, then the advanced add-ons **12, 14, 15, 16**.*

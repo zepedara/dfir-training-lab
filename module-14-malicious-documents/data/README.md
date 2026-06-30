@@ -43,4 +43,4 @@ Hand-writes a small PDF with a correct cross-reference table and these (inert) i
 ### `build_docm.py` — `Statement_Q4.docm` (modern OOXML macro doc)
 Zips a minimal OOXML skeleton (`[Content_Types].xml`, `_rels/.rels`, `word/document.xml`, `word/_rels/document.xml.rels`) **plus the `.doc` above stored as `word/vbaProject.bin`** — i.e. the *same* VBA project in a modern ZIP container. This is what makes the `zipdump → oledump` pipe in Part B work.
 
-> Everything was generated and verified in the `dfir-aio:v2` container; analysis runs offline (`--network none`). Keep these files inert: do not "weaponise" them by repointing the URLs at a live host or swapping `calc.exe` for a real payload.
+> Everything was generated and verified with these tools; analysis runs offline in the lab VM (tools on your `PATH`, no network needed). Keep these files inert: do not "weaponise" them by repointing the URLs at a live host or swapping `calc.exe` for a real payload.

@@ -31,4 +31,4 @@ A normal Windows 7 desktop for a user named **`Jaffa`**, captured inside a Virtu
 ```sh
 sh get-data.sh
 ```
-The script downloads `NotchItUp.7z` from the authors' public Google Drive, verifies the SHA-256, and extracts `Challenge.raw` into this folder. It needs internet **and** a 7-Zip extractor (`7z`/`7za`/`p7zip`) — see the script header for offline guidance. The analysis itself (the module walkthrough) runs fully **offline** inside the `dfir-aio:v2` container.
+The script downloads `NotchItUp.7z` from the authors' public Google Drive, verifies the SHA-256, and extracts `Challenge.raw` into this folder. It needs internet **and** a 7-Zip extractor (`7z`/`7za`/`p7zip`) — see the script header for offline guidance. The analysis itself (the module walkthrough) runs fully **offline** in the lab VM (the tools are already on your `PATH`).

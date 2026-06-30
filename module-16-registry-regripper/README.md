@@ -152,6 +152,8 @@ Sat Sep 19 03:21:47 2020 Z
 ```
 **Read it:** a service literally named **`coreupdater`** runs **`C:\Windows\System32\coreupdater.exe`** with **`Start = Auto Start`** — so it relaunches on every boot. That is textbook **persistence (MITRE T1543.003 — Create or Modify System Service)**. Three tells make it obvious: (1) an **empty Display name** (real Windows services have one), (2) an executable sitting loose in `System32` with a generic "update-y" name, (3) the **install time (03:27:49)** sits right inside the intrusion window. Notice the entry just below it: the **`terminpt`** *Remote Desktop Input Driver* was touched minutes earlier (03:21:47) — Windows loads it when someone uses an **RDP** session, corroborating how the attacker was driving the box.
 
+> **Timezone note (for cross-referencing public write-ups).** RegRipper prints these LastWrite times in **UTC** (the trailing `Z`), so this hive puts the service install at **`03:27:49Z`**. Several public Case-001 write-ups list it as **`02:27:49`** — a **~1-hour offset** that traces to a known timezone/DST quirk in how the original Case-001 artifacts were recorded. We report the value **faithfully as it sits in the raw hive** (`03:27:49Z`); just be aware of the one-hour shift when you line our timeline up against external Case-001 references.
+
 ### Step 4 — Was a USB drive ever attached? (SYSTEM)
 ```bash
 rip -r SYSTEM -p usbstor

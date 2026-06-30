@@ -2,7 +2,7 @@
 
 ## This module ships **no new evidence files** — and that's deliberate
 
-The "Operation Hollow Update" capstone is a **composite teaching scenario**. Rather than duplicate gigabytes of artifacts, it **reuses the real sample data already committed in Modules 1-10**, woven into a single end-to-end intrusion narrative. You work the case by `cd`-ing into the relevant module's `data/` folder and running the container there — exactly as in that module.
+The "Operation Hollow Update" capstone is a **composite teaching scenario**. Rather than duplicate gigabytes of artifacts, it **reuses the real sample data already committed in Modules 1-10**, woven into a single end-to-end intrusion narrative. You work the case by `cd`-ing into the relevant module's `data/` folder and running the tools there — exactly as in that module.
 
 This file documents **where every artifact really comes from**, so the case stays honest and reproducible.
 
@@ -38,13 +38,13 @@ Each module's own `data/README.md` carries the **per-file** provenance (exact up
 - **EVTX-ATTACK-SAMPLES** by **@sbousseaden:** <https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES> — real ATT&CK-technique Windows event logs for detection research. Licence **GPLv3** (see the repo's `LICENSE.GPL`).
 - **hayabusa-sample-evtx** by **Yamato Security:** <https://github.com/Yamato-Security/hayabusa-sample-evtx> — public sample-log collection for testing Hayabusa/Sigma.
 
-All bundled `.evtx` are **inert event logs (no executable payloads)** and safe to parse; the case is worked **offline** (`--network none`). The Module-4 peer hosts (`WORKSTATION-07/12`) are **synthetic, malware-free** counting baselines — never treat them as real evidence.
+All bundled `.evtx` are **inert event logs (no executable payloads)** and safe to parse; the case is worked **offline** in the lab VM (no network needed). The Module-4 peer hosts (`WORKSTATION-07/12`) are **synthetic, malware-free** counting baselines — never treat them as real evidence.
 
 ## Reproducing the case without copying files
 
-From the repo root, point the container at whichever phase you're working:
+From the repo root, `cd` into whichever phase you're working and run the tools (they're already on your `PATH` in the lab VM):
 ```bash
 cd module-01-prefetch-pecmd/data        # (or any module's data/)
-docker run -it --rm --network none -v "$PWD":/data dfir-aio:v2
+# run the module's tools here, e.g. PECmd, EvtxECmd, chainsaw, vol — all on PATH
 ```
 The capstone [`README.md`](README.md) Walkthrough (Section 4) lists the exact commands per phase. If you'd rather assemble a single physical `capstone/` evidence folder, copy each module's `data/` contents into subfolders named for the host/phase and keep this provenance file alongside them — but it isn't necessary to work the case.
