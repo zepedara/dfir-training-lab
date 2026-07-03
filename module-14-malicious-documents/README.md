@@ -57,6 +57,7 @@ None of the tools below run the macro or the JavaScript. They **parse and decode
 |---|---|---|
 | **`oleid`** | oletools | 30-second **triage** of an Office file: macros? encrypted? external links? with a **risk level**. Run it first. |
 | **`olevba`** | oletools | the **macro workhorse** — extracts the VBA source and runs a keyword/IOC scanner that flags auto-exec, suspicious APIs, and obfuscation; can **deobfuscate** and **reveal** the real strings. |
+| **`mraptor`** | oletools | one-shot **macro triage verdict** — tests for the single combination that defines a weaponised macro (**A**utoExec **+ W**rite **+ eX**ecute) and prints `SUSPICIOUS`/clean plus a script-friendly **exit code** (`20` = suspicious). Built to *scale* a triage across a whole mail dump. |
 | **`oledump`** | Didier Stevens | **OLE stream surgery** — lists the streams, marks which hold a macro (`M`), and **decompresses** the one you pick. Plus plugins (e.g. HTTP-heuristics). |
 | **`zipdump`** | Didier Stevens | inspect a **ZIP/OOXML** (`.docm`/`.xlsm`) without unzipping to disk, and **pipe** a member (the `vbaProject.bin`) straight into `oledump`. |
 | **`pdfid`** | Didier Stevens | PDF **triage** — counts the dangerous keywords (`/JavaScript`, `/OpenAction`, `/Launch`, …). |
@@ -104,6 +105,23 @@ External            |0                   |none      |External relationships such
 Relationships       |                    |          |templates, remote OLE objects, etc
 ```
 **Reading it:** `VBA Macros = Yes, suspicious — HIGH`. That single line is your green light to dig. (`oleid` says *"Generic OLE file"* because this teaching sample is a minimal OLE2 VBA container rather than a full Word document — the macro is all that matters here, and `oleid` still finds it.) The `Encrypted = False` and `External Relationships = 0` rule out two common evasions (a flagged-but-unreadable encrypted doc, or a remote-template fetch).
+
+### Step A1.5 — One-shot verdict with `mraptor` (triage at scale)
+`oleid` literally told you to *"Use olevba and mraptor for more info."* `mraptor` (macro-raptor) is the fastest possible second opinion: it hunts for the one combination that defines a weaponised macro — **A**utoExec **+ W**rite **+ eX**ecute — and prints a single verdict plus an **exit code** you can script on.
+
+```bash
+mraptor Invoice_2024_0042.doc
+```
+**Real output:**
+```
+----------+-----+----+---------------------------------------
+Result    |Flags|Type|File
+----------+-----+----+---------------------------------------
+SUSPICIOUS|AWX  |OLE:|Invoice_2024_0042.doc
+Flags: A=AutoExec, W=Write, X=Execute
+Exit code: 20 - SUSPICIOUS
+```
+**Reading it:** `SUSPICIOUS` with all three flags **`AWX`** — the macro auto-runs (`A`), writes to disk (`W`), and executes something (`X`). That is the textbook downloader shape, confirmed in one line. The **exit code** is the real prize (`0` = clean, `20` = suspicious): run `mraptor *.doc *.docm` across an entire phishing-campaign dump and let the exit code *gate* which files earn a full `olevba` dissection. (`mraptor Statement_Q4.docm` returns the same `SUSPICIOUS|AWX` — it reaches the macro **inside** the OOXML ZIP for you, so you do not pre-unpack.)
 
 ### Step A2 — Extract & scan the macro with `olevba`
 ```bash
@@ -386,7 +404,7 @@ A finance user reports two attachments from a "supplier," `Invoice_2024_0042.doc
 ## 10. Key takeaways
 
 - **Office and PDF documents are launchers, not malware** — they run a small auto-exec stub that fetches the real payload. Your job is to read the stub statically and extract the next stage.
-- **Triage before you dissect:** `oleid` (Office) and `pdfid` (PDF) tell you in seconds whether to go deeper — look for **VBA Macros = suspicious/HIGH** and any non-zero **`/JavaScript` `/OpenAction` `/AA` `/Launch`**.
+- **Triage before you dissect:** `oleid` (Office) and `pdfid` (PDF) tell you in seconds whether to go deeper — look for **VBA Macros = suspicious/HIGH** and any non-zero **`/JavaScript` `/OpenAction` `/AA` `/Launch`**. For Office triage **at scale**, `mraptor`'s **AWX** verdict + **exit code 20** gates the deep dive automatically across a whole batch.
 - **Find the auto-exec trigger first:** `AutoOpen`/`Document_Open`/`Workbook_Open` in VBA; `/OpenAction`/`/AA` in PDF. No trigger, far lower urgency.
 - **Then read the de-obfuscated/decoded code:** `olevba --reveal` (and `oledump -s N -v`) for VBA; `pdf-parser -o N -f` for the compressed PDF script. Obfuscation hides bytes; these tools hand you intent.
 - **Know your container:** legacy `.doc`/`.xls` are **OLE2** (use `oledump` directly); modern `.docm`/`.xlsm` are **ZIP** (use `zipdump` to reach `vbaProject.bin`, *then* `oledump`).

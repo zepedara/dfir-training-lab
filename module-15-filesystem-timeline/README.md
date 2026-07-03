@@ -274,6 +274,12 @@ Mon Jun 15 2026 09:20:15 , 12984 , .a.b , -/r... , 81-128-2 , "C:/Users/mortysmi
 
 > **Why `$FN` saves you:** `mactime` on a plain `fls` bodyfile keys off `$SI` — exactly the times the attacker faked. Because the bodyfile also includes the `$FILE_NAME` rows (the `(... $FILE_NAME)` lines), the **true** creation time is right there next to the fake one. This is the timeline equivalent of the `istat` comparison in Step 5.
 
+> **Scale tip — window the timeline to the incident.** A real `$MFT` has hundreds of thousands of rows; you rarely read them all. `mactime` takes an inclusive **date range** as a trailing argument, so once `istat`/MFTECmd have handed you the window (here ~09:10-09:20 on 2026-06-15) you can collapse the whole timeline to just it:
+> ```bash
+> mactime -b fls.body -d -z UTC 2026-06-15..2026-06-16 > timeline_incident.csv
+> ```
+> **Real output** — the entire kill-chain, eight rows and nothing else: `update.ps1` created **09:10:05**, `coreupdater.exe`'s `$FILE_NAME` (true) create at **09:12:33**, `loot.zip` staged **09:20:15** — each deleted/timestomped artefact next to its `$FILE_NAME` truth-time. **That** focused CSV is what goes in the report; the full timeline stays as the appendix you can defend.
+
 #### Same timeline, from MFTECmd (the `$MFT` route)
 MFTECmd can emit a bodyfile too, so you can build the same timeline from the parsed `$MFT` (useful when all you were handed is the `$MFT`, not a full image):
 ```bash
@@ -337,7 +343,7 @@ Every one of those steps survived in the filesystem: the deletions were recovera
 - The partition **offset from `mmls`** (`-o 2048` here) is required by nearly every other TSK command. Always run `mmls` first.
 - **Deleted ≠ gone.** `fls -d` lists deleted files and `icat -r` recovers their bytes until the clusters are reused — that's how you pull back a wiped dropper or staged archive.
 - NTFS keeps **two** timestamp sets. `$SI` is forgeable; `$FN` is kernel-written. **`$SI` Created earlier than `$FN` Created = timestomping**, and **whole-second `$SI`** is a second tell. `istat` shows both; MFTECmd flags them automatically as **`SI<FN`** and **`uSecZeros`**.
-- `fls -m` + `mactime` (or `MFTECmd --body`) builds the **filesystem timeline** — the spine of a super-timeline. Because it carries the `$FN` rows, it survives an attacker who only stomped `$SI`.
+- `fls -m` + `mactime` (or `MFTECmd --body`) builds the **filesystem timeline** — the spine of a super-timeline. Because it carries the `$FN` rows, it survives an attacker who only stomped `$SI`. Pass `mactime` a trailing **date range** (`2026-06-15..2026-06-16`) to window a huge timeline down to the incident.
 - A full super-timeline normally uses **Plaso** to merge every artifact; Plaso is **not** on the lab VM, so here you timeline per-layer and merge in Timeline Explorer.
 
 ---
