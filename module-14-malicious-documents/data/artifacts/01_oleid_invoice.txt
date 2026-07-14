@@ -1,0 +1,31 @@
+oleid 0.60.1 - http://decalage.info/oletools
+THIS IS WORK IN PROGRESS - Check updates regularly!
+Please report any issue at https://github.com/decalage2/oletools/issues
+
+Encoding for stdout is only cp1252, will auto-encode text with utf8 before output
+Filename: Invoice_2024_0042.doc
+WARNING  For now, VBA stomping cannot be detected for files in memory
+--------------------+--------------------+----------+--------------------------
+Indicator           |Value               |Risk      |Description               
+--------------------+--------------------+----------+--------------------------
+File format         |Generic OLE file /  |info      |Unrecognized OLE file.    
+                    |Compound File       |          |Root CLSID:  - None       
+                    |(unknown format)    |          |                          
+--------------------+--------------------+----------+--------------------------
+Container format    |OLE                 |info      |Container type            
+--------------------+--------------------+----------+--------------------------
+Encrypted           |False               |none      |The file is not encrypted 
+--------------------+--------------------+----------+--------------------------
+VBA Macros          |Yes, suspicious     |HIGH      |This file contains VBA    
+                    |                    |          |macros. Suspicious        
+                    |                    |          |keywords were found. Use  
+                    |                    |          |olevba and mraptor for    
+                    |                    |          |more info.                
+--------------------+--------------------+----------+--------------------------
+XLM Macros          |No                  |none      |This file does not contain
+                    |                    |          |Excel 4/XLM macros.       
+--------------------+--------------------+----------+--------------------------
+External            |0                   |none      |External relationships    
+Relationships       |                    |          |such as remote templates, 
+                    |                    |          |remote OLE objects, etc   
+--------------------+--------------------+----------+--------------------------

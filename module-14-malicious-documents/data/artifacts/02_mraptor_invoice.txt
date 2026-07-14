@@ -1,0 +1,10 @@
+MacroRaptor 0.56.2 - http://decalage.info/python/oletools
+This is work in progress, please report issues at https://github.com/decalage2/oletools/issues
+Encoding for stdout is only cp1252, will auto-encode text with utf8 before output
+----------+-----+----+--------------------------------------------------------
+Result    |Flags|Type|File                                                    
+----------+-----+----+--------------------------------------------------------
+SUSPICIOUS|AWX  |OLE:|Invoice_2024_0042.doc                                   
+
+Flags: A=AutoExec, W=Write, X=Execute
+Exit code: 20 - SUSPICIOUS

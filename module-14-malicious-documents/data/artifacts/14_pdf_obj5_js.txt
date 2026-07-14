@@ -1,0 +1,12 @@
+obj 5 0
+ Type: 
+ Referencing: 
+ Contains stream
+
+  <<
+    /Length 194
+    /Filter /FlateDecode
+  >>
+
+ b'// Acme Secure Reader bootstrap\napp.alert({cMsg: "This document is protected. Click OK to view it.", cTitle: "Acme Secure Reader", nIcon: 1});\nvar trackUrl = "http://www.example.test/track?doc=INV-2024-0042";\napp.launchURL(trackUrl, true);\n'
+

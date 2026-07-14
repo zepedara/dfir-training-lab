@@ -1,0 +1,16 @@
+PDFiD 0.2.10 Invoice_2024_0042.pdf
+ PDF Header: %PDF-1.5
+ obj                    8
+ endobj                 8
+ stream                 1
+ endstream              1
+ xref                   1
+ trailer                1
+ startxref              1
+ /Page                  1
+ /JS                    2
+ /JavaScript            3
+ /AA                    1
+ /OpenAction            1
+ /Launch                1
+

@@ -1,0 +1,43 @@
+Encoding for stdout is only cp1252, will auto-encode text with utf8 before output
+olevba 0.60.2 on Python 3.12.7 - http://decalage.info/python/oletools
+===============================================================================
+FILE: Invoice_2024_0042.doc
+Type: OLE
+-------------------------------------------------------------------------------
+VBA MACRO Module1.bas 
+in file: Invoice_2024_0042.doc - OLE stream: 'VBA/Module1'
++----------+--------------------+---------------------------------------------+
+|Type      |Keyword             |Description                                  |
++----------+--------------------+---------------------------------------------+
+|AutoExec  |AutoOpen            |Runs when the Word document is opened        |
+|AutoExec  |Document_Open       |Runs when the Word or Publisher document is  |
+|          |                    |opened                                       |
+|Suspicious|Environ             |May read system environment variables        |
+|Suspicious|Shell               |May run an executable file or a system       |
+|          |                    |command                                      |
+|Suspicious|vbHide              |May run an executable file or a system       |
+|          |                    |command                                      |
+|Suspicious|WScript.Shell       |May run an executable file or a system       |
+|          |                    |command                                      |
+|Suspicious|run                 |May run an executable file or a system       |
+|          |                    |command                                      |
+|Suspicious|powershell          |May run PowerShell commands                  |
+|Suspicious|command             |May run PowerShell commands                  |
+|Suspicious|CreateObject        |May create an OLE object                     |
+|Suspicious|New-Object          |May create an OLE object using PowerShell    |
+|Suspicious|Lib                 |May run code from a DLL                      |
+|Suspicious|URLDownloadToFileA  |May download files from the Internet         |
+|Suspicious|Net.WebClient       |May download files from the Internet using   |
+|          |                    |PowerShell                                   |
+|Suspicious|DownloadString      |May download files from the Internet using   |
+|          |                    |PowerShell                                   |
+|Suspicious|Chr                 |May attempt to obfuscate specific strings    |
+|          |                    |(use option --deobf to deobfuscate)          |
+|Suspicious|StrReverse          |May attempt to obfuscate specific strings    |
+|          |                    |(use option --deobf to deobfuscate)          |
+|Suspicious|exec                |May run an executable file or a system       |
+|          |                    |command using Excel 4 Macros (XLM/XLF)       |
+|IOC       |update.ps1          |Executable file name                         |
+|IOC       |svchost_update.ps1  |Executable file name                         |
++----------+--------------------+---------------------------------------------+
+
