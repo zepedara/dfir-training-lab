@@ -53,6 +53,27 @@ It also needs the pure-Python **`python-registry`** package (the hive parser ACP
 readers rely on): `pip install python-registry`. The setup script installs it. In the prebuilt VM this is
 already done; the commands below run as-is.
 
+> **The concept is timeless; the tool is legacy — and that's the real lesson here.**
+> You are learning ACP for the **idea**, not because it's what you'd reach for first today. Fleet-wide
+> **stacking and anomaly detection over execution artifacts** (ShimCache/Amcache) is one of the most
+> durable techniques in DFIR and worth knowing cold. But AppCompatProcessor the *program* is effectively
+> unmaintained — Python 2, upstream Windows support disabled, no active releases — so in a modern
+> investigation you'd apply the **same concept** with better-supported tooling:
+>
+> - **Velociraptor** — collect ShimCache/Amcache across a live fleet with a single VQL hunt and stack the
+>   results in its notebook. This is the closest actively-maintained equivalent to what ACP does, at scale.
+> - **KAPE + Eric Zimmerman tools** — run `AppCompatCacheParser` / `AmcacheParser` (Modules 02–03) across
+>   many hosts' collected hives, then **stack in Timeline Explorer** (group by SHA1/filename, sort by host
+>   count). Identical "rare tail = evil" math, modern and maintained.
+> - **EDR / SIEM** — where you already have telemetry, execution-frequency stacking is just a saved query.
+> - **Chainsaw / Hayabusa** (Module 06) complement this by *naming the behaviour* in the event logs once
+>   stacking has pointed you at the rare host.
+>
+> **Bottom line: keep the mental model, upgrade the tooling.** ACP is invaluable because it makes the
+> technique explicit and teachable in one place; the tools above are how you'd operationalise the same
+> idea in a real engagement today.
+
+
 ---
 
 ## 3. The data: an eight-host fleet
