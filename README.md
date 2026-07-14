@@ -4,6 +4,8 @@ A hands-on, **guided lab** that walks every tool from the source decks (*Windows
 
 > **How to use:** open **Git Bash** on the lab VM, `cd` into a module's `data/` folder, and follow that module's `README` — you call each tool directly by name from inside that folder. The VM is kept **offline** so evidence can never phone home. Each module = **theory (from the deck) → tool → guided exercises → what to find.**
 
+> **No malware — by design.** Every exercise in this lab works on inert forensic **artifacts and detection signatures** — event logs, registry hives, prefetch, `$MFT` records, extracted tool output, and benign synthetic evidence. No live malware, weaponized documents, or infected images appear anywhere in it. That's a deliberate design choice, so the lab is safe to run on any machine.
+
 ---
 
 ## Curriculum (in order)
@@ -53,7 +55,7 @@ Deeper, self-contained modules that extend the lab below the artifact layer (raw
 - **EVTX-ATTACK-SAMPLES** (sbousseaden) — 278 EVTX of real attack techniques, organized by MITRE ATT&CK → modules 7–10.
 - **hayabusa-sample-evtx** (Yamato-Security) — 599 EVTX → module 6.
 - **DFIR Madness Case 001** disk image → real Prefetch/ShimCache/Amcache extracted for Part A (a documented intrusion with a known story, so the exercises have *answers*).
-- **Advanced-track data** → a published Win7 RAM capture for Module 12 (fetched by `get-data.sh`), purpose-built benign maldoc samples for Module 14, and a synthetic NTFS disk image for Module 15. Each module's `data/README.md` gives exact provenance and licensing.
+- **Advanced-track data** → a published Win7 RAM capture for Module 12 (fetched by `get-data.sh`), purpose-built maldoc samples for Module 14, and a synthetic NTFS disk image for Module 15. Each module's `data/README.md` gives exact provenance and licensing.
 
 All data is bundled in each module's `data/` folder (or fetched by a per-module `get-data.sh` on an online host). All analysis runs **offline** on the lab VM.
 

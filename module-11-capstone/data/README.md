@@ -38,7 +38,7 @@ Each module's own `data/README.md` carries the **per-file** provenance (exact up
 - **EVTX-ATTACK-SAMPLES** by **@sbousseaden:** <https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES> — real ATT&CK-technique Windows event logs for detection research. Licence **GPLv3** (see the repo's `LICENSE.GPL`).
 - **hayabusa-sample-evtx** by **Yamato Security:** <https://github.com/Yamato-Security/hayabusa-sample-evtx> — public sample-log collection for testing Hayabusa/Sigma.
 
-All bundled `.evtx` are **inert event logs (no executable payloads)** and safe to parse; the case is worked **offline** in the lab VM (no network needed). The Module-4 peer hosts (`WORKSTATION-07/12`) are **synthetic, malware-free** counting baselines — never treat them as real evidence.
+The case is worked **offline** in the lab VM (no network needed). The Module-4 peer hosts (`WORKSTATION-07/12`) are **synthetic** counting baselines — never treat them as real evidence.
 
 ## Reproducing the case without copying files
 

@@ -20,7 +20,10 @@ Out of the box, Windows logs surprisingly little about *what programs do*. The d
 Sysmon is two parts: a **kernel driver** (`SysmonDrv`) and a **service**. When you install Sysmon, the driver loads early at boot at a fixed "altitude" (385201 — its place in the stack of filter drivers) so it sees activity before most other software. The driver and service tap into **ETW (Event Tracing for Windows)** — the built-in Windows pipeline that emits a stream of low-level events — plus kernel callbacks for things like process creation and image loads. Sysmon filters that firehose down to attacker-relevant events using an **XML configuration file**, then writes the survivors to its own log: `Microsoft-Windows-Sysmon/Operational`.
 
 Two consequences worth understanding:
-- **Sysmon is only as good as its config.** A blank config logs almost nothing useful; a good config (the community-standard **SwiftOnSecurity** template is the usual starting point) logs the right things without drowning you in noise. The config decides which processes, registry keys, and network connections are recorded.
+- **Sysmon is only as good as its config.** A blank config logs almost nothing useful; a good config logs the right things without drowning you in noise. The config decides which processes, registry keys, and network connections are recorded. Two community configs anchor the two ends of how people run Sysmon, and it is worth knowing both:
+  - **SwiftOnSecurity/sysmon-config** — a **single, heavily-commented XML file** meant to be *read*. It is the standard *learning* baseline: you can open it top to bottom and understand every include/exclude, which is exactly what you want while you are still building the ID map in your head.
+  - **olafhartong/sysmon-modular** — a **production** config split into dozens of per-technique modules, each **tagged with the MITRE ATT&CK technique** it covers. You don't ship the pieces directly; you run its **`Merge-SysmonXml`** PowerShell build step to compile the modules into one deployable XML. That ATT&CK tagging is what makes Sigma/Hayabusa hunting downstream so much richer.
+  - **The rule that matters more than either file: any config is a *starting point*, not a finished product.** Every environment has different "normal," so a config that is quiet on one network is deafening on another. You are expected to **tune** it — add exclusions for your legitimate noisy software, add includes for what you specifically hunt — and to re-tune it as the estate changes. Deploying a stock config unread and never touching it is the most common Sysmon mistake.
 - **Sysmon enriches as it records.** A Sysmon process-create (Event ID 1) includes the full command line, the file **hashes**, *and the parent process* — so you get the process *tree*, not just isolated launches. That parent→child chain is what catches "Word launched PowerShell."
 
 ### What WEF solves, and how
@@ -144,6 +147,10 @@ EvtxECmd -f Zerologon_Sysmon.evtx                  --csv _out --csvf zl_sysmon.c
 
 **Reading the comparison:** neither sensor sees everything. The Security log caught the **4742** AD change; Sysmon caught the **process tree** that drove it. An investigator wants *both*, centralized — which is precisely the argument for Sysmon **and** WEF: forward the Security log *and* the Sysmon log from every host into one `ForwardedEvents` store, so a single Sigma sweep sees the full picture.
 
+> **Nuance — don't hunt Zerologon by looking for logons.** The Zerologon exploit itself (**CVE-2020-1472**) is a flood of **unauthenticated Netlogon RPC** calls against the domain controller; it abuses a crypto flaw to reset the DC's machine-account password **without ever authenticating**. So the exploit does **not** by itself generate the interactive (Type 2) or network (Type 3) logon events you might instinctively grep for — expecting a "logon" to mark the attack will send you looking for something that was never written. The reliable, low-noise IOC is **Event ID 4742 (*a computer account was changed*)** on the DC, i.e. the machine-account password reset. The `4624`/`4672` logons in this sample come from what the attacker does **after** the reset (authenticating with the now-known credential, e.g. a DCSync), not from the Netlogon exploit itself.
+
+> **While you're reading 4624s — know your logon types.** A `4624` is only meaningful once you read its **LogonType**, and a handful are worth memorising cold: **Type 2 = interactive** (someone at the keyboard), **Type 3 = network** (accessing this host from another — SMB, PsExec, most lateral movement), **Type 9 = NewCredentials** (`runas /netonly` — the pattern behind *pass-the-hash* / token manipulation), and **Type 10 = RemoteInteractive** (RDP). The canonical one-page reference for these, and for which parent/child and logon patterns are "evil," is the **SANS *Hunt Evil* poster** — keep it next to the Sysmon ID map.
+
 > **About a "benign baseline":** these captures come from *real, busy hosts*, so most events in any file are ordinary Windows activity — that benign background *is* your baseline. The skill is spotting the one anomalous chain (the `lsass` handle, the parent-less elevated process, the `explorer.exe` thread injection) against the normal traffic in the *same* file. Train your eye to ignore the routine and lock onto the outlier.
 
 ---
@@ -180,8 +187,8 @@ This is the foundation under everything in Part B: every Sysmon ID you just read
 ---
 
 ## 8. Key takeaways
-- **Sysmon** = a kernel driver + service tapping **ETW** and kernel callbacks, filtered by an **XML config**, writing rich process/network/registry/pipe/injection events to `Microsoft-Windows-Sysmon/Operational`. Its config decides its value (start from the SwiftOnSecurity template).
-- The **Sysmon ID map** is the takeaway: **1** (process+tree+hashes), **3** (network), **7** (image load/side-load), **8** (injection), **10** (LSASS), **11** (file drop), **12/13** (registry), **16** (sensor tampered), **17/18** (pipes). These are the exact IDs Modules 6–9 hunted.
+- **Sysmon** = a kernel driver + service tapping **ETW** and kernel callbacks, filtered by an **XML config**, writing rich process/network/registry/pipe/injection events to `Microsoft-Windows-Sysmon/Operational`. Its config decides its value — learn from **SwiftOnSecurity/sysmon-config** (one readable XML), deploy from **olafhartong/sysmon-modular** (ATT&CK-tagged, built with `Merge-SysmonXml`), and **tune** whichever you pick to your environment.
+- The **Sysmon ID map** is the takeaway: **1** (process+tree+hashes), **3** (network), **7** (image load/side-load), **8** (injection), **10** (LSASS), **11** (file drop), **12/13** (registry), **16** (sensor tampered), **17/18** (pipes), **22** (DNS query — C2 domain resolution). These are the exact IDs Modules 6–9 hunted.
 - **Default logging and Sysmon are complementary** — the Zerologon pair proves it: the Security log caught the **AD change (4742)**, Sysmon caught the **execution**. Collect both.
 - **WEF** centralizes everything into `ForwardedEvents` on a collector (`wecutil` + a source-initiated subscription pushed by GPO; agentless, built-in). That single store is what makes enterprise-scale, in-order hunting — and Module 4's cross-host stacking — possible.
 
@@ -190,7 +197,10 @@ This is the foundation under everything in Part B: every Sysmon ID you just read
 ## 9. Sources & further reading
 - Microsoft Sysinternals — *Sysmon* (official docs, event schema, config): https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon
 - TrustedSec — *Sysmon Community Guide* (how the driver + config work): https://github.com/trustedsec/SysmonCommunityGuide
-- SwiftOnSecurity — *sysmon-config* (the community-standard, heavily commented config template): https://github.com/SwiftOnSecurity/sysmon-config
+- SwiftOnSecurity — *sysmon-config* (the readable, heavily-commented single-XML config used for learning): https://github.com/SwiftOnSecurity/sysmon-config
+- olafhartong — *sysmon-modular* (production, per-technique modules tagged to MITRE ATT&CK, built with `Merge-SysmonXml`): https://github.com/olafhartong/sysmon-modular
+- SANS — *Hunt Evil: Your Practical Guide to Threat Hunting* poster (logon types, lateral-movement source/target artefacts): https://www.sans.org/posters/hunt-evil/
+- 13Cubed — *Windows Event Log / Investigative cheat sheet* (event-ID and logon-type quick reference): https://github.com/13cubed
 - Microsoft Learn — *Use Windows Event Forwarding to help with intrusion detection*: https://learn.microsoft.com/en-us/windows/security/operating-system-security/device-management/use-windows-event-forwarding-to-assist-in-intrusion-detection
 - Microsoft Learn — *Setting up a Source-Initiated Subscription* (`wecutil`, GPO, `ForwardedEvents`): https://learn.microsoft.com/en-us/windows/win32/wec/setting-up-a-source-initiated-subscription
 - @sbousseaden — *EVTX-ATTACK-SAMPLES*; Yamato-Security — *hayabusa-sample-evtx* (the sources of this module's data): https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES · https://github.com/Yamato-Security/hayabusa-sample-evtx

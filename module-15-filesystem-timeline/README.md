@@ -26,10 +26,10 @@ A raw disk image (a `.dd`/`.raw`/`.E01` made by an imager like FTK Imager or `dd
 ### NTFS, the `$MFT`, and the two timestamp sets (the crux of this module)
 NTFS keeps its own bookkeeping in hidden files whose names start with `$`. The most important is the **`$MFT` (Master File Table)** — an array of ~1 KB **records**, one per file or directory. The record number *is* the file's id (TSK calls it the "inode" or "MFT entry"; entry 0 is the `$MFT` itself). Each record is built from **attributes**, and two of them carry timestamps:
 
-- **`$STANDARD_INFORMATION` (`$SI`, attribute type `0x10`)** — the times Explorer shows. Crucially, a normal user-mode program **can change these** via the Windows `SetFileTime` API. This is what timestomping tools rewrite.
-- **`$FILE_NAME` (`$FN`, attribute type `0x30`)** — a *second* set of times, stored alongside the file's name. These are updated by the **kernel** on create/rename/move and are **much harder for an attacker to forge** with ordinary tools.
+- **`$STANDARD_INFORMATION` (`$SI`, attribute type `0x10`)** — holds the four **MACB** times Explorer shows (Modified, Accessed, Changed/MFT-modified, Born/Created). Crucially, a normal user-mode program **can change all four** via the documented Windows `SetFileTime` API. This is what timestomping tools rewrite.
+- **`$FILE_NAME` (`$FN`, attribute type `0x30`)** — a *second* MACB set, stored alongside the file's name. These are written **only by the NTFS kernel driver** on create/rename/move and are **not reachable by the standard Win32 file-time APIs at all** — so the ordinary timestomping tools that call `SetFileTime` rewrite `$SI` but leave `$FN` untouched.
 
-> **The timestomp tell:** at real file creation, NTFS writes `$SI` and `$FN` together, so they match. A timestomping tool rewrites only `$SI` (backdating it to look old) and **cannot easily touch `$FN`** — so afterwards **`$SI` Created is *earlier* than `$FN` Created**. A second tell: many stomping tools only set **whole seconds**, leaving `$SI` times ending in `.0000000` while `$FN` keeps its 100-nanosecond precision. You will see both tells, in real tool output, below.
+> **The timestomp tell:** at real file creation, NTFS writes `$SI` and `$FN` together, so they match. A timestomping tool rewrites only `$SI` (backdating it to look old) and **cannot reach `$FN`** through standard APIs — so afterwards **`$SI` Born is *earlier* than `$FN` Born** (an ordering that never happens naturally). A second tell: many stomping tools only set **whole seconds**, leaving `$SI` times ending in `.0000000` while `$FN` keeps its 100-nanosecond precision. And a third, *independent* artifact seals it: the **`$UsnJrnl` change journal** logs a **`USN_REASON_BASIC_INFO_CHANGE`** record the moment `$SI` is rewritten, so the stomp leaves a journal entry whose own timestamp converges on the **real** tamper moment even though `$SI` now claims 2019. Sound timestomp detection is **multi-artifact convergence** — `$SI`-vs-`$FN`, zeroed sub-seconds, and `$UsnJrnl` all pointing at the same instant — never a single tell. You will see the first two, in real tool output, below.
 
 ### What the two tools in this module do
 - **The Sleuth Kit (TSK)** — Brian Carrier's open-source disk-forensics toolkit (the engine under Autopsy). A family of small command-line tools (`mmls`, `fls`, `istat`, `icat`, `mactime`, …), each working at one layer above. Reads images **read-only and offline** — it never mounts anything, so the evidence can't change. Version on the lab VM: **4.11.1**.
@@ -41,7 +41,7 @@ NTFS keeps its own bookkeeping in hidden files whose names start with `$`. The m
 
 ## 2. The scenario in this module's data
 
-You are handed a disk image, **`disk-DESKTOP-SDN1RPT.raw`**, pulled from the desktop of user **`mortysmith`** — the patient-zero host from the lab's running "Stolen Szechuan Sauce" narrative (Modules 1-4). It is a small, **synthetic** NTFS image built specifically for this lesson (no real malware; see [`data/README.md`](data/README.md) for full provenance, licence, and the generator script — *knowing what your evidence is, is itself a DFIR skill*). It was constructed so the filesystem-level facts are exact and checkable:
+You are handed a disk image, **`disk-DESKTOP-SDN1RPT.raw`**, pulled from the desktop of user **`mortysmith`** — the patient-zero host from the lab's running "Stolen Szechuan Sauce" narrative (Modules 1-4). It is a small, **synthetic** NTFS image built specifically for this lesson (see [`data/README.md`](data/README.md) for full provenance, licence, and the generator script — *knowing what your evidence is, is itself a DFIR skill*). It was constructed so the filesystem-level facts are exact and checkable:
 
 | What's on disk | Where | The point |
 |---|---|---|
@@ -309,7 +309,7 @@ A full **super-timeline** merges the filesystem (this module) with registry, EVT
 | File location | `fls -r -p` | apps under `Program Files` | executables in `\Temp`, `\Users\…\Downloads`, `\AppData` |
 | `mactime` `$SI` vs `$FN` rows | `timeline.csv` | the two agree | a file's `$SI` row is far from its `$FN` row |
 
-**Triage discipline:** an old creation date is **not** by itself suspicious — real OS files are old (that's why `win32k.sys` is in the data). What's suspicious is an **inconsistency**: `$SI` older than `$FN`, whole-second `$SI`, an executable in a Temp folder, a tool deleted minutes after it ran. Judge the **combination**, and let MFTECmd's `SI<FN`/`uSecZeros` columns and your deleted-file list point you at the few records worth a hard look.
+**Triage discipline:** an old creation date is **not** by itself suspicious — real OS files are old (that's why `win32k.sys` is in the data). What's suspicious is an **inconsistency**: `$SI` older than `$FN`, whole-second `$SI`, an executable in a Temp folder, a tool deleted minutes after it ran. Judge the **combination**, and let MFTECmd's `SI<FN`/`uSecZeros` columns and your deleted-file list point you at the few records worth a hard look. On a full image, add the **third pillar of convergence**: parse the `$UsnJrnl` (MFTECmd auto-detects it as `$J`) and look for a **`USN_REASON_BASIC_INFO_CHANGE`** record landing in the incident window — when the `$SI`-vs-`$FN` split, the zeroed sub-seconds, and the journal entry all point at the *same* instant, the timestomp is beyond dispute.
 
 ---
 
@@ -353,8 +353,10 @@ Every one of those steps survived in the filesystem: the deletions were recovera
 - The Sleuth Kit — official site & wiki (per-tool man pages: `mmls`, `fls`, `icat`, `istat`, `mactime`): <https://www.sleuthkit.org/> · <https://github.com/sleuthkit/sleuthkit/wiki>
 - Brian Carrier, *File System Forensic Analysis* (Addison-Wesley) — the definitive reference for NTFS internals and the TSK layers.
 - MFTECmd & Timeline Explorer — Eric Zimmerman: <https://github.com/EricZimmerman/MFTECmd> · <https://ericzimmerman.github.io/>
+- AboutDFIR — MFTECmd reference & command cheatsheet (`$MFT`/`$J`/`$LogFile` parsing, the timestomp columns): <https://aboutdfir.com/>
+- Kroll — "Detecting and Analyzing Timestomping with KAPE" — the `$SI`-vs-`$FN` + `$UsnJrnl` convergence method in practice: <https://www.kroll.com/>
 - Microsoft Learn — NTFS Master File Table and the `$STANDARD_INFORMATION` / `$FILE_NAME` attributes (the two timestamp sets).
-- 13Cubed — "NTFS Timestamps / Timestomping" and "MFTECmd" episodes (the `$SI` vs `$FN` and sub-second-precision detection).
+- 13Cubed (Richard Davis) — "NTFS Timestamps / Timestomping", "MFT & the $UsnJrnl", and "MFTECmd" episodes (the `$SI` vs `$FN`, sub-second-precision, and `USN_REASON_BASIC_INFO_CHANGE` detection).
 - SANS FOR500 / FOR508 — bodyfile→`mactime` timelining and `$MFT`/`$UsnJrnl` super-timeline methodology.
 - Plaso / log2timeline — the super-timeline merger (heavier alternative, not installed on the lab VM): <https://plaso.readthedocs.io/>
 - DFIR Madness — "The Stolen Szechuan Sauce" (Case 001), the intrusion the lab's narrative is built on: <https://dfirmadness.com/the-stolen-szechuan-sauce/>

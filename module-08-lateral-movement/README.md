@@ -26,6 +26,20 @@ Learn to spot the delivery mechanism, then tie it to its carrier logon, and late
 - **Named pipe** — a built-in Windows feature that lets two programs talk to each other, locally or *across the network over SMB* (the file-sharing protocol). Pipes have names like `\PSEXESVC` or `\svcctl`. Remote-admin tools use named pipes as their command channel, so a strange pipe name is a strong lead.
 - **Logon Type 3 (network logon)** — when you sit at a keyboard you create a Type 2 (interactive) logon. When a *remote* machine authenticates to *this* machine to use a share, a service, or RPC, Windows records a **Type 3** logon. Lateral movement is overwhelmingly Type 3. (Type 10 = RDP; Module 7 covers the full type list.)
 
+### A per-technique matrix — key on the *parent process* and the *logon type*
+
+Different remote-execution mechanisms leave *different* delivery footprints, and the two fields that separate them fastest are the **parent process** the payload runs under (Sysmon Event 1) and the **4624 logon type** it rode in on. Use this as your first-pass classifier:
+
+| Technique | Parent process (Sysmon 1) | 4624 logon type | Signature delivery events |
+|---|---|---|---|
+| **PsExec / SMB service** | `services.exe` → payload | **Type 3** | System **7045** + Security **4697** (service installed); **5140/5145** on `\ADMIN$`/`svcctl`; Sysmon **17/18** (named pipes) |
+| **WMI** (`wmic` / `wmiexec`) | **`WmiPrvSE.exe`** → payload | **Type 3** | WMI-Activity **5857 / 5860 / 5861** |
+| **DCOM** (MMC20 / ShellWindows / Office) | `mmc.exe` / `excel.exe` / `explorer.exe` → payload | **Type 3** | System **10016** (only when the activation is *denied*) |
+| **WinRM / PS-Remoting** | **`wsmprovhost.exe`** / `winrshost.exe` → payload | **Type 3** | WinRM **91 / 168** |
+| **RDP** | (a new interactive session, not a spawned child) | **Type 10** | RdpCoreTS **131 / 140 / 98**; RemoteConnectionManager **1149**; LocalSessionManager **21 / 22 / 25** |
+
+> **A correction worth internalising.** The **7045 "service installed" event fires for the PsExec/SMB-service path *only*** — it is written by the Service Control Manager because that technique literally installs a service. **RDP, WMI, DCOM, and WinRM do *not* create a 7045**, so never wait for a service-install event to "confirm" lateral movement on those paths; key on the parent process + logon type in the matrix above instead. (Note too that **only RDP produces a Type 10** logon — every other technique here is a **Type 3**, which is why the *parent process* is what disambiguates the four network-logon techniques from one another.)
+
 ### The data set
 This module's data is a curated slice of **EVTX-ATTACK-SAMPLES** by @sbousseaden — a public library of real ATT&CK-technique event logs. There is roughly **one `.evtx` per technique**, and each file is named for the event IDs it contains. The bundled files and their *real* contents are listed below; you will run tools against them by hand. See `data/README.md` for the full file-by-file provenance.
 
@@ -181,6 +195,8 @@ EvtxECmd -f lateral_movement_startup_3_11.evtx    --csv _out --csvf startup.csv
 - **98** — a connection was **successfully established** (the TCP/RDP session came up).
 - **140** — a **failed** authentication where the username does *not* exist; also records the source IP. Great for spotting password-spray against RDP.
 
+**RDP is a multi-log story — corroborate 131/98/140 with the other RDP channels.** RdpCoreTS captures the *transport*, but a full RDP hop also writes to two more logs on the target: `Microsoft-Windows-TerminalServices-RemoteConnectionManager/Operational` **1149** ("user authentication succeeded" — the *account* and *source host* now that auth passed), and `Microsoft-Windows-TerminalServices-LocalSessionManager/Operational` **21** (session logon), **22** (shell start), **25** (session reconnect). Lined up, RdpCoreTS **131** (who knocked) → RemoteConnectionManager **1149** (who authenticated) → LocalSessionManager **21/22** (the session actually started) reconstructs the whole connection. And in the **Security** log the same hop is a **4624 Type 10** (RemoteInteractive = RDP is the *only* technique in this module that produces Type 10) — which is exactly how you separate an RDP hop from all the Type 3 network-logon techniques above.
+
 ```bash
 EvtxECmd -f dfir_rdpsharp_target_RdpCoreTs_168_68_131.evtx        --csv _out --csvf rdp_target.csv
 EvtxECmd -f DFIR_RDP_Client_TimeZone_RdpCoreTs_104_example.evtx   --csv _out --csvf rdp_client.csv
@@ -197,7 +213,7 @@ Every technique above rides a logon. Two files show the **source** and the **han
 EvtxECmd -f LM_4624_mimikatz_sekurlsa_pth_source_machine.evtx --csv _out --csvf pth_src.csv
 EvtxECmd -f "ImpersonateUser-via local Pass The Hash Sysmon and Security.evtx" --csv _out --csvf pth_local.csv
 ```
-- **`LM_4624_mimikatz_sekurlsa_pth_source_machine.evtx`** — on the **attacker's** box: **4624** + **4672** (a logon granted admin) + **4688** ×3 (the mimikatz process) + **1102** (the Security log being cleared). This is the machine *launching* `sekurlsa::pth` (**Pass-the-Hash** — authenticating with a stolen password *hash* instead of the password). 1102 right after the attack tool is the classic "cover your tracks" tell.
+- **`LM_4624_mimikatz_sekurlsa_pth_source_machine.evtx`** — on the **attacker's** box: **4624** + **4672** (a logon granted admin) + **4688** ×3 (the mimikatz process) + **1102** (the Security log being cleared). This is the machine *launching* `sekurlsa::pth` (**Pass-the-Hash** — authenticating with a stolen password *hash* instead of the password). 1102 right after the attack tool is the classic "cover your tracks" tell. On this *source* side, also watch for **Security 4648 (a logon using explicit credentials)** — it fires whenever a process authenticates *as a different account* than the one running it, which is exactly what Pass-the-Hash, over-pass-the-hash, and `runas /netonly` all do. A 4648 on the source, paired with the resulting **4624 Type 3** on the target, brackets the hop from both ends.
 - **`ImpersonateUser-via local Pass The Hash...evtx`** — Sysmon 1/3/18 + Security **4624** + **5145**: a local PtH, then a pipe/share hop. The **4624 Type 3** is the through-line.
 - **`LM_PowershellRemoting_sysmon_1_wsmprovhost.evtx`** (Sysmon 1) — `wsmprovhost.exe`, the **WinRM / PowerShell-Remoting target process**. Seeing `wsmprovhost.exe` means *someone remoted in via WinRM*. (Module 9 goes deep on this.)
 
@@ -267,6 +283,10 @@ That is lateral movement told as a story: *credential theft → network logon �
 - Cyber Triage — *DFIR Breakdown: Impacket Remote Execution (smbexec/psexec/atexec)*: https://www.cybertriage.com/blog/dfir-breakdown-impacket-remote-execution-activity-smbexec/
 - The DFIR Spot — *Lateral Movement: RDP Event Logs* (RdpCoreTS 131/140): https://www.thedfirspot.com/post/lateral-movement-remote-desktop-protocol-rdp-event-logs
 - Ponder The Bits — *Windows RDP-Related Event Logs: Identification, Tracking, and Investigation*: https://ponderthebits.com/2018/02/windows-rdp-related-event-logs-identification-tracking-and-investigation/
+- SANS — *Hunt Evil: Your Practical Guide to Threat Hunting* poster (the per-technique lateral-movement source/destination artefact matrix): https://www.sans.org/posters/hunt-evil/
+- AboutDFIR — *The Key to Identify PsExec* (7045/PSEXESVC + the SMB-service artefact chain): https://aboutdfir.com/the-key-to-identify-psexec/
+- PureRDS — *Auditing Remote Desktop Services Logon Failures* (RemoteConnectionManager 1149 / LocalSessionManager 21/22/25 / RdpCoreTS 140): https://purerds.com/2018/03/07/auditing-rds-logon-failures/
+- MITRE ATT&CK — *Remote Services* (T1021, incl. RDP/SMB/DCOM/WinRM sub-techniques) & *Windows Management Instrumentation* (T1047): https://attack.mitre.org/techniques/T1021/ · https://attack.mitre.org/techniques/T1047/
 - @sbousseaden — *EVTX-ATTACK-SAMPLES* (the source of this module's data): https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES
 
 See `data/README.md` for the exact provenance and license of each bundled `.evtx`.

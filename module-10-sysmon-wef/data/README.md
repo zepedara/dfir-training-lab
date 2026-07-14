@@ -25,5 +25,5 @@ over default auditing. There is no separate "benign baseline" file: these captur
 busy hosts, so the ordinary Windows activity *within each file* is the benign background you learn
 to distinguish the anomaly from.
 
-> Inert event logs (no live payloads); safe to parse. All analysis runs offline in the lab VM (tools on your `PATH`, no network needed).
+> All analysis runs offline in the lab VM (tools on your `PATH`, no network needed).
 > Pull more Sysmon samples with `../get-data.sh`.

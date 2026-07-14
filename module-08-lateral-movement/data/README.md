@@ -38,5 +38,4 @@ Real contents (verified by parsing the files):
 | `LM_ImageLoad_NFSH_Sysmon_7.evtx` | image-load trace | Sysmon 7 ×2 |
 | `LM_regsvc_DirectoryServiceExtPt_Lsass_NTDS_AdamXpn.evtx` | regsvc / directory-service abuse | Sysmon 3 ×3,12,13,18 |
 
-> These are real attacker techniques captured for defensive training. They are inert event logs
-> (no executable payloads) and safe to parse; all analysis runs offline in the lab VM (the tools are already on your `PATH` — no network needed).
+> These are real attacker techniques captured for defensive training; all analysis runs offline in the lab VM (the tools are already on your `PATH` — no network needed).

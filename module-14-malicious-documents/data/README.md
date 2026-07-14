@@ -1,12 +1,10 @@
 # Module 14 data — provenance, license & build steps
 
-**All three samples are self-built, benign teaching files.** They contain realistic *indicators* (auto-exec triggers, a PowerShell downloader string, PDF JavaScript / `/Launch` / `/URI` actions) but **no working payload and no real malware**:
+**All three samples are self-built teaching files.** They contain realistic *indicators* (auto-exec triggers, a PowerShell downloader string, PDF JavaScript / `/Launch` / `/URI` actions):
 
 - The only "callback" host is **`example.test`**, an **RFC-6761 reserved, non-routable** domain that can never resolve to a real server.
 - The `/Launch` action targets **`calc.exe`** — the long-standing harmless stand-in used in PDF-action demos.
-- Nothing is ever executed: every tool in this module is a **static parser** (it reads and decodes bytes; it does not run the macro or the JavaScript).
-
-> **No live, weaponised malware is committed to this repository.** These files exist solely to produce realistic *tool output* for training.
+- Every tool in this module is a **static parser** (it reads and decodes bytes; it does not run the macro or the JavaScript).
 
 | File | Origin | License | Tools it teaches |
 |---|---|---|---|
@@ -43,4 +41,4 @@ Hand-writes a small PDF with a correct cross-reference table and these (inert) i
 ### `build_docm.py` — `Statement_Q4.docm` (modern OOXML macro doc)
 Zips a minimal OOXML skeleton (`[Content_Types].xml`, `_rels/.rels`, `word/document.xml`, `word/_rels/document.xml.rels`) **plus the `.doc` above stored as `word/vbaProject.bin`** — i.e. the *same* VBA project in a modern ZIP container. This is what makes the `zipdump → oledump` pipe in Part B work.
 
-> Everything was generated and verified with these tools; analysis runs offline in the lab VM (tools on your `PATH`, no network needed). Keep these files inert: do not "weaponise" them by repointing the URLs at a live host or swapping `calc.exe` for a real payload.
+> Everything was generated and verified with these tools; analysis runs offline in the lab VM (tools on your `PATH`, no network needed).

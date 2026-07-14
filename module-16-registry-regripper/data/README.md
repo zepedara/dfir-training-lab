@@ -5,7 +5,7 @@ Real Windows **registry hives** from the public **DFIR-Madness "The Stolen Szech
 - **`CITADEL-DC01`** — the domain controller (server). Its machine-wide config hives.
 - **`DESKTOP-SDN1RPT`** — the workstation (users `mortysmith`, `Administrator`). Its per-user hives.
 
-> **Defensive/training use only.** These are real hives from a published teaching dataset; respect the original author's terms and do not redistribute non-educationally. They are configuration databases, not malware — but they *reference* the case malware `coreupdater.exe`, so they live behind the lab's normal evidence handling.
+> **Defensive/training use only.** These are real hives from a published teaching dataset; respect the original author's terms and do not redistribute non-educationally.
 
 ## Files (committed)
 

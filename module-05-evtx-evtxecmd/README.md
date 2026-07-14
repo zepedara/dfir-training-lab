@@ -45,6 +45,13 @@ Module 6 will let detection *rules* automatically flag the suspicious events for
 
 > **Plain-language summary:** EvtxECmd turns a pile of unreadable binary log files into one clean spreadsheet, and uses community "Maps" to label the important fields for you.
 
+### The Maps system — the single most misunderstood mechanic
+Every Windows channel invents its own field names and its own XML layout, so a raw dump of the Security log looks nothing like a raw dump of the Sysmon log. EvtxECmd's Maps solve that by **normalising every schema into one common set of columns** — chiefly the generic **`PayloadData1`–`PayloadData6`** slots plus friendlier ones like **`UserName`**, **`RemoteHost`**, and **`ExecutableInfo`**. That uniform shape is what lets a single sorted CSV hold logons, downloads, process starts, and PowerShell side by side.
+
+The catch that trips up almost every beginner: **what a given column *means* is Event-ID-dependent.** `PayloadData1` might hold a logon type on a 4624 row, a target filename on a Sysmon 11 row, and a job title on a BITS 59 row — because the meaning is decided by whichever Map matched that provider + Event ID. So a column header is never enough on its own; to know what a value represents you trace it back through the **Map file** for that event. The Maps are per-event YAML blueprints in EvtxECmd's `Maps\` folder, crowd-sourced and shipped with the tool. Because the community adds and fixes them constantly, refresh your copy with **`EvtxECmd --sync`**, which pulls the latest Maps straight from Eric Zimmerman's GitHub repository before a big parse.
+
+When you hit an event that has **no Map** (its fields land in a raw `PayloadData` blob), authoring one is straightforward and is exactly the muscle detection engineering demands: dump the event's XML, find the Event ID and the field paths you care about, and write a small Map entry that labels them. Learning to read an event's real schema well enough to map it is the same skill you use in Module 6 to understand what a Sigma rule is actually matching on.
+
 ---
 
 ## 3. The scenario in this module's data
@@ -103,7 +110,7 @@ Processed 4 files in 0.49 seconds
 You now have one merged spreadsheet, **`events.csv`**, holding all 14 events from all four channels — already in a single sortable table.
 
 ### Step 2 — Look at the column headers
-On the lab VM, open `events.csv` in Excel/LibreOffice/Timeline Explorer, or peek from the shell:
+The intended companion for this CSV is **Timeline Explorer** (Eric Zimmerman's free grid viewer): it opens EvtxECmd output natively, lets you sort by `TimeCreated`, filter, and colour-tag rows, and is built for exactly the "many channels, one recursive `-d` parse, one timeline" workflow this module is teaching — point `-d` at a tree of `.evtx` and every channel underneath collapses into one sortable table you scroll in Timeline Explorer. On the lab VM, open `events.csv` in Excel/LibreOffice/Timeline Explorer, or peek from the shell:
 ```bash
 head -1 events.csv
 ```
@@ -215,7 +222,9 @@ An attacker used a **living-off-the-land** trick to pull a payload past defenses
 
 ## 10. Sources & further reading
 
-- EvtxECmd & the EZ Tools Maps — Eric Zimmerman: <https://github.com/EricZimmerman/evtx> · Maps README: <https://github.com/EricZimmerman/evtx/blob/master/evtx/Maps/!!!!README.md>
+- EvtxECmd & the EZ Tools Maps — Eric Zimmerman: <https://github.com/EricZimmerman/evtx> · Maps README (schema of a Map, `PayloadData` fields, `--sync`, authoring your own): <https://github.com/EricZimmerman/evtx/blob/master/evtx/Maps/!!!!README.md>
+- SANS — EvtxECmd tool page / EZ Tools reference (usage & the Maps normalisation model): <https://www.sans.org/tools/evtxecmd/>
+- Harlan Carvey, *Windows Incident Response* — event-log analysis and why knowing an event's schema (not just its ID) is the core skill: <https://windowsir.blogspot.com/>
 - LOLBAS project — `Desktopimgdownldr`: <https://lolbas-project.github.io/lolbas/Binaries/Desktopimgdownldr/>
 - SentinelLabs, "Living Off Windows Land – A New Native File 'downldr'": <https://www.sentinelone.com/labs/living-off-windows-land-a-new-native-file-downldr/>
 - Microsoft Learn — Event 4624 (logon) reference: <https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4624>

@@ -27,7 +27,7 @@ The key subkey is **`InventoryApplicationFile`** — one entry per executable Wi
 - **SHA1 hash** of the file (Amcache calls this the **FileID**) — the single most valuable field. A SHA1 is a 40-hex-character fingerprint of the file's exact bytes; two files with the same SHA1 are the same file.
 - **File size** (in bytes).
 - **LinkDate** — the **compile timestamp** baked into the program's PE header by whoever built it (PE = "Portable Executable", the Windows .exe/.dll format).
-- **FileKeyLastWriteTimestamp** — when Amcache last wrote this entry (a rough "first inventoried / first seen" time).
+- **FileKeyLastWriteTimestamp** — when Amcache last wrote this entry (a rough "first inventoried / first seen" time). This is the **registry key's LastWrite time**, i.e. when the *appraiser recorded the file* — **not** when the file executed. It often lands near a run (as you'll see for `coreupdater.exe`), but never assume "LastWrite = execution time"; the two coincide only when the inventory happens to run right after a launch.
 - **ProductName, Version, Description, OriginalFileName, BinaryType** (32- vs 64-bit), **IsOsComponent**, **IsPeFile**, and more.
 
 ### Why investigators love it (what you can prove)
@@ -43,6 +43,7 @@ Amcache is the **"identity / attribution"** corner of the Triad. The **SHA1** is
 3. **The raw SHA1 carries four padding zeros** in the hive (the stored FileID looks like `0000` + the real 40-hex SHA1). **AmcacheParser strips those leading zeros for you**, so the CSV shows a clean, lookup-ready 40-character SHA1. (Good to know if you ever read the raw hive by hand.)
 4. **LinkDate is attacker-controllable and often nonsense.** It's whatever value the compiler wrote (or the author faked). In our real data you'll see genuine Microsoft binaries with absurd LinkDates (years like 2049, 2077, 2090) right alongside the malware's fake **2010** date — so **never treat an odd LinkDate alone as suspicious.** It's one weak signal among several.
 5. Like other hives, `Amcache.hve` can be **dirty** and ships with **`.LOG1/.LOG2`** transaction logs that the parser replays (same lesson as Module 2: collect the logs).
+6. **The Amcache schema has evolved — so the layout differs between machines.** Early Amcache (Windows 8 / early Windows 10) stored entries under **`Root\File`** and **`Root\Programs`**; modern builds use **`Root\InventoryApplicationFile`** (plus `InventoryApplication`, `InventoryDriverBinary`, etc.), which is what this hive uses and where the SHA1 now lives. Crucially, the experimental research (see the ANSSI paper below) found the format is driven by the version of the underlying **appraiser DLL, not the Windows version** — a patched-up older OS can carry a newer schema and vice-versa. Always let a version-aware parser (AmcacheParser) detect the layout rather than assuming a fixed key path.
 
 ---
 
@@ -197,12 +198,16 @@ Each artifact covers the others' blind spots. `coreupdater.exe` is in **Amcache 
 
 ## Sources & further reading
 - **AmcacheParser / EZ Tools** (official tool + AboutDFIR manual): https://github.com/EricZimmerman/AmcacheParser and https://aboutdfir.com/toolsandartifacts/windows/eric-zimmermans-tools/
+- **ANSSI — Blanche Lagny, "Analysis of the AmCache" (2019)** (the definitive experimental paper; establishes by testing that the Amcache format tracks the **appraiser DLL version, not the Windows version**, and rigorously separates what the timestamps do and don't mean): https://www.ssi.gouv.fr/uploads/2019/01/anssi-coriin_2019-analysis_amcache.pdf
+- **The DFIR Spot — "Evidence of Program Existence: Amcache"** (a clear, current walkthrough of why Amcache proves *existence*, not execution): https://thedfirspot.com/
 - **The definitive Amcache.hve forensic reference** (every key/value/timestamp): https://www.amcacheparser.com/en/blog/amcache-hve-reference
 - **Securelist (Kaspersky) — "AmCache artifact: forensic value and a tool for data extraction"**: https://securelist.com/amcache-forensic-artifact/117622/
 - **Yogesh Khatri — "Amcache.hve in Windows 8 — Goldmine for malware hunters"** (origins + the SHA1 detail): https://www.swiftforensics.com/2013/12/amcachehve-in-windows-8-goldmine-for.html
 - **Magnet Forensics — "ShimCache vs AmCache"** (how identity vs existence pair up): https://www.magnetforensics.com/blog/shimcache-vs-amcache-key-windows-forensic-artifacts/
 - **13Cubed — "ShimCache and AmCache"** (free video): https://www.youtube.com/c/13cubed
 - **DFIR Madness — Case 001** (dataset provenance): https://dfirmadness.com/the-stolen-szechuan-sauce/
+
+**ATT&CK mapping.** Amcache's SHA1 is what lets you attribute a binary that ran via **T1204 (User Execution)** and, because a masquerading binary like `coreupdater.exe` sits in `System32` with `IsOsComponent=False`, catch **T1036 (Masquerading)** by comparing name/path/hash/metadata. If an attacker deletes the payload after use, the Amcache entry (hash + path + inventory time) often survives it — evidence that outlives the **T1070.004 (Indicator Removal: File Deletion)** cleanup.
 
 ## Pivot
 - The SHA1 → **Module 4 (Scaling)**: stack that hash across many hosts with AppCompatProcessor to find every infected box.

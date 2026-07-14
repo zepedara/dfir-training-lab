@@ -22,13 +22,18 @@ When you log in, Windows caches your credential material in the memory of a prot
 ### The two evidence sources (from the decks)
 1. **Catch the dump.** With **Sysmon** installed, opening another process's memory is logged as **Sysmon Event ID 10 (ProcessAccess)**. When the *target* of that access is `lsass.exe`, you look at the **`GrantedAccess`** field — the exact memory-access rights that were requested. Certain values are a near-perfect fingerprint of dumping tools:
 
-   | GrantedAccess | Meaning | Typical tool |
-   |---|---|---|
-   | `0x1010` | read memory + query info | Mimikatz `sekurlsa::logonpasswords` |
-   | `0x1410` | query info + read memory (adds full PROCESS_QUERY_INFORMATION 0x0400 over 0x1010) | ProcDump / Task Manager dump |
-   | `0x143a` | broad read/query/VM rights | Mimikatz lsadump / Invoke-Mimikatz |
+   `GrantedAccess` is a **bitmask** — each set bit is one process-access right — so the way to read it is to *decompose it into its bits*, not to memorise magic numbers. The rights that matter here are `PROCESS_CREATE_THREAD` (`0x0002`), `PROCESS_VM_OPERATION` (`0x0008`), `PROCESS_VM_READ` (`0x0010`), `PROCESS_VM_WRITE` (`0x0020`), `PROCESS_QUERY_INFORMATION` (`0x0400`), and `PROCESS_QUERY_LIMITED_INFORMATION` (`0x1000`). The common masks build up one bit at a time:
 
-   > **Important nuance:** Sysmon compares `GrantedAccess` as a *literal string*, and tools tweak their flags over time, so these values are strong **leads**, not a complete allow/deny list. Modern Sigma rules also flag any *uncommon* access mask on LSASS regardless of the exact number. No legitimate everyday process needs to read LSASS's memory — so any of these on `lsass.exe` deserves immediate attention.
+   | GrantedAccess | Bitwise decode | Meaning | Typical tool |
+   |---|---|---|---|
+   | `0x1010` | `0x1000` QUERY_LIMITED_INFORMATION + `0x10` VM_READ | the *minimum* to read LSASS memory and carve secrets | classic **Mimikatz** `sekurlsa::logonpasswords` |
+   | `0x1410` | `0x1010` **+ `0x400`** QUERY_INFORMATION | full-query + read | **ProcDump / NanoDump / Cobalt Strike** dumpers — note this mask is *read-only*; it is **not** a handle-duplication signature (a common public-table error) |
+   | `0x1438` | `0x1410` **+ `0x20`** VM_WRITE **+ `0x8`** VM_OPERATION | read **and write** LSASS memory | **SSP / security-package injection** |
+   | `0x143a` | `0x1438` **+ `0x2`** CREATE_THREAD | read/write + spawn a thread *inside* LSASS | injection-style **Mimikatz** / Invoke-Mimikatz |
+
+   > **The strongest tell is the write/execute bits.** A tool that only *reads* to dump memory never needs `PROCESS_VM_WRITE` (`0x20`) or `PROCESS_CREATE_THREAD` (`0x2`) — legitimate read-only diagnostics (EDR, backup, a debugger inspecting a crash) don't set them. So the moment `0x20`/`0x2` appear on an `lsass.exe` access (as in `0x1438`/`0x143a`), you are almost certainly looking at code being *injected into* LSASS, not just read from it.
+
+   > **Important nuance:** Sysmon compares `GrantedAccess` as a *literal string*, and attackers deliberately **vary the mask** (and can dump via a *duplicated* handle so the tell-tale open never shows on LSASS at all), so these values are strong **leads**, not a complete allow/deny list. Modern Sigma rules also flag any *uncommon* access mask on LSASS regardless of the exact number. Because the mask alone can be evaded, corroborate with the **`CallTrace`** (a stack that ends in *unbacked* / non-image memory, or that passes through `dbghelp.dll`+`dbgcore.dll`, is the fingerprint of `MiniDumpWriteDump`), **Sysmon Event 11** (creation of a `.dmp` file where LSASS was dumped to disk), and — if a **SACL** is set on `lsass.exe` — **Security 4656/4663** (a handle to LSASS was *opened*/*read*, logged by the object-access auditor rather than by Sysmon). No legitimate everyday process needs to read LSASS's memory — so any of these on `lsass.exe` deserves immediate attention.
 
 2. **Follow the logons.** After stealing a credential, the attacker *uses* it — and that produces **Security log logon events**. The key one is **Event ID 4624 (an account successfully logged on)**, whose **Logon Type** field tells you *how* they logged in:
 
@@ -40,6 +45,8 @@ When you log in, Windows caches your credential material in the memory of a prot
    | **10 / 11** | RemoteInteractive (**RDP**) / cached interactive | remote desktop / offline-cached logon |
 
    Companion events: **4625** (failed logon — brute force/spray), **4648** (a logon using *explicit* credentials — "run as this other account"), and **4672** (special/admin privileges assigned at logon — an admin logon).
+
+   **Reading a Pass-the-Hash across two hosts.** PtH leaves a matched pair of artefacts. On the **source** machine (where the stolen hash is injected, e.g. `sekurlsa::pth`) you see a **4624 Type 9 (NewCredentials)** whose **Logon Process is `seclogon`** — the local identity is kept but *different* network creds are attached — usually alongside a **4648** (explicit-credential logon). On the **target** machine the reused hash arrives as a **4624 Type 3** with an **NTLM** authentication package (Kerberos would have needed the plaintext/ticket, so NTLM here is itself a signal), typically preceded by a **4776** (the local NTLM credential-validation event). Type 9-`seclogon` on one host and Type 3-NTLM on another, close in time, is the PtH signature.
 
 ### What you prove with all this
 Tie the two together and you can prove the *spread*: "LSASS was dumped on host A at 14:49 (Sysmon 10, GrantedAccess `0x1010`), and three minutes later those creds appear in a Type-9 NewCredentials logon reaching host B (Security 4624)." That chain — **dump → abnormal logon** — is the heart of identity analysis.
@@ -137,7 +144,7 @@ Compare with `sysmon_3_10_Invoke-Mimikatz...` (GrantedAccess **`0x143a`**, sourc
 ### Step 3 — Catch the stealthy variants (LOLBAS dump & DCSync)
 Two samples don't look like "Mimikatz" at all:
 - **`sysmon_10_comsvcs_minidump_lsass`** — here the *source* opening LSASS is `rundll32.exe` running `comsvcs.dll` (a trusted Windows DLL). Chainsaw's "**Process Memory Dump Via Comsvcs.DLL**" rule catches the rundll32+comsvcs+MiniDump command line, and "**Uncommon Process Access Rights**" catches the LSASS read. This is the LOLBAS way to dump creds without bringing your own tool.
-- **`security_4662_dcsync`** — there's **no LSASS access here at all**. On a **Domain Controller** (`DC1.insecurebank.local`), Security **Event 4662** shows account `Administrator` performing a **directory replication** (the object access includes the `DS-Replication-Get-Changes` rights GUID). Chainsaw fires "**Mimikatz DC Sync / Active Directory Replication from Non-Machine Account**." The tell: replication should only ever be requested by *domain-controller computer accounts*, never by a user like `Administrator`. That's an attacker pulling password hashes straight from AD.
+- **`security_4662_dcsync`** — there's **no LSASS access here at all**. On a **Domain Controller** (`DC1.insecurebank.local`), Security **Event 4662** shows account `Administrator` performing a **directory replication**. The decode is in the event's fields: the **`AccessMask` is `0x100`** (the "Control Access" / extended-right access), and the **`Properties`** field names the specific replication **control-access-right GUIDs** — **`DS-Replication-Get-Changes`** (`1131f6aa-9c07-11d1-f79f-00c04fc2dcd2`), **`DS-Replication-Get-Changes-All`** (`1131f6ad-9c07-11d1-f79f-00c04fc2dcd2`), and **`DS-Replication-Get-Changes-In-Filtered-Set`** (`89e95b76-444d-4c62-991a-0facbeda640c`). Those three GUIDs are what Mimikatz `lsadump::dcsync` invokes to pull secrets. Chainsaw fires "**Mimikatz DC Sync / Active Directory Replication from Non-Machine Account**." The tell: replication should only ever be requested by *domain-controller computer accounts*, never by a user like `Administrator`. That's an attacker pulling password hashes straight from AD. (Note 4662 only records this if **"Audit Directory Service Access"** is enabled *and* a SACL for those rights exists on the domain object — without that audit policy the DCSync is invisible in the Security log.)
 
 ### Step 4 — Read the logons (who used the creds, and how)
 After a dump, chase how the creds were *used*. The fast way is Hayabusa's logon summary; run it on the benign baseline first so you learn to read the table:
@@ -211,6 +218,7 @@ An attacker with code execution went for the master key. Across these logs you c
 - Microsoft Learn — Event 4624 (logon types reference): <https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4624>
 - TrustedSec — Sysmon Community Guide, Process Access (Event 10 / GrantedAccess): <https://github.com/trustedsec/SysmonCommunityGuide/blob/master/chapters/process-access.md>
 - Splunk — "You Bet Your Lsass: Hunting LSASS Access": <https://www.splunk.com/en_us/blog/security/you-bet-your-lsass-hunting-lsass-access.html>
+- jsecurity101 — "Syncing Into the Shadows: DCSync Detection" (4662 AccessMask `0x100` + the replication rights GUIDs): <https://jsecurity101.medium.com/syncing-into-the-shadows-b433cbcb37be>
 - MITRE ATT&CK — OS Credential Dumping: LSASS Memory (T1003.001) & DCSync (T1003.006): <https://attack.mitre.org/techniques/T1003/001/> · <https://attack.mitre.org/techniques/T1003/006/>
 - LOLBAS — `comsvcs.dll` MiniDump: <https://lolbas-project.github.io/lolbas/Libraries/Comsvcs/>
 - Hayabusa `logon-summary`: <https://github.com/Yamato-Security/hayabusa>

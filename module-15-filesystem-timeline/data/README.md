@@ -6,9 +6,7 @@ This module ships a **small, purpose-built synthetic NTFS disk image** plus the
 reproducible — you can regenerate every byte and verify there is nothing hidden.
 
 > **Be honest about your evidence (a DFIR lesson in itself).** This is **not** a
-> dump of a real victim machine and contains **no real malware** — `coreupdater.exe`
-> here is a 77-byte text stub with an `MZ` header, not an executable. The image
-> re-uses the running characters of the lab's narrative — host **`DESKTOP-SDN1RPT`**,
+> dump of a real victim machine — it re-uses the running characters of the lab's narrative — host **`DESKTOP-SDN1RPT`**,
 > user **`mortysmith`**, malware name **`coreupdater.exe`** — drawn from the public
 > **DFIR Madness "Stolen Szechuan Sauce" (Case 001)** teaching dataset, so it threads
 > with Modules 1-4. The *filesystem-level ground truth* (timestomping, deletions,
@@ -40,7 +38,7 @@ All times are **UTC**. The intrusion window is **2026-06-15 ~09:10–09:20**; th
 
 - **Synthetic image + `$MFT`:** authored by this lab specifically for Module 15;
   released under the same licence as the repository. Free to use, modify, redistribute
-  for training. Contains no third-party data and no malware.
+  for training. Contains no third-party data.
 - **Narrative/character names** (`DESKTOP-SDN1RPT`, `mortysmith`, `coreupdater.exe`):
   inspired by **DFIR Madness — "The Stolen Szechuan Sauce" (Case 001)**,
   <https://dfirmadness.com/the-stolen-szechuan-sauce/>, a publicly published intrusion

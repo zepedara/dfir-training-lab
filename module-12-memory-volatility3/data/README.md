@@ -20,7 +20,7 @@ This is the memory image from the **"NotchItUp"** forensics challenge of **InCTF
 - **Source write-up / provenance:** bi0s — *InCTFi 2019: NotchItUp* — <https://blog.bi0s.in/2019/09/24/Forensics/InCTFi19-NotchItUp/>
 - **Sample catalogue entry:** <https://github.com/pinesol93/MemoryForensicSamples>
 
-**License note:** like most public CTF challenge files, the image is released for **educational / training use** but ships **without an explicit open-source license file**. It contains **no malware** — it is a benign Windows 7 desktop capture whose "challenge" is recovering data the user protected in an archive. We **redistribute it by reference only** (via `get-data.sh`, not by committing it) and credit the original authors. If you intend to use it beyond personal training, check the original challenge's terms first.
+**License note:** like most public CTF challenge files, the image is released for **educational / training use** but ships **without an explicit open-source license file**. It is a Windows 7 desktop capture whose "challenge" is recovering data the user protected in an archive. We **redistribute it by reference only** (via `get-data.sh`, not by committing it) and credit the original authors. If you intend to use it beyond personal training, check the original challenge's terms first.
 
 ## What's in it (so you know what you're looking at)
 

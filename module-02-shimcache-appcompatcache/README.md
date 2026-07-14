@@ -38,7 +38,7 @@ ShimCache is the **"existence"** corner of the Triad. Its superpower: the **appl
 That makes it a favourite for catching staging activity and anti-forensics.
 
 ### How it works under the hood (and the three big gotchas)
-1. **It builds up in memory while Windows runs**, and is **only written ("flushed") to the `SYSTEM` hive on a clean shutdown/reboot.** Consequence: if you grab a `SYSTEM` hive from a *live* machine, recent activity may not be in it yet. (This is "The Volatility of ShimCache" from the deck.)
+1. **It builds up in memory while Windows runs**, and is **only written ("flushed") to the `SYSTEM` hive on a clean shutdown/reboot.** Consequence: if you grab a `SYSTEM` hive from a *live* machine, the newest activity may still be **memory-only** and not on disk yet — and a crash or hard power-off can lose it entirely. So the freshest entries you most want may be exactly the ones missing from a live-acquired hive. (This is "The Volatility of ShimCache" from the deck.)
 2. **The Windows 10/11 "executed" flag is not trustworthy.** On Win7 it meaningfully meant "this ran"; on Win10 it commonly reads `No` even for things that clearly ran (you'll see this in our data — *every* row says `Executed: No`). **Treat ShimCache as proof of *existence/awareness*, never as proof of execution.** Use Prefetch/Amcache for the "did it run" claim.
 3. **The cache is ordered roughly most-recent-first and capped** (around **1024** entries on modern Windows). So **CacheEntryPosition 0 = most recently inserted**, giving you a rough relative timeline; and old entries eventually fall off the end (absence ≠ never present).
 
@@ -88,6 +88,8 @@ Found 266 cache entries for Windows10C_11 in ControlSet001
 **Reading it:**
 - *"Two transaction logs found … applied"* — the hive was dirty and the tool replayed the `.LOG` files. (If the logs were missing, you'd risk an incomplete or aborted parse — hence we always collect them.)
 - *"Found 266 cache entries … Windows10C_11"* — 266 executables were cached; `Windows10C_11` is the detected cache format (Windows 10 Creators+ / 11). Each control set is a saved hardware/driver configuration; the live one is `ControlSet001` here.
+
+> **Parse *every* control set, not just the current one.** A `SYSTEM` hive usually holds more than one `ControlSet00x` (e.g. `ControlSet001` *and* `ControlSet002` — the *last known good* configuration). Each carries its own `AppCompatCache`, and an older control set can still hold entries the live one has already cycled off the end. AppCompatCacheParser reads **all** control sets by default (that's the behaviour you want); the `-c <n>` flag *narrows* it to one. Don't restrict yourself to `CurrentControlSet` and miss a record preserved only in the other set.
 
 > **Handy flags:** add `-t` to sort entries by last-modified time (newest first) instead of cache position, and `-c <n>` to parse only one control set. `--nl` tells the tool to *ignore* transaction logs (use only if you deliberately want the on-disk state) — normally you want the default, which replays them.
 
@@ -182,11 +184,13 @@ The desktop `DESKTOP-SDN1RPT` (users `mortysmith` and `administrator` — the ca
 
 ## Sources & further reading
 - **AppCompatCacheParser / EZ Tools** (official tool + AboutDFIR manual): https://github.com/EricZimmerman/AppCompatCacheParser and https://aboutdfir.com/toolsandartifacts/windows/eric-zimmermans-tools/
-- **Mandiant — "Caching Out: The Value of Shimcache for Investigators"** (the foundational paper on ShimCache forensics): https://cloud.google.com/blog/topics/threat-intelligence/caching-out-the-value-of-shimcache-for-investigators/
+- **Mandiant — "Caching Out: The Value of Shimcache for Investigators"** (the standard modern reference; it builds directly on Andrew Davis's seminal 2012 whitepaper *"Leveraging the Application Compatibility Cache in Forensic Investigations,"* which first documented the blob's binary format): https://cloud.google.com/blog/topics/threat-intelligence/caching-out-the-value-of-shimcache-for-investigators/
+- **13Cubed — "Let's Talk About Shimcache: The Most Misunderstood Artifact"** (Richard Davis; the clearest correction of the "presence = execution" myth on Win8/10/11): https://www.youtube.com/c/13cubed
 - **Magnet Forensics — "ShimCache vs AmCache: Key Windows Forensic Artifacts"** (how the two differ and pair): https://www.magnetforensics.com/blog/shimcache-vs-amcache-key-windows-forensic-artifacts/
 - **SANS DFIR — Windows Forensic Analysis poster** (where ShimCache sits among execution artifacts): https://www.sans.org/posters/windows-forensic-analysis/
-- **13Cubed — "ShimCache and AmCache" episode** (free video walkthrough): https://www.youtube.com/c/13cubed
 - **DFIR Madness — Case 001** (dataset provenance): https://dfirmadness.com/the-stolen-szechuan-sauce/
+
+**ATT&CK mapping.** ShimCache lives under the `AppCompatCache` key that the **T1546.011 (Event Triggered Execution: Application Shimming)** technique abuses — the same application-compatibility subsystem attackers can weaponise for persistence is the one that leaves this forensic trail. Reading the cache is how you'd both detect shim-based persistence and recover the existence of tooling that has since been deleted.
 
 ## Pivot
 - A suspicious path here → **Module 1** (did it run?) and **Module 3** (what's its SHA1?). To hunt one binary across many hosts → **Module 4**.

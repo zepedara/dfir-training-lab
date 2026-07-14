@@ -32,6 +32,8 @@ Both tools in this module read raw `.evtx`, load the Sigma rule set, and report 
 
 You typically run **both**: Hayabusa for the fast big-picture timeline, Chainsaw to pull the named, evidence-rich detections you'll quote in your report.
 
+**Where these two sit next to Module 5's EvtxECmd — three tools, three distinct jobs.** Keep the division of labour straight: **EvtxECmd parses and *normalises*** raw `.evtx` into one clean, human-readable table (it makes no judgement about good vs. bad); **Chainsaw is the fast incident-response *triage and search* engine** — it can grep artefacts for a string or timestamp in seconds *and* run the full Sigma rule set for named detections; **Hayabusa is the *scored hunting* tool** — its whole design is to emit one severity-ranked timeline you read worst-first. Parse with EvtxECmd, triage/search and Sigma-hunt with Chainsaw, score-and-rank with Hayabusa. They overlap on Sigma, but you reach for each for a different reason.
+
 ---
 
 ## 2. What the tools do (high level)
@@ -95,7 +97,7 @@ Saved file: timeline.csv
 ```
 **Read the summary:** Hayabusa loaded ~4,600 rules, kept the ~2,280 that apply to these channels, and **8 of 12 events were notable**, so a third of the events (the 4 with no hits) were dropped as noise before you read a line. The headline alert is **HIGH: "PsExec Service Child Process Execution."** That's the whole value proposition: 12 events became one obvious lead.
 
-> **Version caveat.** The exact rule/detection counts shown here — Hayabusa's "Total detection rules", "enabled after channel filter", and "Unique detections", plus Chainsaw's "Loaded N detection rules" — depend on the installed Hayabusa/Sigma/Chainsaw versions, so a student's numbers may differ from these; the **shape** of the result is what matters, not the precise figures.
+> **Version caveat — counts drift, so never treat them as fixed.** The exact rule/detection counts shown here — Hayabusa's "Total detection rules", "enabled after channel filter", and "Unique detections", plus Chainsaw's "Loaded N detection rules" — depend on the installed Hayabusa/Sigma/Chainsaw versions, so a student's numbers may differ from these; the **shape** of the result is what matters, not the precise figures. These rulesets move fast: a current Hayabusa build bundles **3,800+ detection rules** (its own `hayabusa-rules` set plus converted Sigma), and both that set and the upstream SigmaHQ repo gain and revise rules on almost every release. The right habit is to **look inside the tool's `rules/` (or `sigma/`) folder and update it** — Hayabusa's `update-rules` command, or a `git pull` on the Sigma repo — rather than memorising a rule count. A number that was "correct" last month is simply the version you happened to run, not a property of the tool.
 
 ### Step 2 — Read the timeline
 Open `timeline.csv`. The important columns are `Timestamp`, `RuleTitle`, `Level`, `Computer`, `Channel`, `EventID`. Sorted by time, the story is:
@@ -119,6 +121,8 @@ chainsaw hunt sysmon_privesc_psexec_dwell.evtx \
 - **`...evtx`** — the artifact to hunt (a file **or** a folder).
 - **`-s /opt/chainsaw/sigma`** — the **s**igma rules folder bundled with chainsaw on the lab VM (adjust to your VM's path if different).
 - **`--mapping .../sigma-event-logs-all.yml`** — the **mapping** (Section 1) that tells Chainsaw where each Sigma logical field lives inside a real Windows event. Without it, Chainsaw can't translate the rules to these logs.
+
+> **The #1 Chainsaw gotcha: wrong/missing mapping = zero hits, and the tool *looks* broken.** If you forget `--mapping`, or point it at the wrong mapping file for these logs, `chainsaw hunt` will happily load the rules, scan the events, and report **nothing** — no error, just no detections. Students conclude the tool is broken or the logs are clean, when in fact the Sigma field names were never translated to the event's real fields, so *nothing could ever match*. When a hunt over known-malicious samples comes back empty, **suspect the mapping first**: confirm you passed `--mapping sigma-event-logs-all.yml` (the general-purpose mapping that covers Sysmon + the core Windows channels used here) and that its path is correct.
 
 **Expected output (trimmed):**
 ```
@@ -200,7 +204,8 @@ On `MSEDGEWIN10`, an attacker who already had a foothold used **PsExec** to exec
 
 - Chainsaw — WithSecure Labs: <https://github.com/WithSecureLabs/chainsaw> · Usage wiki: <https://github.com/WithSecureLabs/chainsaw/wiki/Usage>
 - Hayabusa — Yamato Security: <https://github.com/Yamato-Security/hayabusa> · "Analyzing Sample Timeline Results": <https://github.com/Yamato-Security/hayabusa/wiki/Analyzing-Sample-Timeline-Results>
-- Sigma rules & format — SigmaHQ: <https://github.com/SigmaHQ/sigma> · About Sigma: <https://sigmahq.io/>
+- `hayabusa-rules` — Yamato Security (the bundled rule set; rule counts and `update-rules`): <https://github.com/Yamato-Security/hayabusa-rules>
+- Sigma rules & format — SigmaHQ: <https://github.com/SigmaHQ/sigma> · Sigma rule specification (the `logsource`/`detection` schema): <https://github.com/SigmaHQ/sigma-specification> · About Sigma: <https://sigmahq.io/>
 - MITRE ATT&CK — PsExec / Remote Services (T1021.002), Service Execution (T1569.002): <https://attack.mitre.org/techniques/T1021/002/>
 - Sample provenance — hayabusa-sample-evtx (Yamato): <https://github.com/Yamato-Security/hayabusa-sample-evtx> · EVTX-ATTACK-SAMPLES (@sbousseaden): <https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES>
 

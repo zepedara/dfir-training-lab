@@ -41,6 +41,15 @@ There is **one `NTUSER.DAT` and one `UsrClass.dat` per user profile**, so on a m
 - **Accounts** — "what local users and admins exist?" → SAM.
 - **Device & network history** — "was a USB stick plugged in? what network did it join?" → USBSTOR, MountedDevices, NetworkList.
 
+### The execution-evidence artifacts (beyond persistence)
+Persistence answers *"how did it survive a reboot?"*; **execution evidence** answers *"did it actually run, when, and how often?"* The registry carries several execution artifacts worth naming explicitly, because between them they catch **GUI** *and* **silent command-line** programs — the pair you lean on when Prefetch is disabled or wiped:
+
+- **UserAssist** (`NTUSER.DAT`, per user) — records GUI programs a user launched, with a **run count**, a **last-run time**, and (Win7+) a **focus-time** counter (total seconds the window was in the foreground). The names are stored **ROT13-encoded** under two GUID subkeys: **`{CEBFF5CD-ACE2-4F4F-9178-9926F41749EA}`** for executables and **`{F4E57C4B-2036-45F0-A9AB-443BCFE33D9F}`** for shortcut (`.lnk`) launches. RegRipper's `userassist` plugin un-ROT13s the names and decodes the counters for you (Step 12).
+- **BAM / DAM** (Background / Desktop Activity Moderator, `SYSTEM\…\Services\bam\State\UserSettings\<SID>`) — on Windows 10 1709+ this records the **full path of each executable a user ran**, and the **first 8 bytes** of the value are a **FILETIME of that program's last execution (UTC)**. Retention is only **~7 days**, but that short window is exactly what makes it superb for catching **silent / CLI malware** that never shows up in UserAssist. It is keyed by user **SID**, so it also tells you *which* account ran the binary.
+- **MUICache** (`UsrClass.dat`) — caches the friendly display names of executables Explorer has launched; a rougher "has-been-run" list that often keeps entries after the binary is deleted.
+
+Together with ShimCache and Amcache (Modules 2-3), these form the registry's side of the **execution triad** — no single one is complete, so you corroborate across them.
+
 ---
 
 ## 2. What the tool does — RegRipper
@@ -225,6 +234,15 @@ This is **fileless / registry-resident persistence (T1547.001 — Registry Run K
 
 > **Note.** This is **real** evidence, so the persistence carries its genuine, unremarkable names — a `coreupdater` service and a `coreupdate` Run key — not anything eye-catching. The skill is the same regardless: *judge persistence by behaviour, not by a friendly name.*
 
+> **The persistence keys worth memorising (with ATT&CK mapping).** RegRipper has a plugin for each, and a single intrusion often plants more than one — so sweep them all:
+> - **Run / RunOnce** (`…\CurrentVersion\Run`, in SOFTWARE and NTUSER) — **T1547.001** (Registry Run Keys / Startup Folder). *This case's `coreupdate` value.*
+> - **Services** `ImagePath` / `ServiceDLL` (SYSTEM) — **T1543.003** (Create or Modify System Service). *This case's `coreupdater` service.*
+> - **Winlogon** `Shell` / `Userinit` (SOFTWARE) — **T1547.004** (Winlogon Helper DLL).
+> - **Image File Execution Options** `Debugger` value — including the sticky-keys / `sethc.exe` accessibility trick (SOFTWARE) — **T1546.012** (IFEO Injection) and **T1546.008** (Accessibility Features).
+> - **AppInit_DLLs** (SOFTWARE) — **T1546.010** (AppInit DLLs).
+>
+> Editing any of these keys is itself **T1112 (Modify Registry)**; enumerating them read-only, as RegRipper does, is **T1012 (Query Registry)**.
+
 ### Step 8 — Installed programs (SOFTWARE)
 ```bash
 rip -r SOFTWARE -p uninstall
@@ -301,7 +319,7 @@ rip -r Administrator_NTUSER.DAT -p userassist
 2020-09-19 03:39:02Z
   Microsoft.MicrosoftEdge ... (1)
 ```
-**Read it — this is direct proof of execution.** The Administrator account **ran `coreupdater.exe` once, at 2020-09-19 03:40:49 UTC**, then opened `cmd.exe` seconds later. UserAssist only records things a **human launched through the GUI**, so this isn't a background service — *a person ran the malware*. The number in parentheses is the **run count**.
+**Read it — this is direct proof of execution.** The Administrator account **ran `coreupdater.exe` once, at 2020-09-19 03:40:49 UTC**, then opened `cmd.exe` seconds later. UserAssist only records things a **human launched through the GUI**, so this isn't a background service — *a person ran the malware*. The number in parentheses is the **run count**; alongside it each entry also carries a **focus-time** value (how long the window sat in the foreground), which separates a program that was opened and instantly closed from one someone actually used. These entries live under the executable GUID `{CEBFF5CD-…}`; a `.lnk`-shortcut launch of the same binary would instead appear under `{F4E57C4B-…}`.
 
 **Why this step matters for the whole course:** Module 2 showed `coreupdater.exe` was **missing from this same host's ShimCache** — a deliberate gap. Here the registry catches it anyway, from a *different* artifact in a *different* hive. That is the core lesson of execution forensics: **no single artifact is complete, so you corroborate across the "execution triad"** — ShimCache (Module 2), Amcache (Module 3), and UserAssist (this module).
 
@@ -358,11 +376,13 @@ One account, one malware family, **two persistence mechanisms and a confirmed ha
 
 ## 10. Sources & further reading
 
-- RegRipper 3.0 — Harlan Carvey: <https://github.com/keydet89/RegRipper3.0>
-- Harlan Carvey, *Windows Registry Forensics* (Syngress) — the authoritative text on hive structure and artifact locations.
-- SANS FOR500 — Windows Registry artifact reference (UserAssist, Shellbags, USBSTOR, Run keys, ShimCache).
-- MITRE ATT&CK — T1543.003 (Service), T1547.001 (Registry Run Key), T1059.001 (PowerShell): <https://attack.mitre.org/>
-- 13Cubed — "Investigating the Windows Registry" / RegRipper episodes (YouTube).
+- RegRipper 3.0 — Harlan Carvey (`keydet89`): <https://github.com/keydet89/RegRipper3.0>
+- Harlan Carvey, *Windows Registry Forensics*, 2nd ed. (Syngress) — the authoritative text on hive structure and artifact locations (UserAssist, BAM, MUICache, persistence keys).
+- Harlan Carvey, *Windows Incident Response* blog — ongoing notes on registry-based execution and persistence tradecraft: <https://windowsir.blogspot.com/>
+- Maxim Suhanov (dfir.ru) — internals of the **BAM/DAM** keys and the FILETIME last-execution timestamp: <https://dfir.ru/>
+- SANS — "RegRipper: Ripping Registries With Ease" (FOR500 registry artifact reference: UserAssist, Shellbags, USBSTOR, BAM, Run keys, ShimCache).
+- MITRE ATT&CK — persistence: T1543.003 (Service), T1547.001 (Run Key), T1547.004 (Winlogon), T1546.010 (AppInit_DLLs), T1546.012 (IFEO), T1546.008 (Accessibility); execution: T1059.001 (PowerShell); registry ops: **T1112 (Modify Registry)**, **T1012 (Query Registry)**: <https://attack.mitre.org/>
+- 13Cubed — "Introduction to Windows Forensics" and "Investigating the Windows Registry" / RegRipper episodes (YouTube).
 - DFIR-Madness, "The Stolen Szechuan Sauce" (Case 001) — dataset provenance: <https://dfirmadness.com/the-stolen-szechuan-sauce/>
 
 ---

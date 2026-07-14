@@ -20,4 +20,4 @@ Real contents (verified by parsing the files):
 | `LM_PowershellRemoting_sysmon_1_wsmprovhost.evtx` | PS-Remoting target process | Sysmon 1 (wsmprovhost.exe) |
 | `LM_sysmon_remote_task_src_powershell.evtx` | PowerShell as source of remote task | Sysmon 3 ×2,7 |
 
-> Inert event logs (no live payloads); safe to parse. All analysis runs offline in the lab VM (tools on your `PATH`, no network needed).
+> All analysis runs offline in the lab VM (tools on your `PATH`, no network needed).

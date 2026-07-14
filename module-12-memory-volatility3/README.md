@@ -81,6 +81,16 @@ sh get-data.sh        # one-time: downloads Challenge.raw (~1.5 GB). Online host
 
 > Universal flags you will reuse: **`-f FILE`** = the image to analyse (required); **`-q`** = quiet (hide the progress bars); **`-r csv`** = render output as CSV (great for grepping/timelining); **`-o DIR`** = where to write dumped files. Volatility 3 **auto-detects** the OS — you never specify a profile.
 
+> **The triage taxonomy (why the steps run in this order).** The plugin sequence below is not arbitrary — it is the standard live-response order codified in *The Art of Memory Forensics*: **anchor → enumerate → hunt → carve.**
+> 1. **`windows.info`** anchors the case (OS build + capture time) and validates that symbols matched.
+> 2. **`pslist` → `pstree` → `psscan`** enumerate what ran and its parent→child ancestry, then *scan* the raw dump for anything hidden or already exited (the `psscan`-vs-`pslist` diff).
+> 3. **`cmdline`** exposes exactly how each process launched; on the suspects you then pull **`dlllist`** (side-loading) and **`handles`** (open files / keys / mutexes).
+> 4. **`malfind`** hunts injected code — remembering **RWX is a *lead, not a verdict***: JIT engines (.NET/Java/browsers), Windows hot-patch trampolines, and WMI providers all create benign RWX, so the confirmation is an **`MZ`** header or real shellcode at the top of the region.
+> 5. **`netscan`** hunts C2 by **pool-tag carving** — the correct offline choice, because the linked-list `windows.netstat` needs `tcpip.sys` symbols that aren't in the bundled pack (Step 10).
+> 6. **`svcscan`** sweeps service persistence, and **`--dump`** carves the live payload back out for `capa`/FLOSS/YARA.
+>
+> Volatility 3 locates every one of these kernel structures using its bundled **symbol tables (ISF JSON)** — the auto-detected model that replaced Volatility 2's `--profile` guesswork.
+
 ### Step 1 — Identify the image (`windows.info`), always first
 ```bash
 vol -q -f Challenge.raw windows.info
