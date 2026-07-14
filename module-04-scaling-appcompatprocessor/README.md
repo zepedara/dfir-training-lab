@@ -33,6 +33,19 @@ known-bad search, recon scoring, and timestomp detection on top.
 
 ---
 
+
+> **Modern-tooling reality check.** ACP's *idea* — least-frequency-of-occurrence stacking of
+> execution artifacts across an entire fleet — is one of the most durable concepts in DFIR, and it
+> is exactly what you should carry out of this module. The *tool*, though, shows its age: it is
+> Python 2 (end-of-life), single-purpose, and its ingest is brittle. In a modern investigation you
+> would apply the same stacking concept with actively-maintained tooling — **Velociraptor** for
+> fleet-wide collection and VQL stacking across live endpoints, **Eric Zimmerman's
+> `AppCompatCacheParser` + `AmcacheParser` feeding Timeline Explorer or a quick SQL `GROUP BY`**, or
+> a **SIEM (Elastic/Splunk)** for stacking at true enterprise scale. Learn the *why* here with ACP;
+> reach for those in production.
+
+---
+
 ## 2. A note on running ACP on Windows (important)
 
 ACP is written for Python 2 and was authored on Linux; upstream explicitly disabled Windows support

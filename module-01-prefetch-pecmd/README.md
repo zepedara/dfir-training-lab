@@ -165,7 +165,7 @@ COREUPDATER.EXE              runs=1   last=2020-09-19 03:40:49 loaded=51 files
 Sort the scan by run time so the activity lines up chronologically around the incident window. Because `LastRun` is in `YYYY-MM-DD HH:MM:SS` ISO order, a plain text sort on that column *is* a true chronological sort:
 
 ```bash
-sort -t, -k4 pf.csv | awk -F',' 'NR>1 {printf "%-26s %-40s runs=%-3s\n", $4, $2, $3}' | less -S
+tail -n +2 pf.csv | sort -t, -k4 | awk -F',' '{printf "%-26s %-40s runs=%-3s\n", $4, $2, $3}' | less -S
 ```
 - `sort -t, -k4 pf.csv` — sort the rows on **column 4** (`LastRun`); `-t,` tells `sort` the fields are comma-separated.
 - `awk -F',' '...'` — pretty-print the run time, executable, and run count into aligned columns.
