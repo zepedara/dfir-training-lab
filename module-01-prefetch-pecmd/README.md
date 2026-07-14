@@ -39,7 +39,7 @@ Although Windows built this purely for speed, it accidentally created one of the
 1. You launch `program.exe`.
 2. A Windows service called the **Prefetcher** (part of the *SysMain*/Superfetch service) monitors the launch for about **10 seconds**.
 3. About 10 seconds *after* the process starts, Windows writes (or updates) the `.pf` file on disk. **This is the famous "10-second rule":** the timestamp baked into the `.pf` is essentially when the program *started*, but the file's own creation/modify time on disk is ~10 seconds later. When you build a timeline, remember the recorded run is the real "go" moment.
-4. Since Windows 8, the `.pf` file is **compressed** with an algorithm called **Xpress Huffman** (sometimes shown as `XPRESS10`/`MAM` format). This is why you need a real Prefetch parser to read it — you can't just open it in Notepad.
+4. Since Windows 10, the `.pf` file is **compressed** with an algorithm called **Xpress Huffman** (sometimes shown as `XPRESS10`/`MAM` format); Prefetch on Windows 7/8/8.1 is **uncompressed**. This is why you need a real Prefetch parser to read it — you can't just open it in Notepad.
 5. Inside, since Windows 8, Windows keeps the **last 8 run times** (older Windows kept only 1). It also keeps a running **run count**.
 
 ### Limits and gotchas (so you don't over-claim)

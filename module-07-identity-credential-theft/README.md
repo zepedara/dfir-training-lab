@@ -25,7 +25,7 @@ When you log in, Windows caches your credential material in the memory of a prot
    | GrantedAccess | Meaning | Typical tool |
    |---|---|---|
    | `0x1010` | read memory + query info | Mimikatz `sekurlsa::logonpasswords` |
-   | `0x1410` | adds duplicate-handle | ProcDump / Task Manager dump |
+   | `0x1410` | query info + read memory (adds full PROCESS_QUERY_INFORMATION 0x0400 over 0x1010) | ProcDump / Task Manager dump |
    | `0x143a` | broad read/query/VM rights | Mimikatz lsadump / Invoke-Mimikatz |
 
    > **Important nuance:** Sysmon compares `GrantedAccess` as a *literal string*, and tools tweak their flags over time, so these values are strong **leads**, not a complete allow/deny list. Modern Sigma rules also flag any *uncommon* access mask on LSASS regardless of the exact number. No legitimate everyday process needs to read LSASS's memory — so any of these on `lsass.exe` deserves immediate attention.

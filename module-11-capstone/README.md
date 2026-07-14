@@ -104,7 +104,7 @@ With the SHA1 in hand, **stack** it across hosts. On the bundled three, confirm 
 ```bash
 cd ../../module-06-sigma-chainsaw-hayabusa/data
 hayabusa csv-timeline -d . -o all-timeline.csv
-chainsaw hunt . -s /sigma --mapping /chainsaw/mappings/sigma-event-logs-all.yml
+chainsaw hunt . -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
 ```
 Run **both** engines over the whole folder. Hayabusa ranks by severity (reading order); Chainsaw names the technique with evidence. This is how you turn 20-plus logs into a prioritised lead list in two commands.
 
@@ -176,7 +176,7 @@ PHASE 5  Hands-on-keyboard PowerShell 4104: MiniDumpWriteDump/Get-Process lsass,
 1. **Initial access** via a LOLBAS download (`desktopimgdownldr` → `a.uguu.se/...Bin.7z`) on the front-office desktop.
 2. **Execution & foothold:** `coreupdater.exe` (SHA1 `fd153c66…`), a 7 KB non-OS binary masquerading in System32, ran 2020-09-19 03:40:49 UTC.
 3. **Credential theft is confirmed and domain-wide:** multiple LSASS-dump techniques **plus DCSync** on a DC — treat all domain credentials as compromised.
-4. **Lateral movement reached finance** via PsExec service install, Pass-the-Hash, and RDP — each with its carrier logon.
+4. **Lateral movement reached finance** via PsExec service install and Pass-the-Hash; an **RDP connection toward the finance host** is also recorded (an attempt/connection, not a confirmed successful logon) — each with its carrier logon.
 5. **Hands-on-keyboard** activity via obfuscated PowerShell; some PowerShell ran in-memory (Sysmon-only visibility).
 
 **IOCs to sweep the fleet:**

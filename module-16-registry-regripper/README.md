@@ -150,7 +150,8 @@ Sat Sep 19 03:27:49 2020 Z
 
 Sat Sep 19 03:21:47 2020 Z
   Name      = terminpt
-  ImagePath = \SystemRoot\System32\drivers\terminpt.sys   (Microsoft Remote Desktop Input Driver)
+  Display   = @termmou.inf,%TermInpt.SVCDESC%;Microsoft Remote Desktop Input Driver
+  ImagePath = \SystemRoot\System32\drivers\terminpt.sys
 ```
 **Read it:** a service literally named **`coreupdater`** runs **`C:\Windows\System32\coreupdater.exe`** with **`Start = Auto Start`** — so it relaunches on every boot. That is textbook **persistence (MITRE T1543.003 — Create or Modify System Service)**. Three tells make it obvious: (1) an **empty Display name** (real Windows services have one), (2) an executable sitting loose in `System32` with a generic "update-y" name, (3) the **install time (03:27:49)** sits right inside the intrusion window. Notice the entry just below it: the **`terminpt`** *Remote Desktop Input Driver* was touched minutes earlier (03:21:47) — Windows loads it when someone uses an **RDP** session, corroborating how the attacker was driving the box.
 

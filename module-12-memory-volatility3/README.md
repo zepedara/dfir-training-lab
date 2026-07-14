@@ -149,8 +149,8 @@ vol -q -f Challenge.raw windows.psscan
 
 **The classic hidden-process hunt is to diff `psscan` against `pslist`** — anything `psscan` sees that `pslist` does not is a candidate hidden process:
 ```bash
-vol -q -r csv -f Challenge.raw windows.pslist | cut -d, -f1 | sort -u > seen_list.txt
-vol -q -r csv -f Challenge.raw windows.psscan | cut -d, -f1 | sort -u > seen_scan.txt
+vol -q -r csv -f Challenge.raw windows.pslist | tail -n +2 | cut -d, -f2 | sort -u > seen_list.txt
+vol -q -r csv -f Challenge.raw windows.psscan | tail -n +2 | cut -d, -f2 | sort -u > seen_scan.txt
 comm -13 seen_list.txt seen_scan.txt     # PIDs in scan but NOT in list
 ```
 **Real result:** both plugins return the **same 53 processes**, and the diff is **empty**. **Read it:** no process is hidden or unlinked on this host — the visible list is the true list. (On a rootkit-infected host this diff is where the hidden implant falls out.)
@@ -267,6 +267,7 @@ vol -q -f Challenge.raw windows.svcscan | grep -Ei 'Users|Temp|AppData|ProgramDa
 
 ### Step 12 — Carve the suspect binary out of RAM (`--dump`)
 ```bash
+mkdir -p dump
 vol -q -o dump -f Challenge.raw windows.pslist --pid 3716 --dump
 ```
 - **`--pid 3716`** targets WinRAR; **`--dump`** reconstructs that process's executable image from memory and writes it to the **`-o dump`** output directory. (Make sure `dump/` exists first: `mkdir -p dump`.)

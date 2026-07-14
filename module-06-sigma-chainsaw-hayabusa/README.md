@@ -50,7 +50,7 @@ Both are **offline** — no internet, no agent, no SIEM. Perfect for triage on a
 
 ## 3. The scenario in this module's data
 
-This module's `data/` folder bundles **23 curated attack-technique `.evtx`** files (a subset of the public Yamato `hayabusa-sample-evtx` / EVTX-ATTACK-SAMPLES sets — see `data/README.md`). They cover a range of techniques: Mimikatz hash-dumps, PowerSploit, Invoke-Obfuscation PowerShell, a password-spray, a UACME UAC-bypass, event-log tampering, and several **PsExec** lateral-movement captures.
+This module's `data/` folder bundles **23 curated `.evtx`** files (a subset of the public Yamato `hayabusa-sample-evtx` / EVTX-ATTACK-SAMPLES sets — see `data/README.md`). Most are single **attack-technique** captures, but a few — the `many-events-*` application/security/system logs — are **bulk volume/baseline logs**, not single-technique captures, included so the folder-level run resembles a real evidence pile. They cover a range of techniques: Mimikatz hash-dumps, PowerSploit, Invoke-Obfuscation PowerShell, a password-spray, a UACME UAC-bypass, event-log tampering, and several **PsExec** lateral-movement captures.
 
 The **guided walkthrough below uses one file** — `sysmon_privesc_psexec_dwell.evtx`, a **PsExec lateral-movement** capture (Sysmon logs from host `MSEDGEWIN10`) — so your numbers match exactly. Then you'll run **both tools across the whole folder** and let them name every technique. **PsExec** is Microsoft's legitimate remote-admin tool (run a command on another machine); attackers love it because it's signed and everywhere. It works by dropping a service that listens on a **named pipe** called **`\PSEXESVC`** — and that pipe is its fingerprint.
 
@@ -93,7 +93,9 @@ Top high alerts:   PsExec Service Child Process Execution (1)
 Top medium alerts: PsExec Tool Execution From Suspicious Locations (2) · PsExec Service Execution (1)
 Saved file: timeline.csv
 ```
-**Read the summary:** Hayabusa loaded ~4,600 rules, kept the ~2,280 that apply to these channels, and out of **12** events, **8** were notable — a **33% data reduction** before you read a single line. The headline alert is **HIGH: "PsExec Service Child Process Execution."** That's the whole value proposition: 12 events became one obvious lead.
+**Read the summary:** Hayabusa loaded ~4,600 rules, kept the ~2,280 that apply to these channels, and **8 of 12 events were notable**, so a third of the events (the 4 with no hits) were dropped as noise before you read a line. The headline alert is **HIGH: "PsExec Service Child Process Execution."** That's the whole value proposition: 12 events became one obvious lead.
+
+> **Version caveat.** The exact rule/detection counts shown here — Hayabusa's "Total detection rules", "enabled after channel filter", and "Unique detections", plus Chainsaw's "Loaded N detection rules" — depend on the installed Hayabusa/Sigma/Chainsaw versions, so a student's numbers may differ from these; the **shape** of the result is what matters, not the precise figures.
 
 ### Step 2 — Read the timeline
 Open `timeline.csv`. The important columns are `Timestamp`, `RuleTitle`, `Level`, `Computer`, `Channel`, `EventID`. Sorted by time, the story is:
@@ -177,7 +179,7 @@ On `MSEDGEWIN10`, an attacker who already had a foothold used **PsExec** to exec
 
 ## 8. Try-it-yourself exercises
 
-1. **Name them all.** After Step 4, open `all-timeline.csv` and the Chainsaw CSV. For each of the 23 samples, write the one-line technique its detections reveal (Mimikatz hash-dump, Invoke-Obfuscation, password-spray, UACME bypass, event-log tampering, …). Pure **WMI/DCOM** lateral movement lives in **Module 8**.
+1. **Name them all.** After Step 4, open `all-timeline.csv` and the Chainsaw CSV. For each of the attack-technique samples, write the one-line technique its detections reveal (Mimikatz hash-dump, Invoke-Obfuscation, password-spray, UACME bypass, event-log tampering, …) — the `many-events-*` files are volume/baseline logs, not single-technique captures, so treat them as background rather than a technique to name. Pure **WMI/DCOM** lateral movement lives in **Module 8**.
 2. **Tell the story.** In `timeline.csv` (Step 2), sort by timestamp and write the 3-line account of the PsExec attack.
 3. **Tune severity.** Run Step 5 with `--min-level high` vs. `--min-level low`. How does the noise change? Which level would you start triage at, and why is "high only" risky if you stop there?
 4. **Cross-tool check.** Pick the `mimikatz-privesc-hashdump.evtx` sample. Does Hayabusa's top alert and Chainsaw's named rule agree on the technique? When they differ, why might that happen (different rule sets)?

@@ -98,7 +98,7 @@ Found 15 unassociated file entry and 83 program file entries (across 85 program 
 > **Useful flags:** `--mp` shows higher-precision timestamps; `-b <file>` / `-w <file>` let you *include only* or *exclude* specific SHA1 lists (handy for whitelisting known-good hashes at scale); `--nl` ignores the transaction logs (normally leave it off so they're replayed).
 
 ### Step 2 — Pull every executable's identity (name, SHA1, size, path)
-The SHA1 lives in the Unassociated CSV. Columns of interest: `SHA1` (4), `FullPath` (6), `Name` (7), `LinkDate` (9), `ProductName` (10), `Size` (11).
+The SHA1 (FileID) appears in **both** the Unassociated and Associated file-entry CSVs; our dropper just happens to live in the Unassociated one. Columns of interest: `SHA1` (4), `FullPath` (6), `Name` (7), `LinkDate` (9), `ProductName` (10), `Size` (11).
 ```bash
 awk -F, 'NR>1{printf "%-22s sha1=%s size=%-8s prod=%s\n", $7, $4, $11, $10}' \
   amcache_UnassociatedFileEntries.csv
