@@ -3,7 +3,7 @@
 **Deck mapping:** *Advanced Intrusion Forensic Hunting* → "Triage & live response" / memory analysis.
 **Goal:** take a snapshot of a Windows machine's **RAM** and reconstruct what was actually running, talking on the network, and hiding in memory **at the moment of capture** — the evidence that never touches the disk.
 
-> **Middle-earth framing.** In the realm's story, insider data-staging is **Saruman's** kind of betrayal (the turned insider, `saruman.white`) rather than SAURON's implants — a useful contrast to the rest of the lab (see [`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The image itself is a **real, publicly-published forensics-challenge capture**, so its ground-truth names are **never altered**: the user is `Jaffa`, the file is `Challenge.raw`. Theme the lens; the memory keeps its real names.
+> **Evidence note.** The image is a **real, publicly-published forensics-challenge capture**, so its ground-truth names are **never altered**: the user is `Jaffa`, the file is `Challenge.raw`.
 
 ---
 
@@ -72,8 +72,6 @@ sh get-data.sh        # one-time: downloads Challenge.raw (~1.5 GB). Online host
 - **`cd module-12-memory-volatility3/data`** — move into the folder holding this module's evidence. **Every command below is run from inside this folder**, so the image is named with a simple relative path (`Challenge.raw`).
 - **`get-data.sh`** — fetches and unpacks the memory image into this folder (it is far too big to commit). Run it once on a machine with internet; the analysis itself is offline.
 - All forensic tools — **Volatility 3 (on your `PATH` as `vol`)**, plus `yara`, `capa`, FLOSS and the rest — are installed **natively on the lab VM and already on your `PATH`**, so you call `vol` directly by name in Git Bash; there is no container or Docker. The VM is kept **offline** (no network), which is exactly how forensics should run: the evidence can never phone home, and Volatility's Windows symbols are **bundled** (`windows.zip`) so nothing needs downloading.
-
-Every command below is run from inside this folder, where the image is `Challenge.raw`.
 
 > **A note on speed.** The **first** plugin you run on a fresh image is slow — Volatility scans the whole file to locate the kernel and build a cache. Every later plugin on the same image is much faster.
 

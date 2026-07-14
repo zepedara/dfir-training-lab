@@ -5,7 +5,7 @@
 
 > **New to this?** Read the next two sections slowly. Every italic term is defined the first time it appears. By the end you'll be able to look at a folder of `.pf` files and tell a story about what happened on a computer.
 
-> **Middle-earth framing (and the evidence rule).** In the lab's story, this is patient-zero execution evidence in the breach of **Middle-earth Holdings** by **SAURON / APT-MORDOR** (see [`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). But the data here is the **real** DFIR-Madness Case 001 evidence, and forensics' cardinal rule is *we never alter evidence* — so its baked-in names stay exactly as the tools print them: the compromised host is `DESKTOP-SDN1RPT` and the case malware is `coreupdater.exe`. Read it as one workstation in the realm; the names you see in output are the real ones, always.
+> **Evidence note.** The data here is the real DFIR-Madness Case 001 evidence, so tool output shows its real baked-in names unaltered — host `DESKTOP-SDN1RPT`, malware `coreupdater.exe`.
 
 ---
 

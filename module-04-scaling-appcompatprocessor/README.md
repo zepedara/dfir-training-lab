@@ -8,7 +8,7 @@
 >
 > **Scenario:** the realm of **Middle-earth Holdings** has been breached by **SAURON (APT-MORDOR)**. You
 > have AppCompat collections from eight hosts. You do not yet know which are compromised. ACP will tell
-> you. (Theme reference: [`THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md).)
+> you.
 
 ---
 

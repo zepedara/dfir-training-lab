@@ -3,7 +3,7 @@
 **Deck mapping:** *Intrusion Hunting Playbook* → "Disk forensics & the super-timeline" (the filesystem spine under every other artifact).
 **Goal:** open a raw disk image with **no Windows and no mounting**, read its partition table, list every file *including deleted ones*, **recover** a deleted file, **inspect one file's metadata** down to its two separate timestamp sets, **parse the `$MFT`** with MFTECmd, and **build a filesystem timeline** — then read that timeline to catch an attacker who deleted his tools and **timestomped** his backdoor.
 
-> **Middle-earth framing.** Same realm, same villain — **SAURON / APT-MORDOR** against **Middle-earth Holdings** (canon: [`../THEME-MIDDLE-EARTH.md`](../THEME-MIDDLE-EARTH.md)). The disk image is **synthetic** (built for this lesson), but it is deliberately stamped with the **same ground-truth names as the real Case-001 host** so it dovetails with Modules 1-4 — and because the tool output below is the real parse of those exact bytes, those names are shown **unaltered**: host `DESKTOP-SDN1RPT`, user `mortysmith`, backdoor `coreupdater.exe`. We theme the story, not the evidence.
+> **Evidence note.** The disk image is **synthetic** (built for this lesson), but it is deliberately stamped with the **same ground-truth names as the real Case-001 host** so it dovetails with Modules 1-4 — and because the tool output below is the real parse of those exact bytes, those names are shown **unaltered**: host `DESKTOP-SDN1RPT`, user `mortysmith`, backdoor `coreupdater.exe`.
 
 ---
 
@@ -63,7 +63,7 @@ Open **Git Bash** on the lab VM and change into this module's data directory:
 cd module-15-filesystem-timeline/data
 ```
 - **`cd module-15-filesystem-timeline/data`** — move into the folder holding this module's disk image (`disk-DESKTOP-SDN1RPT.raw`) and the pre-carved `MFT`. **Every command below is run from inside this folder**, so the image and the reports you write use simple relative paths.
-- The full **Sleuth Kit** (`mmls`, `fls`, `istat`, `icat`, `mactime`, …) and **MFTECmd** are installed **natively on the lab VM and already on your `PATH`** — call them directly by name in Git Bash; there is no container or Docker. The VM is kept **offline** (no network), so evidence can never "phone home" and the analysis is provably offline. TSK reads the image **read-only** and never mounts it, so the evidence can't change.
+- The full **Sleuth Kit** (`mmls`, `fls`, `istat`, `icat`, `mactime`, …) and **MFTECmd** are installed **natively on the lab VM and already on your `PATH`** — call them directly by name in Git Bash; there is no container or Docker. The VM is kept **offline** (no network), so evidence can never "phone home." TSK reads the image **read-only** and never mounts it, so the evidence can't change.
 
 > **Prefer a GUI?** The Sleuth Kit also ships with **Autopsy**, its graphical front-end, on the lab VM — same engine, same results, point-and-click. The command-line walkthrough below is faster to follow and to drop into a report; the flags map one-to-one.
 

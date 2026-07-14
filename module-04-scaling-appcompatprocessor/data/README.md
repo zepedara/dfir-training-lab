@@ -1,6 +1,6 @@
 # Module 4 — data provenance (`data/fleet/`)
 
-This module's data is an **eight-host synthetic fleet** of Application-Compatibility (ShimCache) collections, one CSV per host, used to demonstrate **stacking / least-frequency-of-occurrence (LFO)** — the technique only works with many hosts to count against. There is no clean, license-clear public multi-host AppCompat set, so the fleet is **generated, not downloaded**, and is clearly labelled synthetic. It is **not** real case evidence; it is a teaching construct (the same Middle-earth theme as the rest of the lab — see [`../../THEME-MIDDLE-EARTH.md`](../../THEME-MIDDLE-EARTH.md)).
+This module's data is an **eight-host synthetic fleet** of Application-Compatibility (ShimCache) collections, one CSV per host, used to demonstrate **stacking / least-frequency-of-occurrence (LFO)** — the technique only works with many hosts to count against. There is no clean, license-clear public multi-host AppCompat set, so the fleet is **generated, not downloaded**, and is clearly labelled synthetic. It is **not** real case evidence; it is a teaching construct.
 
 > See the **[module README](../README.md)** for the full walkthrough (it explains every ACP command run against this folder), and **[`../tools/build_fleet_csvs.py`](../tools/build_fleet_csvs.py)** for the generator — the script is documented and is itself part of the lesson (it shows exactly what "normal vs intrusion" looks like in this artifact).
 
@@ -38,7 +38,7 @@ The three compromised hosts carry a planted toolkit with a clear **2024-09-13 / 
 | `morgul.dll` (NTDS / DCSync) | `MINAS-TIRITH-DC01` | `C:\Windows\NTDS\morgul.dll` |
 | `balrog.exe` (end-objective payload) | `MINAS-TIRITH-DC01` | `C:\PerfLogs\balrog.exe` |
 
-`palantir.exe` and `nazgul.exe` land on **two** hosts each (Count = 2) — the classic lateral-movement signature ACP surfaces in the stack — while the single-host implants and the legitimate-rare role tools (DC `repadmin`/`netdom`/`ntdsutil`, SQL `sqlservr`/`Ssms`) share the Count = 1 tail you must triage. The full mapping of each file to what it actually does is in the [module README, §5](../README.md) and the canonical [`../../THEME-MIDDLE-EARTH.md`](../../THEME-MIDDLE-EARTH.md).
+`palantir.exe` and `nazgul.exe` land on **two** hosts each (Count = 2) — the classic lateral-movement signature ACP surfaces in the stack — while the single-host implants and the legitimate-rare role tools (DC `repadmin`/`netdom`/`ntdsutil`, SQL `sqlservr`/`Ssms`) share the Count = 1 tail you must triage. The full mapping of each file to what it actually does is in the [module README, §5](../README.md).
 
 ## License
 Generated for this lab; freely reusable. No third-party data. Re-generate or extend the fleet (add hosts, plant your own tool) by editing and re-running [`../tools/build_fleet_csvs.py`](../tools/build_fleet_csvs.py).
