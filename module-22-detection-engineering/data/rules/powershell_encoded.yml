@@ -1,0 +1,9 @@
+title: Encoded PowerShell Command
+id: bb22cc33-dd44-ee55-ff66-778899001122
+status: experimental
+description: PowerShell script block using base64/EncodedCommand obfuscation.
+logsource: {product: windows, category: ps_script}
+detection:
+  selection: {ScriptBlockText|contains: ['-enc', '-EncodedCommand', 'FromBase64String']}
+  condition: selection
+level: high

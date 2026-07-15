@@ -1,0 +1,9 @@
+title: New Service Installed
+id: aa11bb22-cc33-dd44-ee55-ff6677889900
+status: experimental
+description: A Windows service was installed (Security 7045). Broad on purpose - refine it.
+logsource: {product: windows, service: system}
+detection:
+  selection: {EventID: 7045}
+  condition: selection
+level: medium
