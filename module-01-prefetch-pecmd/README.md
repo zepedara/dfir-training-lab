@@ -40,11 +40,11 @@ Although Windows built this purely for speed, it accidentally created one of the
 2. A Windows service called the **Prefetcher** (part of the *SysMain*/Superfetch service) monitors the launch for about **10 seconds**.
 3. About 10 seconds *after* the process starts, Windows writes (or updates) the `.pf` file on disk. **This is the famous "10-second rule":** the timestamp baked into the `.pf` is essentially when the program *started*, but the file's own creation/modify time on disk is ~10 seconds later. When you build a timeline, remember the recorded run is the real "go" moment — the recorded run time *trails* the true launch by that ~10-second observation window, so treat it as "launch, plus a few seconds."
    - **The `.pf` file's own MACB timestamps tell their own story.** Because Windows creates the `.pf` the first time a program runs and rewrites it on later runs, the file's filesystem **Created** time ≈ the program's **first-ever** execution and its **last-Modified** time ≈ its **most recent** execution (both offset by the ~10-second lag). So even before you parse the bytes inside, the `.pf`'s create/modify pair already brackets the first and last runs.
-4. Since Windows 10, the `.pf` file is **compressed** with an algorithm called **Xpress Huffman** (sometimes shown as `XPRESS10`/`MAM` format); Prefetch on Windows 7/8/8.1 is **uncompressed**. This is why you need a real Prefetch parser to read it — you can't just open it in Notepad.
+4. Since Windows 10, the `.pf` file is **compressed** with an algorithm called **Xpress Huffman** (the on-disk signature is `MAM`); Prefetch on Windows 7/8/8.1 is **uncompressed**. This is why you need a real Prefetch parser to read it — you can't just open it in Notepad.
 5. Inside, since Windows 8, Windows keeps the **last 8 run times** (older Windows kept only 1). It also keeps a running **run count**.
 
 ### Limits and gotchas (so you don't over-claim)
-- **Prefetch can be turned off.** A registry value, `EnablePrefetcher` (under `...\Session Manager\Memory Management\PrefetchParameters`), controls it. On SSDs and Windows Servers it is sometimes disabled, so *no Prefetch file does NOT prove a program never ran.*
+- **Prefetch can be turned off.** A registry value, `EnablePrefetcher` (under `...\Session Manager\Memory Management\PrefetchParameters`), controls it. A common myth is that Windows disables Prefetch on SSDs — on Windows 10/11 clients it stays **enabled by default**; it can be turned off manually via `EnablePrefetcher`, and some Server roles ship with it off. Either way, *no Prefetch file does NOT prove a program never ran.*
 - **Capacity is capped.** Modern Windows 10/11 keeps up to **1024** Prefetch files (older Windows kept 128). When full, the oldest get deleted — so absence can simply mean "aged out."
 - **Attackers delete Prefetch** to cover tracks. A *missing* `.pf` for a program you know ran is itself a finding.
 - **Only the last 8 runs** are timestamped. A program run 50 times shows run count 50 but only 8 dates.
@@ -231,12 +231,12 @@ In Case 001, the desktop `DESKTOP-SDN1RPT` was compromised. Among the 197 Prefet
 
 ## Sources & further reading
 This module's structure follows the standard DFIR teaching of Prefetch. To go deeper:
-- **PECmd / EZ Tools** (Eric Zimmerman's official tools + docs): https://ericzimmerman.github.io/ and the AboutDFIR EZ Tools manual: https://aboutdfir.com/toolsandartifacts/windows/eric-zimmermans-tools/
+- **PECmd / EZ Tools** (Eric Zimmerman's official tools + docs): https://ericzimmerman.github.io/ and the AboutDFIR EZ Tools manuals: https://aboutdfir.com/books/ez-tools-manuals/
 - **libscca — Windows Prefetch File (PF) format** (an open-source spec documenting the Prefetch binary format PECmd parses): https://github.com/libyal/libscca/blob/main/documentation/Windows%20Prefetch%20File%20(PF)%20format.asciidoc
 - **Yogesh Khatri — "Windows Prefetch (.PF) files"** (the classic deep-dive on the format, hash, and timestamps): http://www.swiftforensics.com/2013/10/windows-prefetch-pf-files.html
-- **Magnet Forensics — "Forensic Analysis of Prefetch files in Windows"** (the 10-second rule, run counts, what you can prove): https://www.magnetforensics.com/blog/forensic-analysis-of-prefetch-files-in-windows/
+- **Magnet Forensics — "Forensic Analysis of Prefetch files in Windows"** (run counts, the last-8 run times, what you can prove): https://www.magnetforensics.com/blog/forensic-analysis-of-prefetch-files-in-windows/
 - **13Cubed — "Prefetch Deep Dive"** (Richard Davis; the definitive free video on the last-8 timestamps, the path hash, and the 10-second lag): https://www.youtube.com/c/13cubed
-- **SANS Internet Storm Center — "The Forensic Value of Prefetch"** (concise diary on what Prefetch does and doesn't prove): https://isc.sans.edu/diary/
+- **SANS Internet Storm Center — "The Forensic Value of Prefetch"** (concise diary on what Prefetch does and doesn't prove): https://isc.sans.edu/diary/Forensic+Value+of+Prefetch/29168
 - **SANS "Hunt Evil" poster** (where Prefetch sits among the Windows execution artifacts, alongside ShimCache and Amcache): https://www.sans.org/posters/hunt-evil/
 - **DFIR Madness — Case 001** (the dataset these `.pf` files come from): https://dfirmadness.com/the-stolen-szechuan-sauce/
 

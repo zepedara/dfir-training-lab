@@ -12,7 +12,7 @@
 ## 1. Background — what Amcache is and why Windows creates it
 
 ### The everyday purpose
-Windows keeps a background **inventory** of the programs and drivers on a machine — partly for the same application-compatibility system behind ShimCache, partly for telemetry and "Programs & Features"–style bookkeeping. A scheduled task (the **Microsoft Compatibility Appraiser**, `CompatTelRunner.exe`) periodically walks the disk and records metadata about executables it finds. That inventory is stored in a dedicated registry hive:
+Windows keeps a background **inventory** of the programs and drivers on a machine — partly for the same application-compatibility system behind ShimCache, partly for telemetry and "Programs & Features"–style bookkeeping. A scheduled task (the **Microsoft Compatibility Appraiser**, `CompatTelRunner.exe`) periodically inventories executables in common program locations (Program Files, the desktop, and paths it encounters) and records their metadata. That inventory is stored in a dedicated registry hive:
 
 ```
 C:\Windows\appcompat\Programs\Amcache.hve
@@ -24,7 +24,7 @@ A *hive* is a standalone registry-database file. `Amcache.hve` is the **richest*
 The key subkey is **`InventoryApplicationFile`** — one entry per executable Windows has inventoried. For each, Amcache can hold:
 
 - **Full path** and **file name**.
-- **SHA1 hash** of the file (Amcache calls this the **FileID**) — the single most valuable field. A SHA1 is a 40-hex-character fingerprint of the file's exact bytes; two files with the same SHA1 are the same file.
+- **SHA1 hash** of the file (Amcache calls this the **FileID**) — the single most valuable field. A SHA1 is a 40-hex-character fingerprint of the file's bytes; two files with the same SHA1 are the same file. (Amcache hashes only the **first ~31 MB** of a file, so the FileID is a full-file SHA1 for anything smaller — as here — but keep that limit in mind for very large binaries.)
 - **File size** (in bytes).
 - **LinkDate** — the **compile timestamp** baked into the program's PE header by whoever built it (PE = "Portable Executable", the Windows .exe/.dll format).
 - **FileKeyLastWriteTimestamp** — when Amcache last wrote this entry (a rough "first inventoried / first seen" time). This is the **registry key's LastWrite time**, i.e. when the *appraiser recorded the file* — **not** when the file executed. It often lands near a run (as you'll see for `coreupdater.exe`), but never assume "LastWrite = execution time"; the two coincide only when the inventory happens to run right after a launch.
@@ -197,14 +197,14 @@ Each artifact covers the others' blind spots. `coreupdater.exe` is in **Amcache 
 - The verdict on `coreupdater.exe` comes from **converging fields** (System32 path + not-an-OS-component + empty metadata + 7 KB + incident-window inventory), and from its **Triad fingerprint** (Amcache + Prefetch, no ShimCache).
 
 ## Sources & further reading
-- **AmcacheParser / EZ Tools** (official tool + AboutDFIR manual): https://github.com/EricZimmerman/AmcacheParser and https://aboutdfir.com/toolsandartifacts/windows/eric-zimmermans-tools/
-- **ANSSI — Blanche Lagny, "Analysis of the AmCache" (2019)** (the definitive experimental paper; establishes by testing that the Amcache format tracks the **appraiser DLL version, not the Windows version**, and rigorously separates what the timestamps do and don't mean): https://www.ssi.gouv.fr/uploads/2019/01/anssi-coriin_2019-analysis_amcache.pdf
+- **AmcacheParser / EZ Tools** (official tool + AboutDFIR manual): https://github.com/EricZimmerman/AmcacheParser and the SANS tool page: https://www.sans.org/tools/amcacheparser
+- **ANSSI — Blanche Lagny, "Analysis of the AmCache" (2019)** (the definitive experimental paper; establishes by testing that the Amcache format tracks the **appraiser DLL version, not the Windows version**, and rigorously separates what the timestamps do and don't mean): https://cyber.gouv.fr/sites/default/files/2019/01/anssi-coriin_2019-analysis_amcache.pdf
 - **The DFIR Spot — "Evidence of Program Existence: Amcache"** (a clear, current walkthrough of why Amcache proves *existence*, not execution): https://thedfirspot.com/
 - **The definitive Amcache.hve forensic reference** (every key/value/timestamp): https://www.amcacheparser.com/en/blog/amcache-hve-reference
 - **Securelist (Kaspersky) — "AmCache artifact: forensic value and a tool for data extraction"**: https://securelist.com/amcache-forensic-artifact/117622/
 - **Yogesh Khatri — "Amcache.hve in Windows 8 — Goldmine for malware hunters"** (origins + the SHA1 detail): https://www.swiftforensics.com/2013/12/amcachehve-in-windows-8-goldmine-for.html
 - **Magnet Forensics — "ShimCache vs AmCache"** (how identity vs existence pair up): https://www.magnetforensics.com/blog/shimcache-vs-amcache-key-windows-forensic-artifacts/
-- **13Cubed — "ShimCache and AmCache"** (free video): https://www.youtube.com/c/13cubed
+- **13Cubed — "Let's Talk About Shimcache: The Most Misunderstood Artifact"** (free video): https://www.youtube.com/watch?v=7byz1dR_CLg
 - **DFIR Madness — Case 001** (dataset provenance): https://dfirmadness.com/the-stolen-szechuan-sauce/
 
 **ATT&CK mapping.** Amcache's SHA1 is what lets you attribute a binary that ran via **T1204 (User Execution)** and, because a masquerading binary like `coreupdater.exe` sits in `System32` with `IsOsComponent=False`, catch **T1036 (Masquerading)** by comparing name/path/hash/metadata. If an attacker deletes the payload after use, the Amcache entry (hash + path + inventory time) often survives it — evidence that outlives the **T1070.004 (Indicator Removal: File Deletion)** cleanup.

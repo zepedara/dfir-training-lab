@@ -27,10 +27,10 @@ HKLM\SYSTEM\CurrentControlSet\Control\Session Manager\AppCompatCache\AppCompatCa
 
 - **Full path** of the executable (e.g. `C:\Windows\System32\wscript.exe`).
 - **Last-modified time** of that file — specifically the file's `$StandardInformation` modified timestamp from the filesystem, *not* a run time. (Renaming or recompiling a file changes this; merely running it does not.)
-- On older Windows (7/8), an **"executed" flag**; on Windows 10/11 that flag exists in the data but is **unreliable** (see below).
+- On Vista/7 (and Server 2008/2012), a reliable **"executed" flag**; on Windows 10/11 that flag exists in the data but is **unreliable** (see below).
 
 ### Why investigators love it (what you can prove)
-ShimCache is the **"existence"** corner of the Triad. Its superpower: the **application-compatibility subsystem** adds an entry when Windows **examines a file's metadata to decide whether it needs a compatibility shim** — which it does at (or just before) execution, but historically could also be driven by other interactions. So an entry proves the OS *evaluated* the file, **not** that it ran. The **exact triggers have changed across Windows versions** — on **XP/2003-era** systems a broader range of file interactions could insert an entry (which is where the old, now-debunked "merely browsing a file in Explorer adds it" rule of thumb came from), whereas on **Win7 and later** entries are essentially **execution / compatibility-evaluation** driven, and on Win10/11 the per-row "executed" flag additionally became unreliable (see below). The takeaway holds regardless of version: ShimCache can preserve a record of a malicious tool that:
+ShimCache is the **"existence"** corner of the Triad. Its superpower: the **application-compatibility subsystem** adds an entry when Windows **examines a file's metadata to decide whether it needs a compatibility shim** — which it does at (or just before) execution, but historically could also be driven by other interactions. So an entry proves the OS *evaluated* the file, **not** that it ran. The **exact triggers have changed across Windows versions** — on **Vista/7 (and Server 2008/2012)** interactive directory-browsing could insert an entry too — which is why the old "merely browsing a file in Explorer adds it" rule of thumb is only *partly* a myth: it applied to those versions, whose **reliable execution flag** lets you tell a browse from a run. **XP/2003** had no execution flag at all (so an entry was *probably* an execution — you just can't confirm it per-row), and on **Win8/10/11** the format changed and the per-row "executed" flag became unreliable (see below). The takeaway holds regardless of version: ShimCache can preserve a record of a malicious tool that:
 
 - was **dropped but never executed**, or
 - ran once and was then **deleted** (the registry entry survives the file).
@@ -183,14 +183,14 @@ The desktop `DESKTOP-SDN1RPT` (users `mortysmith` and `administrator` — the ca
 - It can preserve a record of a **deleted** tool — great for staging/anti-forensics hunts — but it also has gaps (`coreupdater` isn't here), which is the whole argument for the Triad.
 
 ## Sources & further reading
-- **AppCompatCacheParser / EZ Tools** (official tool + AboutDFIR manual): https://github.com/EricZimmerman/AppCompatCacheParser and https://aboutdfir.com/toolsandartifacts/windows/eric-zimmermans-tools/
-- **Mandiant — "Caching Out: The Value of Shimcache for Investigators"** (the standard modern reference; it builds directly on Andrew Davis's seminal 2012 whitepaper *"Leveraging the Application Compatibility Cache in Forensic Investigations,"* which first documented the blob's binary format): https://cloud.google.com/blog/topics/threat-intelligence/caching-out-the-value-of-shimcache-for-investigators/
-- **13Cubed — "Let's Talk About Shimcache: The Most Misunderstood Artifact"** (Richard Davis; the clearest correction of the "presence = execution" myth on Win8/10/11): https://www.youtube.com/c/13cubed
+- **AppCompatCacheParser / EZ Tools** (official tool + AboutDFIR manual): https://github.com/EricZimmerman/AppCompatCacheParser and the SANS tool listing: https://www.sans.org/tools/appcompatcacheparser
+- **Mandiant — "Caching Out: The Value of Shimcache for Investigators"** (the standard modern reference; it builds directly on Andrew Davis's seminal 2012 whitepaper *"Leveraging the Application Compatibility Cache in Forensic Investigations,"* which first documented the blob's binary format): https://cloud.google.com/blog/topics/threat-intelligence/caching-out-the-val/
+- **13Cubed — "Let's Talk About Shimcache: The Most Misunderstood Artifact"** (Richard Davis; the clearest correction of the "presence = execution" myth on Win8/10/11): https://www.youtube.com/watch?v=7byz1dR_CLg
 - **Magnet Forensics — "ShimCache vs AmCache: Key Windows Forensic Artifacts"** (how the two differ and pair): https://www.magnetforensics.com/blog/shimcache-vs-amcache-key-windows-forensic-artifacts/
 - **SANS DFIR — Windows Forensic Analysis poster** (where ShimCache sits among execution artifacts): https://www.sans.org/posters/windows-forensic-analysis/
 - **DFIR Madness — Case 001** (dataset provenance): https://dfirmadness.com/the-stolen-szechuan-sauce/
 
-**ATT&CK mapping.** ShimCache lives under the `AppCompatCache` key that the **T1546.011 (Event Triggered Execution: Application Shimming)** technique abuses — the same application-compatibility subsystem attackers can weaponise for persistence is the one that leaves this forensic trail. Reading the cache is how you'd both detect shim-based persistence and recover the existence of tooling that has since been deleted.
+**ATT&CK mapping.** ShimCache is a forensic byproduct of the same **application-compatibility subsystem** that **T1546.011 (Event Triggered Execution: Application Shimming)** abuses for persistence — though the technique weaponises the **shim database** (`.sdb` files plus the `InstalledSDB`/`Custom` keys), not the `AppCompatCache` value itself, which is only the trail it leaves behind. Reading the cache is how you'd both detect shim-based persistence and recover the existence of tooling that has since been deleted.
 
 ## Pivot
 - A suspicious path here → **Module 1** (did it run?) and **Module 3** (what's its SHA1?). To hunt one binary across many hosts → **Module 4**.
