@@ -41,7 +41,7 @@ WHERE condition
 - **`Windows.Forensics.Prefetch`** — collects **and parses** every `.pf` prefetch file (execution evidence — the same artifact Module 01 parses with PECmd).
 - **`Windows.Detection.*`** — a family of *hunting* artifacts (e.g. YARA sweeps, suspicious-autorun detections) that encode known-bad logic in VQL.
 
-Thousands of community artifacts live in the **Velociraptor Artifact Exchange** (<https://docs.velociraptor.app/exchange/>) — hunts for specific ATT&CK techniques, parsers for niche artifacts, detection content — all just VQL you can read, audit, and run.
+Thousands of community artifacts live in the **Velociraptor Artifact Exchange** (<https://docs.velociraptor.app/exchange/>) — hunts for specific ATT&CK techniques, parsers for niche artifacts, detection content — all just VQL you can read, audit, and run. **One caution:** Exchange artifacts are community-contributed and **not officially supported** — some fetch or run external tooling, so read an artifact's VQL before you run it (Velociraptor's own guidance is “use at your own risk”).
 
 ---
 
@@ -71,7 +71,7 @@ velociraptor -v query "SELECT Name, Pid, Ppid, CommandLine FROM pslist() LIMIT 1
 
 - **`pslist()`** is VQL's core triage plugin: it walks the OS process table and yields one row per **running** process. Selecting `Name, Pid, Ppid, CommandLine` gives you the three things that crack most triage questions — *what is running, who launched it (`Ppid` = parent PID), and with what arguments.*
 
-**Real output (JSON, trimmed):**
+**Representative output (JSON, trimmed):**
 ```json
 {"Name":"System","Pid":4,"Ppid":0,"CommandLine":null}
 {"Name":"services.exe","Pid":712,"Ppid":628,"CommandLine":"C:\\Windows\\system32\\services.exe"}
@@ -92,7 +92,7 @@ velociraptor -v query "SELECT Name, CommandLine FROM pslist() WHERE Name =~ 'svc
 
 - This is the same `pslist()` source, now **filtered** with **`WHERE Name =~ 'svchost'`** — `=~` is VQL's **regex match**, so this keeps only rows whose process name matches `svchost`. This is how you go from "show me everything" to *hunting a specific thing*.
 
-**Real output (JSON, trimmed):**
+**Representative output (JSON, trimmed):**
 ```json
 {"Name":"svchost.exe","CommandLine":"C:\\Windows\\system32\\svchost.exe -k DcomLaunch -p"}
 {"Name":"svchost.exe","CommandLine":"C:\\Windows\\system32\\svchost.exe -k RPCSS -p"}
@@ -111,7 +111,7 @@ velociraptor artifacts collect Windows.Forensics.Prefetch --output collection.zi
 - **`artifacts collect <ArtifactName>`** runs a **built-in artifact** — a packaged bundle of VQL — instead of a raw query. **`Windows.Forensics.Prefetch`** globs every `.pf` file under `C:\Windows\Prefetch`, **parses** each one (executable name, run count, last-run times, loaded files), and yields the results as rows.
 - **`--output collection.zip`** writes those results into a self-contained **collection zip** rather than printing them. This is the **offline-collector pattern in one line**: a single command **collects + parses + packages** the evidence.
 
-**Real output (verbose log, trimmed):**
+**Representative output (verbose log, trimmed):**
 ```
 [INFO] Collecting artifact Windows.Forensics.Prefetch
 [INFO] Uploaded results to container collection.zip
@@ -129,7 +129,7 @@ unzip -l collection.zip
 
 - **`unzip -l`** lists the container's contents **without extracting** — so you can see the Velociraptor collection format before you unpack it.
 
-**Real output (trimmed):**
+**Representative output (trimmed):**
 ```
 Archive:  collection.zip
   Length      Name
@@ -208,7 +208,7 @@ The standard, safe pipeline:
 
 - **Velociraptor — official documentation** (VQL reference, **Offline Collections**, **Artifact Exchange**, Building an Offline Collector): <https://docs.velociraptor.app/>
 - **Velociraptor Artifact Exchange** — community hunts, parsers, and detections (all readable VQL): <https://docs.velociraptor.app/exchange/>
-- **Dr. Michael Cohen — "Velociraptor — Hunting Evil"** — the author's own walkthrough of VQL hunting tradecraft.
+- **Dr. Michael Cohen — "Velociraptor: Hunting Evil"** (author talk, PDF) — VQL hunting tradecraft from the tool's creator: <https://www.velocidex.com/resources/nzitf_velociraptor.pdf>.
 - **Rapid7 — Velociraptor blog** — release notes, artifact deep-dives, and IR use-cases: <https://www.rapid7.com/blog/tag/velociraptor/>
 - **Eric Capuano — "Live Incident Response with Velociraptor"** — a practical end-to-end deploy-hunt-collect walkthrough.
 - **Velociraptor — source (AGPL), Rapid7 / Velocidex:** <https://github.com/Velocidex/velociraptor>

@@ -44,7 +44,7 @@ There is **one `NTUSER.DAT` and one `UsrClass.dat` per user profile**, so on a m
 ### The execution-evidence artifacts (beyond persistence)
 Persistence answers *"how did it survive a reboot?"*; **execution evidence** answers *"did it actually run, when, and how often?"* The registry carries several execution artifacts worth naming explicitly, because between them they catch **GUI** *and* **silent command-line** programs — the pair you lean on when Prefetch is disabled or wiped:
 
-- **UserAssist** (`NTUSER.DAT`, per user) — records GUI programs a user launched, with a **run count**, a **last-run time**, and (Win7+) a **focus-time** counter (total seconds the window was in the foreground). The names are stored **ROT13-encoded** under two GUID subkeys: **`{CEBFF5CD-ACE2-4F4F-9178-9926F41749EA}`** for executables and **`{F4E57C4B-2036-45F0-A9AB-443BCFE33D9F}`** for shortcut (`.lnk`) launches. RegRipper's `userassist` plugin un-ROT13s the names and decodes the counters for you (Step 12).
+- **UserAssist** (`NTUSER.DAT`, per user) — records GUI programs a user launched, with a **run count**, a **last-run time**, and (Win7+) a **focus-time** counter (total time in **milliseconds** the window was in the foreground). The names are stored **ROT13-encoded** under two GUID subkeys: **`{CEBFF5CD-ACE2-4F4F-9178-9926F41749EA}`** for executables and **`{F4E57C4B-2036-45F0-A9AB-443BCFE33D9F}`** for shortcut (`.lnk`) launches. RegRipper's `userassist` plugin un-ROT13s the names and decodes the counters for you (Step 12).
 - **BAM / DAM** (Background / Desktop Activity Moderator, `SYSTEM\…\Services\bam\State\UserSettings\<SID>`) — on Windows 10 1709+ this records the **full path of each executable a user ran**, and the **first 8 bytes** of the value are a **FILETIME of that program's last execution (UTC)**. Retention is only **~7 days**, but that short window is exactly what makes it superb for catching **silent / CLI malware** that never shows up in UserAssist. It is keyed by user **SID**, so it also tells you *which* account ran the binary.
 - **MUICache** (`UsrClass.dat`) — caches the friendly display names of executables Explorer has launched; a rougher "has-been-run" list that often keeps entries after the binary is deleted.
 
@@ -57,7 +57,7 @@ Together with ShimCache and Amcache (Modules 2-3), these form the registry's sid
 **RegRipper** (by **Harlan Carvey**) is a free, open-source, **plugin-driven** registry parser. You point it at one hive file and tell it which **plugin** to run; the plugin knows the exact key path(s) for one artifact, decodes the values, and prints a clean report. It does three things that matter:
 
 1. **Reads the raw hive offline** using the Perl `Parse::Win32Registry` library — no Windows, no mounting, **read-only and forensically sound**. It runs fine on the lab VM against an extracted hive.
-2. **One plugin = one artifact.** `services` lists services, `userassist` decodes UserAssist, `usbstor` lists USB drives, `shellbags` rebuilds folder-browsing history. There are **~260 plugins** in this build; you don't have to remember a single key path.
+2. **One plugin = one artifact.** `services` lists services, `userassist` decodes UserAssist, `usbstor` lists USB drives, `shellbags` rebuilds folder-browsing history. There are **over 250 plugins** in this build (run `rip -l` to count yours); you don't have to remember a single key path.
 3. **Decodes the ugly parts for you** — ROT13 UserAssist names, FILETIME timestamps, MRU ordering blobs — and prints each key's **LastWrite time** next to the data.
 
 You can run a single plugin (`-p`), or a whole **profile** (`-f system`, `-f software`, `-f ntuser` …) that bundles every plugin for that hive type into one sweep.
@@ -319,7 +319,7 @@ rip -r Administrator_NTUSER.DAT -p userassist
 2020-09-19 03:39:02Z
   Microsoft.MicrosoftEdge ... (1)
 ```
-**Read it — this is direct proof of execution.** The Administrator account **ran `coreupdater.exe` once, at 2020-09-19 03:40:49 UTC**, then opened `cmd.exe` seconds later. UserAssist only records things a **human launched through the GUI**, so this isn't a background service — *a person ran the malware*. The number in parentheses is the **run count**; alongside it each entry also carries a **focus-time** value (how long the window sat in the foreground), which separates a program that was opened and instantly closed from one someone actually used. These entries live under the executable GUID `{CEBFF5CD-…}`; a `.lnk`-shortcut launch of the same binary would instead appear under `{F4E57C4B-…}`.
+**Read it — this is direct proof of execution.** The Administrator account **ran `coreupdater.exe` once, at 2020-09-19 03:40:49 UTC**, then opened `cmd.exe` seconds later. UserAssist only records things a **human launched through the GUI**, so this isn't a background service — *a person ran the malware*. The number in parentheses is the **run count**; alongside it each entry also carries a **focus-time** value (how long — measured in **milliseconds** — the window sat in the foreground), which separates a program that was opened and instantly closed from one someone actually used. These entries live under the executable GUID `{CEBFF5CD-…}`; a `.lnk`-shortcut launch of the same binary would instead appear under `{F4E57C4B-…}`.
 
 **Why this step matters for the whole course:** Module 2 showed `coreupdater.exe` was **missing from this same host's ShimCache** — a deliberate gap. Here the registry catches it anyway, from a *different* artifact in a *different* hive. That is the core lesson of execution forensics: **no single artifact is complete, so you corroborate across the "execution triad"** — ShimCache (Module 2), Amcache (Module 3), and UserAssist (this module).
 
@@ -380,7 +380,7 @@ One account, one malware family, **two persistence mechanisms and a confirmed ha
 - Harlan Carvey, *Windows Registry Forensics*, 2nd ed. (Syngress) — the authoritative text on hive structure and artifact locations (UserAssist, BAM, MUICache, persistence keys).
 - Harlan Carvey, *Windows Incident Response* blog — ongoing notes on registry-based execution and persistence tradecraft: <https://windowsir.blogspot.com/>
 - Maxim Suhanov (dfir.ru) — internals of the **BAM/DAM** keys and the FILETIME last-execution timestamp: <https://dfir.ru/>
-- SANS — "RegRipper: Ripping Registries With Ease" (FOR500 registry artifact reference: UserAssist, Shellbags, USBSTOR, BAM, Run keys, ShimCache).
+- Maxim Suhanov (dfir.ru) — **BAM/DAM** internals (key path, FILETIME, 7-day window): <https://dfir.ru/2020/04/08/bam-internals/>.
 - MITRE ATT&CK — persistence: T1543.003 (Service), T1547.001 (Run Key), T1547.004 (Winlogon), T1546.010 (AppInit_DLLs), T1546.012 (IFEO), T1546.008 (Accessibility); execution: T1059.001 (PowerShell); registry ops: **T1112 (Modify Registry)**, **T1012 (Query Registry)**: <https://attack.mitre.org/>
 - 13Cubed — "Introduction to Windows Forensics" and "Investigating the Windows Registry" / RegRipper episodes (YouTube).
 - DFIR-Madness, "The Stolen Szechuan Sauce" (Case 001) — dataset provenance: <https://dfirmadness.com/the-stolen-szechuan-sauce/>
