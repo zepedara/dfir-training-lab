@@ -71,7 +71,7 @@ The last two are a matched pair on purpose: they let you *see for yourself* what
 | **17/18** | Pipe Created / Connected | **PsExec & named-pipe** lateral movement (Modules 6, 8) |
 | **19/20/21** | WMI Event subscription | WMI persistence |
 | **22** | DNS Query | C2 domain resolution |
-| **23/26** | File / stream delete | anti-forensic wiping |
+| **23/26** | File delete (23 = archived to `C:\Sysmon`, 26 = detected) | anti-forensic wiping |
 
 ---
 
@@ -200,7 +200,7 @@ This is the foundation under everything in Part B: every Sysmon ID you just read
 - SwiftOnSecurity — *sysmon-config* (the readable, heavily-commented single-XML config used for learning): https://github.com/SwiftOnSecurity/sysmon-config
 - olafhartong — *sysmon-modular* (production, per-technique modules tagged to MITRE ATT&CK, built with `Merge-SysmonXml`): https://github.com/olafhartong/sysmon-modular
 - SANS — *Hunt Evil: Your Practical Guide to Threat Hunting* poster (logon types, lateral-movement source/target artefacts): https://www.sans.org/posters/hunt-evil/
-- 13Cubed — *Windows Event Log / Investigative cheat sheet* (event-ID and logon-type quick reference): https://github.com/13cubed
+- 13Cubed (Richard Davis) — Windows event-log / Sysmon investigation walkthroughs (video references): <https://www.13cubed.com/>
 - Microsoft Learn — *Use Windows Event Forwarding to help with intrusion detection*: https://learn.microsoft.com/en-us/windows/security/operating-system-security/device-management/use-windows-event-forwarding-to-assist-in-intrusion-detection
 - Microsoft Learn — *Setting up a Source-Initiated Subscription* (`wecutil`, GPO, `ForwardedEvents`): https://learn.microsoft.com/en-us/windows/win32/wec/setting-up-a-source-initiated-subscription
 - @sbousseaden — *EVTX-ATTACK-SAMPLES*; Yamato-Security — *hayabusa-sample-evtx* (the sources of this module's data): https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES · https://github.com/Yamato-Security/hayabusa-sample-evtx

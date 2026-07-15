@@ -218,9 +218,9 @@ An attacker with code execution went for the master key. Across these logs you c
 - Microsoft Learn — Event 4624 (logon types reference): <https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4624>
 - TrustedSec — Sysmon Community Guide, Process Access (Event 10 / GrantedAccess): <https://github.com/trustedsec/SysmonCommunityGuide/blob/master/chapters/process-access.md>
 - Splunk — "You Bet Your Lsass: Hunting LSASS Access": <https://www.splunk.com/en_us/blog/security/you-bet-your-lsass-hunting-lsass-access.html>
-- jsecurity101 — "Syncing Into the Shadows: DCSync Detection" (4662 AccessMask `0x100` + the replication rights GUIDs): <https://jsecurity101.medium.com/syncing-into-the-shadows-b433cbcb37be>
+- jsecurity101 — "Syncing Into the Shadows: DCSync Detection" (4662 AccessMask `0x100` + the replication rights GUIDs): <https://medium.com/@jsecurity101/syncing-into-the-shadows-bbd656dd14c8>
 - MITRE ATT&CK — OS Credential Dumping: LSASS Memory (T1003.001) & DCSync (T1003.006): <https://attack.mitre.org/techniques/T1003/001/> · <https://attack.mitre.org/techniques/T1003/006/>
-- LOLBAS — `comsvcs.dll` MiniDump: <https://lolbas-project.github.io/lolbas/Libraries/Comsvcs/>
+- LOLBAS — `comsvcs.dll` MiniDump: <https://lolbas-project.github.io/lolbas/Libraries/comsvcs/>
 - Hayabusa `logon-summary`: <https://github.com/Yamato-Security/hayabusa>
 - Sample provenance — EVTX-ATTACK-SAMPLES (@sbousseaden, GPLv3): <https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES>
 
