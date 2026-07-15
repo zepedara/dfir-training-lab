@@ -31,6 +31,102 @@ NTFS keeps its own bookkeeping in hidden files whose names start with `$`. The m
 
 > **The timestomp tell:** at real file creation, NTFS writes `$SI` and `$FN` together, so they match. A timestomping tool rewrites only `$SI` (backdating it to look old) and **cannot reach `$FN`** through standard APIs — so afterwards **`$SI` Born is *earlier* than `$FN` Born** (an ordering that never happens naturally). A second tell: many stomping tools only set **whole seconds**, leaving `$SI` times ending in `.0000000` while `$FN` keeps its 100-nanosecond precision. And a third, *independent* artifact seals it: the **`$UsnJrnl` change journal** logs a **`USN_REASON_BASIC_INFO_CHANGE`** record the moment `$SI` is rewritten, so the stomp leaves a journal entry whose own timestamp converges on the **real** tamper moment even though `$SI` now claims 2019. Sound timestomp detection is **multi-artifact convergence** — `$SI`-vs-`$FN`, zeroed sub-seconds, and `$UsnJrnl` all pointing at the same instant — never a single tell. You will see the first two, in real tool output, below.
 
+### NTFS internals reference — the attributes and journals an examiner reads
+
+The two timestamp attributes above are the crux of *this* module, but they sit inside a larger structure worth knowing end-to-end, because the same `$MFT`, indexes, and journals recur across the filesystem, timeline, and anti-forensics work. This reference expands the picture; every fact here is what the tools already on your `PATH` (`istat`, `icat`, `fls`, `mactime`, MFTECmd) surface for you.
+
+#### The MFT is a sequential array of records, and the first ones are the filesystem itself
+The `$MFT` is one hidden file laid out as a flat array of fixed-size **records** (1,024 bytes on virtually every volume; the size is declared in `$Boot`, not hard-coded). Records are numbered from **0**, and that number *is* the file id (`istat image 5` reads record 5). The low records are NTFS's own metadata files — high-value artifacts in their own right:
+
+| Entry | File | What it is |
+|------|------|-----------|
+| 0 | `$MFT` | the table itself; its `$DATA` maps where the MFT lives on disk |
+| 1 | `$MFTMirr` | mirror of the first records, kept mid-volume for recovery |
+| 2 | `$LogFile` | the metadata transaction journal (redo/undo) |
+| 3 | `$Volume` | volume serial, NTFS version, dirty flag |
+| 4 | `$AttrDef` | the attribute-type definitions this volume supports |
+| 5 | `.` | the root directory |
+| 6 | `$Bitmap` | cluster allocation map (used vs. free) |
+| 7 | `$Boot` | boot sector + BIOS parameter block (record/cluster sizes live here) |
+| 8 | `$BadClus` | clusters marked bad |
+| 9 | `$Secure` | central, de-duplicated store of all security descriptors (ACLs/SIDs) |
+| 10 | `$UpCase` | uppercase table for case-insensitive name collation |
+| 11 | `$Extend` | directory holding `$UsnJrnl`, `$Quota`, `$ObjId`, `$Reparse` |
+
+Entries 12–23 are reserved. Note that the change journal (`$UsnJrnl`) is a **child of `$Extend`**, so it takes a *high* entry number, not a fixed low one — which is why you locate `$UsnJrnl:$J` through `$Extend`, never at a constant inode.
+
+#### A record = a header + a sequence of typed attributes
+In NTFS a file's name, its timestamps, its security, and its content are *all just attributes* on the record. Each attribute is self-describing (type code, length, a resident/non-resident flag, optional name). The ones you meet most:
+
+| Hex | Attribute | Purpose |
+|-----|-----------|---------|
+| `0x10` | `$STANDARD_INFORMATION` | the MACB set Explorer shows; DOS flags; owner/security id; USN |
+| `0x20` | `$ATTRIBUTE_LIST` | pointer to attributes that spilled into other records |
+| `0x30` | `$FILE_NAME` | filename + parent-directory reference + a *second* MACB set |
+| `0x40` | `$OBJECT_ID` | unique 64-bit / GUID object id |
+| `0x50` | `$SECURITY_DESCRIPTOR` | ACLs/SIDs (largely superseded by the central `$Secure`) |
+| `0x80` | `$DATA` | file content |
+| `0x90` | `$INDEX_ROOT` | root of a directory B-tree (always resident) |
+| `0xA0` | `$INDEX_ALLOCATION` | non-resident index storage for large directories |
+| `0xB0` | `$BITMAP` | allocation bitmap (for the MFT itself and large indexes) |
+
+**Resident vs. non-resident:** an attribute value is either stored *inline* in the 1 KB record (resident) or out in clusters on disk with the record holding only compact **data runs** — `(length, starting-cluster)` extents — that a tool follows to reassemble it (non-resident). `$STANDARD_INFORMATION` and `$FILE_NAME` are always resident; `$DATA` can be either.
+
+#### The record header (what `istat` interprets for you)
+- **Signature** — first four bytes are ASCII `FILE` (a failed integrity check reads `BAAD`).
+- **Fixup / Update-Sequence Array** — a torn-write detector: the last two bytes of every 512-byte sector are swapped out for a repeating sequence number and stashed in an array; a parser must apply the fixup before trusting the record. (This is why you carve `$MFT` with a forensic tool, not `dd`-and-hope.)
+- **`$LogFile` Sequence Number (LSN)** — ties the record to its last `$LogFile` transaction.
+- **Sequence number** — bumped each time a record is *reused* for a new file; combined with the entry number it forms a **file reference** that lets NTFS detect stale pointers to a recycled entry.
+- **Hard-link count** — counts the `$FILE_NAME` attributes on the record.
+- **Flags** — `0x01` = in use, `0x02` = directory. So `0x00` = deleted file, `0x01` = live file, `0x02` = deleted directory, `0x03` = live directory. This is how tools decide "deleted?" and "file or folder?".
+- **Base record reference** — for spillover records, points back to the base entry.
+
+#### `$STANDARD_INFORMATION` (`0x10`) and `$FILE_NAME` (`0x30`)
+Covered in depth above as the timestomp pair. In one line each: `$SI` carries the Explorer-visible MACB set and is **user-mode settable** (`SetFileTime` → the timestomp target); `$FN` carries a **second** MACB set plus the name and parent reference, is **kernel-written on create/rename/move**, and so exposes the stomp when `$SI` and `$FN` disagree in an impossible way. A file can hold **several `$FILE_NAME` attributes** (Win32 long name, DOS 8.3 short name, POSIX), which is why the link count tracks them.
+
+#### `$DATA` (`0x80`) — content, resident data, and Alternate Data Streams
+Every ordinary file has one unnamed `$DATA` stream. Small files are **resident** — the content sits inside the MFT record with *no clusters allocated*, so a small deleted file can be recovered straight from the `$MFT` even if its clusters were reused. Larger files are **non-resident** (data runs; this is the map `icat` walks).
+
+NTFS also allows **extra, named `$DATA` attributes** — **Alternate Data Streams (ADS)**, addressed `file.txt:streamname`. ADS content is invisible to Explorer and excluded from the displayed file size, historically abused to hide payloads. The headline forensic case is **`Zone.Identifier`**, the **Mark-of-the-Web (MotW)**: browsers and mail clients attach it to downloaded files. Its `ZoneId` (0 = local machine, 1 = intranet, 2 = trusted, **3 = internet**, 4 = restricted) marks provenance, and modern browsers add `ReferrerUrl`/`HostUrl` lines that can reveal the **exact download URL** — powerful for a suspicious binary. Reason both ways: presence (especially `ZoneId=3` with a `HostUrl`) is strong evidence of download and source; absence is *consistent with* local creation, copy from removable/network media, or an archive/copy step that stripped the stream — suggestive, never conclusive. `istat` shows each `$DATA` (default and named) and whether it's resident; `icat` extracts a named stream; MFTECmd lists named streams and, via `$J`, flags `STREAM_CHANGE` events.
+
+#### `$I30` — directory indexes and INDX slack (deleted-file recovery)
+A directory's contents are not a flat list but a **B-tree of `$FILE_NAME` entries sorted by name**, built from `$INDEX_ROOT` (`0x90`, resident root) and, once the directory outgrows the root, `$INDEX_ALLOCATION` (`0xA0`, non-resident nodes). The index name for filename indexes is **`$I30`**; the non-resident nodes are 4,096-byte records that begin with the ASCII signature **`INDX`**. Each index entry is a *copy* of a child's `$FILE_NAME` — so it carries the name, sizes, the full `$FN` MACB set, and both the file and parent MFT references.
+
+The forensic gold is **INDX slack**: when a file is deleted or renamed the B-tree re-balances but does **not** zero the old entry, so a stale `$FILE_NAME` survives in the unused slack of the index node until overwritten. You can therefore recover a deleted file's name, size, timestamps, and MFT/parent references **from the parent directory's index even after the file's own MFT record is reused** — an independent recovery path that also gives a second, `$FN`-sourced timestamp snapshot to check a stomped `$SI` against. Tools: MFTECmd (processes `$I30`/directory slack), INDXParse.py, INDXRipper.
+
+#### `$LogFile` (record 2) and `$UsnJrnl:$J` (under `$Extend`)
+Two journals, at two different levels:
+
+- **`$LogFile`** is the low-level **metadata transaction log**. Before NTFS commits a metadata change it writes a transaction with an **LSN**, a **redo** (roll forward) and an **undo** (roll back), and the target's file reference; on reboot it replays/rolls back to a consistent state. Because it operates at the bottom, one logical action ("create a file") becomes *several* `$LogFile` transactions touching `$MFT`, `$I30`, `$Bitmap`. It is **circular and small**, so it **wraps fast** — its window is minutes-to-hours on a busy volume — but while in-window it is the finest-grained, most authoritative reconstruction of very recent creates/deletes/renames. Tool: LogFileParser (Joakim Schicht), NTFS Log Tracker.
+
+- **`$UsnJrnl:$J`** (the `$J` alternate data stream of `$Extend\$UsnJrnl`; a **sparse** file whose aged-out front reads as zeros) is the higher-level **change journal** — one record per change, each carrying a **USN**, a UTC timestamp, the file and **parent** references (path reconstruction), a **name**, and a bitwise **reason** set. Key reasons: `FILE_CREATE` (0x100), `FILE_DELETE` (0x200), `RENAME_OLD_NAME` (0x1000) + `RENAME_NEW_NAME` (0x2000) — a rename emits **both** — `DATA_OVERWRITE`/`_EXTEND`/`_TRUNCATION`, `BASIC_INFO_CHANGE` (0x8000, i.e. a timestamp/attribute change — the timestomp corroborator), `STREAM_CHANGE` (0x200000, an ADS added/removed), and `CLOSE` (0x80000000). Reasons **accumulate** over an open handle and finish with a `CLOSE`. It logs at a higher level, so it covers a **much longer window than `$LogFile`** — typically **days** (volume-dependent; teach "days," not a constant), and records **survive the file's deletion**. Tools: **MFTECmd `-f $J`**, UsnJrnl2Csv, Velociraptor `parse_usn()`.
+
+**Reading the three together** is the super-timeline pivot: the `$MFT` gives current state + both timestamp sets (*what exists, does `$SI` disagree with `$FN`?*); `$UsnJrnl` gives the durable long-baseline narrative (*what was created / renamed / deleted, and when — even if it's gone now*); `$LogFile`, when in-window, gives high-resolution ground truth for the most recent events (*the exact operation and order behind a USN summary*). `$SI` can be forged, but the `$FN` set, the USN `FILE_*`/`BASIC_INFO_CHANGE` records, and the `$LogFile` transactions are far harder to forge *consistently* — which is what defeats anti-forensics.
+
+#### Useful techniques for searching journals
+- **Pivot on reason flags.** Filter the parsed `$J` CSV to `FILE_DELETE` to enumerate everything deleted in the window (with names/timestamps that survive the file); to `FILE_CREATE` to catch dropped tooling; to `RENAME_OLD_NAME`+`RENAME_NEW_NAME` pairs (same USN-adjacent) to see staging where an attacker renames a payload into place.
+- **Reconstruct paths** by chaining each record's **parent reference** up through the `$MFT` — the journal stores references, not full paths, so join `$J` against the `$MFT` output on the parent entry.
+- **Bracket by time**, not by reading it all: once `istat`/MFTECmd hand you the incident window, filter both journals to it (the same windowing you use with `mactime` below).
+- **Corroborate timestomping**: a `BASIC_INFO_CHANGE` in `$J` whose *own* timestamp lands in the incident window, on a file whose `$SI` claims to be years old, converges on the real tamper moment.
+- **Watch for the gap**: a stretch of `$J` that is suspiciously empty, or a `$LogFile`/`$UsnJrnl` that was reset, is itself an indicator (see file-wiping and countermeasures below).
+
+#### Characteristics of file wiping (secure deletion)
+Ordinary deletion only flips the record's in-use flag and frees clusters — the `$MFT` entry, `$FN` in the parent `$I30`, and the `$UsnJrnl` `FILE_DELETE` record all persist, which is why recovery works. A **wiping** tool tries to destroy that residue, and the *attempt itself* leaves a recognizable signature:
+- **Overwritten cluster content** — carved/recovered data comes back as uniform patterns (all-zero, all-`0xFF`, or repeating/random fill) instead of a real header, so a file "exists" in metadata but its content is meaningless.
+- **Normalized/zeroed timestamps** and mass same-second `$SI` values across many files (a wipe pass rewriting metadata in bulk).
+- **A burst of `$UsnJrnl` `DATA_OVERWRITE` then `FILE_DELETE`** across many files in a tight interval — the journal captures the wipe even when the files are gone.
+- **Tool footprints** — the wiping utility's own presence in prefetch, `$MFT`, `$UsnJrnl` `FILE_CREATE`, and MotW (`Zone.Identifier`) on the downloaded wiper.
+- **Journal truncation/reset** — a `$UsnJrnl` deleted and recreated (via `fsutil usn`) or a `$LogFile` that starts abruptly is a strong anti-forensics tell, because normal systems don't reset them.
+
+#### Defensive countermeasures (making the evidence harder to erase)
+- **Enable and size up the change journal** (`fsutil usn createjournal` with a generous `maxsize`) so the `$UsnJrnl` window covers days-to-weeks and survives an attacker's dwell time.
+- **Ship the journals off-host early** — forward `$UsnJrnl`/Security/Sysmon telemetry to a SIEM or EDR so a local wipe can't reach the copy (this is exactly why the enterprise-collection modules exist).
+- **Enable Sysmon** (Event ID 11 FileCreate, 23/26 FileDelete) and **object-access auditing** so file lifecycle is recorded *outside* NTFS where wiping can't touch it.
+- **Volume Shadow Copies / periodic imaging** capture point-in-time `$MFT`/journal state before an attacker can scrub it.
+- **Triage fast** — `$LogFile`'s minutes-to-hours window means the richest evidence is perishable; collect the volume (or at least `$MFT`, `$LogFile`, `$UsnJrnl:$J`) as early in the response as possible.
+
+> **How this maps to the practice below.** Everything above is what `istat`, `icat`, `fls`, `mactime`, and MFTECmd expose from the shipped image — you already parse the `$MFT` with MFTECmd in Step 6 and read both timestamp sets with `istat` in Step 5. The `$UsnJrnl` gets its own hands-on MFTECmd walkthrough in the browser/journal exercises; the `$I30`, `$LogFile`, and journal-search techniques here give you the vocabulary to read those outputs like an examiner rather than a tool operator.
+
 ### What the two tools in this module do
 - **The Sleuth Kit (TSK)** — Brian Carrier's open-source disk-forensics toolkit (the engine under Autopsy). A family of small command-line tools (`mmls`, `fls`, `istat`, `icat`, `mactime`, …), each working at one layer above. Reads images **read-only and offline** — it never mounts anything, so the evidence can't change. Version on the lab VM: **4.11.1**.
 - **MFTECmd** — Eric Zimmerman's dedicated `$MFT`/`$J`/`$LogFile` parser (.NET). It flattens the `$MFT` into a rich CSV with **both** timestamp sets in separate columns *and* pre-computed timestomp flags (`SI<FN`, `uSecZeros`). Version on the lab VM: **2026.5.0**.
