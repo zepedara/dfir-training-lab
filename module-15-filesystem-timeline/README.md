@@ -388,7 +388,44 @@ mactime -b mft.body -d -z UTC > timeline_mft.csv
 
 Either route gives you the **filesystem half of a super-timeline**.
 
-### Step 8 — Where the heavier tooling fits (Plaso)
+### Step 8 — The change journal: MFTECmd on `$UsnJrnl:$J`
+
+The `$MFT` shows the disk's *current* state; the **`$UsnJrnl` change journal** shows the *history of changes* — including files that were created and then deleted, and the exact moment a file was timestomped. Because a USN record **outlives the file it describes**, the journal is both the third pillar of timestomp convergence and the durable record of an attacker's staging-and-cleanup. This module ships `UsnJrnl_J` — the raw `$J` stream carved from a volume that recorded the same intrusion (host `DESKTOP-SDN1RPT`, user `mortysmith`). Parse it exactly the way you parsed the `$MFT`; MFTECmd auto-detects the USN record format:
+
+```bash
+MFTECmd -f UsnJrnl_J --csv . --csvf usnjrnl.csv
+```
+- **`-f UsnJrnl_J`** — the raw `$J` stream. It was carved with `icat` from `$Extend\$UsnJrnl:$J` — the *same* `icat`-by-attribute technique you used to pull the `$MFT` in Step 6 (`icat -o 128 usn.vhd 38-128-3`, where `38-128-3` is `$UsnJrnl`'s `$DATA` stream named `$J`).
+- Each row is one change: a **name**, a **UTC timestamp**, the file and parent MFT references (for path reconstruction), and a **reason** (`UpdateReasons`) — the bitwise-OR reason set decoded to text.
+
+Now read just the three columns that tell the story — name, time, reason:
+```bash
+cut -d, -f1,9,10 usnjrnl.csv
+```
+The attacker's whole sequence is there, in order (abridged):
+```
+cu.tmp           …37.6148492   FileCreate            <- payload staged under an innocuous temp name
+cu.tmp           …37.6293930   RenameOldName         <- ...then renamed
+coreupdater.exe  …37.6293930   RenameNewName         <- ...into place  (RENAME = this pair)
+coreupdater.exe  …37.6433303   DataExtend            <- payload bytes written
+update.ps1       …37.6458383   FileCreate            <- second-stage script dropped
+loot.zip         …37.6458383   FileCreate            <- collection archive dropped
+coreupdater.exe  …37.9843261   BasicInfoChange       <- the TIMESTOMP (metadata rewrite)
+update.ps1       …38.3119259   FileDelete|Close      <- cleanup
+loot.zip         …38.3119259   FileDelete|Close      <- cleanup
+```
+
+**Read it like an examiner:**
+- **`RenameOldName` on `cu.tmp` immediately followed by `RenameNewName` on `coreupdater.exe`** *is* a rename — a move always emits this pair, so matching them reconstructs the attacker staging the payload under a throwaway name and renaming it into place.
+- **`BasicInfoChange` on `coreupdater.exe`** is the journal's fingerprint of the **timestomp**: `$SI` was rewritten, and the journal logged the event with the **real** wall-clock time (`…37.98`) even though `istat`/MFTECmd now show that file's `$SI` claiming 2019. This is the independent third artifact that Step 5's `$SI`-vs-`$FN` split and Step 6's `uSecZeros` flag converge with — three sources, one instant.
+- **`FileDelete|Close` on `update.ps1` and `loot.zip`** proves they existed and were removed. The journal remembers the **names and timing** of deleted tooling even after the `$MFT` records are reused — often the only place they survive.
+- The `FileCreate|Close` rows for `Windows`, `Users`, `mortysmith`, … are benign directory scaffolding, and `IndexerVolumeGuid` / `$TxfLog.blf` are normal OS bookkeeping. **Filter to the reasons and names that matter** (`FileDelete`, `RenameOldName`, `BasicInfoChange`) rather than reading every row — the journal-searching technique from the Background.
+
+> **Why this is the durable pillar.** The `$LogFile` (MFT record 2) records the same events at finer grain but wraps in minutes-to-hours; the `$UsnJrnl` keeps its higher-level record for **days**. Every row above — the rename, the timestomp, the two deletions — outlived the action that produced it. On a live host you would carve `$J` from `\$Extend\$UsnJrnl:$J` with `icat` (or MFTECmd's raw-volume mode) exactly as this artifact was made.
+
+*(The shipped `UsnJrnl_J` is **inert**: it was generated on a scratch NTFS volume driven through this exact benign sequence — the files held only an `MZ` header plus a marker string, never any code — then carved with `icat`. The generator is `data/build-usnjrnl.ps1`; the journal is pure filesystem-change metadata, no executable content.)*
+
+### Step 9 — Where the heavier tooling fits (Plaso)
 A full **super-timeline** merges the filesystem (this module) with registry, EVTX (Module 5), Prefetch (Module 1), Amcache (Module 3), browser history, and more, into one sorted file. The standard one-shot merger is **Plaso** (`log2timeline.py` to ingest everything, `psort.py` to sort/filter).
 
 > **Tool gap (verified on the lab VM, 2026-06-29):** **Plaso is *not* installed** on the lab VM — `which log2timeline.py psort.py` returns nothing. That's deliberate (Plaso is heavy). Until it's added, build the timeline **per layer** as you did here — TSK `fls`+`mactime` and MFTECmd for the filesystem, `EvtxECmd` for logs (Module 5), RegRipper for the registry — and **merge them in Timeline Explorer** (all EZ output and `mactime -d` CSV are easy to load and sort together). Adding Plaso is a recommended future enhancement to the lab VM, not a requirement for this lesson.
