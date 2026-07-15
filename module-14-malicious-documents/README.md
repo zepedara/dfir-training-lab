@@ -62,7 +62,7 @@ The tools below produced the artifacts in `data/artifacts/`. You will not re-run
 | Tool | Suite | One-line job | Captured as |
 |---|---|---|---|
 | **`oleid`** | oletools | 30-second **triage** of an Office file: macros? encrypted? external links? with a **risk level**. | `01_oleid_invoice.txt` |
-| **`mraptor`** | oletools | one-shot **macro triage verdict** — tests for the single combination that defines a weaponised macro (**A**utoExec **+ W**rite **+ eX**ecute) and prints `SUSPICIOUS`/clean plus a script-friendly **exit code** (`20` = suspicious). | `02_mraptor_invoice.txt` |
+| **`mraptor`** | oletools | one-shot **macro triage verdict** — tests for the combination that defines a weaponised macro (**A**utoExec **plus** **W**rite **or** e**X**ecute) and prints `SUSPICIOUS`/clean plus a script-friendly **exit code** (`20` = suspicious). | `02_mraptor_invoice.txt` |
 | **`olevba`** | oletools | the **macro workhorse** — extracts the VBA source and runs a keyword/IOC scanner that flags auto-exec, suspicious APIs, and obfuscation; can **deobfuscate** and **reveal** the real strings. | `03_olevba_analysis_invoice.txt`, `04_olevba_reveal_invoice.txt`, `invoice.macro.vba`, `statement.macro.vba` |
 | **`oledump`** | Didier Stevens | **OLE stream surgery** — lists the streams, marks which hold a macro (`M`), and **decompresses** the one you pick. Plus plugins (e.g. HTTP-heuristics). | `05_oledump_invoice.txt`, `06_oledump_macro_invoice.txt`, `07_oledump_http_invoice.txt`, `09_statement_vbaproject_streams.txt`, `10_statement_macro.txt` |
 | **`zipdump`** | Didier Stevens | inspect a **ZIP/OOXML** (`.docm`/`.xlsm`) without unzipping to disk, and **pipe** a member (the `vbaProject.bin`) into `oledump`. | `08_zipdump_statement.txt` |
@@ -119,7 +119,7 @@ grep -iE 'VBA Macros|HIGH|Encrypted|External' 01_oleid_invoice.txt
 ```
 
 ### Step A1.5 — One-shot verdict with `mraptor` (triage at scale)
-`oleid` literally told you to *"Use olevba and mraptor for more info."* `mraptor` (macro-raptor) hunts for the one combination that defines a weaponised macro — **A**utoExec **+ W**rite **+ eX**ecute — and prints a single verdict plus an **exit code** you can script on.
+`oleid` literally told you to *"Use olevba and mraptor for more info."* `mraptor` (macro-raptor) hunts for the combination that defines a weaponised macro — **A**utoExec **plus** **W**rite **or** e**X**ecute — and prints a single verdict plus an **exit code** you can script on.
 
 ```bash
 cat 02_mraptor_invoice.txt
@@ -220,7 +220,7 @@ grep -iE "app = |host = |flags = |DownloadString" 04_olevba_reveal_invoice.txt
 Identical to what your `python3` one-liner computed — two independent methods, one answer. That agreement is what you put in the report. The full `04_olevba_reveal_invoice.txt` also contains olevba's **IOC / VBA-string** table, which lists the reconstructed URL `http://www.example.test/inv/update.ps1` and the exact expression that built each hidden string — read it with `cat 04_olevba_reveal_invoice.txt` when you want the tool's own accounting.
 
 ### Step A6 — Cross-check the container with `oledump`
-`olevba` is automated; `oledump` shows the **raw OLE structure** and a clean decompress — captured here to confirm the source did not come from a stomped/decoy stream. The stream listing:
+`olevba` is automated; `oledump` shows the **raw OLE structure** and a clean decompress — captured here to confirm both tools decode the *same* source bytes. (Matching two source extractions does not by itself rule out **VBA stomping** — which leaves the compiled **p-code** to run while the stored source is altered/removed; detect that by comparing source against p-code, e.g. with `pcodedmp`.) The stream listing:
 
 ```bash
 cat 05_oledump_invoice.txt

@@ -203,10 +203,10 @@ On `MSEDGEWIN10`, an attacker who already had a foothold used **PsExec** to exec
 ## 10. Sources & further reading
 
 - Chainsaw — WithSecure Labs: <https://github.com/WithSecureLabs/chainsaw> · Usage wiki: <https://github.com/WithSecureLabs/chainsaw/wiki/Usage>
-- Hayabusa — Yamato Security: <https://github.com/Yamato-Security/hayabusa> · "Analyzing Sample Timeline Results": <https://github.com/Yamato-Security/hayabusa/wiki/Analyzing-Sample-Timeline-Results>
+- Hayabusa — Yamato Security: <https://github.com/Yamato-Security/hayabusa> · sample walkthrough data: <https://github.com/Yamato-Security/hayabusa-sample-evtx>
 - `hayabusa-rules` — Yamato Security (the bundled rule set; rule counts and `update-rules`): <https://github.com/Yamato-Security/hayabusa-rules>
 - Sigma rules & format — SigmaHQ: <https://github.com/SigmaHQ/sigma> · Sigma rule specification (the `logsource`/`detection` schema): <https://github.com/SigmaHQ/sigma-specification> · About Sigma: <https://sigmahq.io/>
-- MITRE ATT&CK — PsExec / Remote Services (T1021.002), Service Execution (T1569.002): <https://attack.mitre.org/techniques/T1021/002/>
+- MITRE ATT&CK — PsExec / Remote Services: SMB/Windows Admin Shares (T1021.002), Service Execution (T1569.002): <https://attack.mitre.org/techniques/T1021/002/>
 - Sample provenance — hayabusa-sample-evtx (Yamato): <https://github.com/Yamato-Security/hayabusa-sample-evtx> · EVTX-ATTACK-SAMPLES (@sbousseaden): <https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES>
 
 ---
