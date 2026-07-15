@@ -278,14 +278,16 @@ That is lateral movement told as a story: *credential theft → network logon �
 ## 9. Sources & further reading
 
 - JPCERT/CC — *Detecting Lateral Movement through Tracking Event Logs* (the reference catalogue of which tool leaves which event): https://www.jpcert.or.jp/english/pub/sr/20170612ac-ir_research_en.pdf
-- Microsoft Learn — *4624: An account was successfully logged on* (logon types): https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10-security/auditing/event-4624
-- Microsoft Learn — *4697: A service was installed in the system* (the **Security**-log audit event): https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10-security/auditing/event-4697 — note the event this module keys on, **7045**, is the equivalent **System**-log event written by the **Service Control Manager** (event source `Service Control Manager`); it has no dedicated MS-Learn page. 4697 is its audit-subsystem counterpart and must be explicitly enabled.
+- Microsoft Learn — *4624: An account was successfully logged on* (logon types): https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4624
+- Microsoft Learn — *4697: A service was installed in the system* (the **Security**-log audit event): https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4697 — note the event this module keys on, **7045**, is the equivalent **System**-log event written by the **Service Control Manager** (event source `Service Control Manager`); it has no dedicated MS-Learn page. 4697 is its audit-subsystem counterpart and must be explicitly enabled.
 - Cyber Triage — *DFIR Breakdown: Impacket Remote Execution (smbexec/psexec/atexec)*: https://www.cybertriage.com/blog/dfir-breakdown-impacket-remote-execution-activity-smbexec/
-- The DFIR Spot — *Lateral Movement: RDP Event Logs* (RdpCoreTS 131/140): https://www.thedfirspot.com/post/lateral-movement-remote-desktop-protocol-rdp-event-logs
+- The DFIR Spot — *Lateral Movement: RDP Event Logs* (RdpCoreTS 131/98): https://www.thedfirspot.com/post/lateral-movement-remote-desktop-protocol-rdp-event-logs
 - Ponder The Bits — *Windows RDP-Related Event Logs: Identification, Tracking, and Investigation*: https://ponderthebits.com/2018/02/windows-rdp-related-event-logs-identification-tracking-and-investigation/
 - SANS — *Hunt Evil: Your Practical Guide to Threat Hunting* poster (the per-technique lateral-movement source/destination artefact matrix): https://www.sans.org/posters/hunt-evil/
 - AboutDFIR — *The Key to Identify PsExec* (7045/PSEXESVC + the SMB-service artefact chain): https://aboutdfir.com/the-key-to-identify-psexec/
-- PureRDS — *Auditing Remote Desktop Services Logon Failures* (RemoteConnectionManager 1149 / LocalSessionManager 21/22/25 / RdpCoreTS 140): https://purerds.com/2018/03/07/auditing-rds-logon-failures/
+- PureRDS — *Auditing Remote Desktop Services Logon Failures* (RdpCoreTS **140/131** logon-failure events): https://purerds.org/remote-desktop-security/auditing-remote-desktop-services-logon-failures-1/
+- Ponder The Bits — *Windows RDP-Related Event Logs* (RemoteConnectionManager **1149**, LocalSessionManager **21/22/25**): https://ponderthebits.com/2018/02/windows-rdp-related-event-logs-identification-tracking-and-investigation/
+- MITRE ATT&CK — *Use Alternate Authentication Material*: Pass-the-Hash **T1550.002** / Pass-&-Over-pass-the-Ticket **T1550.003** (the technique behind Step 8): https://attack.mitre.org/techniques/T1550/002/
 - MITRE ATT&CK — *Remote Services* (T1021, incl. RDP/SMB/DCOM/WinRM sub-techniques) & *Windows Management Instrumentation* (T1047): https://attack.mitre.org/techniques/T1021/ · https://attack.mitre.org/techniques/T1047/
 - @sbousseaden — *EVTX-ATTACK-SAMPLES* (the source of this module's data): https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES
 
