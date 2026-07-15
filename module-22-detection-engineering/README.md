@@ -39,7 +39,7 @@ A Sigma rule is a small YAML document with four parts that matter here:
 
 Three more fields separate a hobby rule from one a team will actually trust and maintain — real detection engineers rely on them:
 
-- **`status`** — the rule's maturity: `experimental` (just written, unproven), `test` (being validated), or `stable` (trusted in production). It tells a reviewer how much to lean on the rule.
+- **`status`** — the rule's maturity: `experimental` (just written, unproven), `test` (being validated), or `stable` (trusted in production) — the three you progress a rule *through*. The current Sigma spec defines **five** values in total, adding `deprecated` (retired — kept for history but no longer maintained) and `unsupported` (can't run as written, e.g. it needs a field the backend doesn't have); a mature rule library uses all five to manage detections across their whole lifecycle. It tells a reviewer how much to lean on the rule.
 - **`falsepositives`** — a plain-text list of the known benign things that could trip the rule (e.g. *"legitimate admin installing a service"*). It makes the rule **FP-aware** and gives the triaging analyst the first thing to check.
 - **`tags`** — the ATT&CK (and other) mappings, e.g. `attack.t1543.003` for a service install. Tags make a rule **reviewable and pivotable** — you can see at a glance which technique it covers and find every rule for a tactic.
 
