@@ -216,3 +216,16 @@ The standard, safe pipeline:
 
 ---
 *Previous: [Module 18 — The Super Timeline](../module-18-super-timeline). This module adds the **acquisition/triage** front-end that feeds every analyzer in the lab: harvest with Velociraptor (collect live artifacts), then parse with PECmd (Module 01), EvtxECmd (Module 05), RegRipper (Module 16), and the timeline (Modules 15/18).*
+
+
+---
+
+## Sources
+
+- **Velociraptor official docs (VQL, offline collections, Build Collector, artifacts)** — [docs.velociraptor.app](https://docs.velociraptor.app/)
+- **Velociraptor source (AGPL; Velocidex/Rapid7)** — [Velocidex/velociraptor (GitHub)](https://github.com/Velocidex/velociraptor)
+- **Velociraptor Artifact Exchange (community VQL hunts/parsers/detections)** — [Velociraptor Artifact Exchange](https://docs.velociraptor.app/exchange/)
+- **Rapid7 stewardship, release notes, IR use-cases** — [Rapid7 blog — Velociraptor tag](https://www.rapid7.com/blog/tag/velociraptor/)
+- **Practical live-IR deploy/hunt/collect walkthrough** — [Eric Capuano — Live Incident Response with Velociraptor (blog.ecapuano.com)](https://blog.ecapuano.com/)
+- **PowerShell execution (encoded command lines the pslist() hunt surfaces)** — [MITRE ATT&CK T1059.001 — PowerShell](https://attack.mitre.org/techniques/T1059/001/)
+- **Windows service persistence (service/svchost masquerade context)** — [MITRE ATT&CK T1543.003 — Windows Service](https://attack.mitre.org/techniques/T1543/003/)

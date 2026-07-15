@@ -232,3 +232,17 @@ An attacker used a **living-off-the-land** trick to pull a payload past defenses
 
 ---
 *Next: [Module 6 — Sigma Hunting with Chainsaw & Hayabusa](../module-06-sigma-chainsaw-hayabusa).*
+
+
+---
+
+## Sources
+
+- **EvtxECmd (Eric Zimmerman)** — [EricZimmerman/evtx (GitHub)](https://github.com/EricZimmerman/evtx)
+- **Timeline Explorer & the EZ Tools suite** — [Eric Zimmerman's Tools](https://ericzimmerman.github.io/)
+- **Sysmon (Event ID 1 process create, 11 file create)** — [Sysmon — Sysinternals (Microsoft Learn)](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
+- **Security logon events & Logon Types (4624 / 4625)** — [4624(S) An account was successfully logged on (Microsoft Learn)](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4624)
+- **PowerShell Script Block Logging (Event ID 4104)** — [about_Logging_Windows (Microsoft Learn)](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_logging_windows)
+- **LOLBAS technique — desktopimgdownldr.exe** — [Desktopimgdownldr — LOLBAS Project](https://lolbas-project.github.io/lolbas/Binaries/Desktopimgdownldr/)
+- **BITS abuse (Event ID 59/60)** — [T1197 BITS Jobs — MITRE ATT&CK](https://attack.mitre.org/techniques/T1197/)
+- **Evidence provenance (sample .evtx)** — [EVTX-ATTACK-SAMPLES (sbousseaden, GitHub)](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)

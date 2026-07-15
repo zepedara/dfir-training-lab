@@ -335,3 +335,14 @@ enumerating. Combined with the stack, it points you at the hosts that had hands-
 > **Honesty note:** the Count=3-style baseline bands and the planted SAURON toolkit are a constructed
 > teaching dataset (Section 3). The ACP tool, its commands, and its outputs are **real** — everything
 > above was produced by running this exact build of ACP on this exact fleet in the lab VM.
+
+
+---
+
+## Sources
+
+- **AppCompatProcessor (ACP)** — [mbevilacqua/appcompatprocessor (GitHub)](https://github.com/mbevilacqua/appcompatprocessor)
+- **ShimCache / Application Compatibility Cache** — [Caching Out: The Value of Shimcache for Investigators (Mandiant / Google Cloud)](https://cloud.google.com/blog/topics/threat-intelligence/caching-out-the-val/)
+- **Amcache.hve artifact** — [AMCache — Digital Forensics Artifact Knowledge Base](https://artifacts-kb.readthedocs.io/en/latest/sources/windows/AMCache.html)
+- **Modern replacement parsers — AppCompatCacheParser / AmcacheParser / Timeline Explorer** — [Eric Zimmerman's Tools (EZ Tools)](https://ericzimmerman.github.io/)
+- **Velociraptor (fleet-wide collection & stacking)** — [Velocidex/velociraptor (GitHub)](https://github.com/Velocidex/velociraptor)

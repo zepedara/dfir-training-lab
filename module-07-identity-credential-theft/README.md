@@ -226,3 +226,17 @@ An attacker with code execution went for the master key. Across these logs you c
 
 ---
 *Next: [Module 8 — Lateral Movement](../module-08-lateral-movement).*
+
+
+---
+
+## Sources
+
+- **Mimikatz (sekurlsa::logonpasswords, sekurlsa::pth, lsadump::dcsync)** — [gentilkiwi/mimikatz (official repo & wiki)](https://github.com/gentilkiwi/mimikatz)
+- **LSASS memory credential dumping** — [MITRE ATT&CK T1003.001 — OS Credential Dumping: LSASS Memory](https://attack.mitre.org/techniques/T1003/001/)
+- **comsvcs.dll MiniDump LOLBAS trick (rundll32 → MiniDump lsass)** — [LOLBAS Project — comsvcs.dll](https://lolbas-project.github.io/lolbas/Libraries/comsvcs/)
+- **DCSync (replicate password data from a DC; Security 4662 + DS-Replication-Get-Changes GUIDs)** — [MITRE ATT&CK T1003.006 — OS Credential Dumping: DCSync](https://attack.mitre.org/techniques/T1003/006/)
+- **Pass-the-Hash (NTLM; Logon Type 9 NewCredentials)** — [MITRE ATT&CK T1550.002 — Use Alternate Authentication Material: Pass the Hash](https://attack.mitre.org/techniques/T1550/002/)
+- **Sysmon Event ID 10 (ProcessAccess) / GrantedAccess bitmask on lsass.exe** — [Microsoft Learn — Sysmon (Sysinternals)](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
+- **Security Event 4624 logon types (2/3/9/10/11)** — [Microsoft Learn — 4624(S) An account was successfully logged on](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4624)
+- **Chainsaw / Hayabusa / EvtxECmd (Sigma hunting, logon-summary, evtx parsing)** — [WithSecureLabs/chainsaw](https://github.com/WithSecureLabs/chainsaw) · [Yamato-Security/hayabusa](https://github.com/Yamato-Security/hayabusa) · [Eric Zimmerman's Tools (EvtxECmd)](https://ericzimmerman.github.io/)

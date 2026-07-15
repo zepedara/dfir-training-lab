@@ -298,3 +298,18 @@ See `data/README.md` for the exact provenance and license of each bundled `.evtx
 
 ---
 *Next: [Module 9 — PowerShell Tradecraft](../module-09-powershell-tradecraft).*
+
+
+---
+
+## Sources
+
+- **PsExec / remote-service execution (PSEXESVC, \ADMIN$, svcctl pipe)** — [Microsoft Learn — PsExec (Sysinternals)](https://learn.microsoft.com/en-us/sysinternals/downloads/psexec) · [MITRE ATT&CK T1021.002 — SMB/Windows Admin Shares](https://attack.mitre.org/techniques/T1021/002/) · [MITRE ATT&CK T1569.002 — Service Execution](https://attack.mitre.org/techniques/T1569/002/)
+- **WMI lateral movement (WmiPrvSE.exe, wmiexec)** — [MITRE ATT&CK T1047 — Windows Management Instrumentation](https://attack.mitre.org/techniques/T1047/)
+- **DCOM lateral movement (MMC20.Application / ShellWindows / LethalHTA)** — [MITRE ATT&CK T1021.003 — Remote Services: Distributed Component Object Model](https://attack.mitre.org/techniques/T1021/003/)
+- **WinRM / PowerShell Remoting (wsmprovhost.exe)** — [MITRE ATT&CK T1021.006 — Remote Services: Windows Remote Management](https://attack.mitre.org/techniques/T1021/006/)
+- **RDP lateral movement (Type 10; SharpRDP)** — [MITRE ATT&CK T1021.001 — Remote Services: Remote Desktop Protocol](https://attack.mitre.org/techniques/T1021/001/)
+- **Remote scheduled tasks (atsvc; 4698/4699/4702)** — [MITRE ATT&CK T1053.005 — Scheduled Task](https://attack.mitre.org/techniques/T1053/005/) · [Microsoft Learn — 4698(S) A scheduled task was created](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4698)
+- **Service-install & share-access events (7045/4697, 5140/5145)** — [Microsoft Learn — 4697(S) A service was installed](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-4697) · [Microsoft Learn — 5145 A network share object was checked](https://learn.microsoft.com/en-us/previous-versions/windows/it-pro/windows-10/security/threat-protection/auditing/event-5145)
+- **RDP connection event logs (RdpCoreTS 131/98/140, RemoteConnectionManager 1149, LocalSessionManager 21/22/25)** — [The DFIR Spot — Lateral Movement: RDP Event Logs](https://www.thedfirspot.com/post/lateral-movement-remote-desktop-protocol-rdp-event-logs)
+- **Impacket (psexec/wmiexec/atexec/dcomexec) & EVTX-ATTACK-SAMPLES data set** — [fortra/impacket](https://github.com/fortra/impacket) · [sbousseaden/EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)

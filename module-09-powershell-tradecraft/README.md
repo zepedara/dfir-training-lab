@@ -202,3 +202,16 @@ See `data/README.md` for the exact provenance and license of each bundled `.evtx
 
 ---
 *Next: [Module 10 — Sysmon + WEF](../module-10-sysmon-wef).*
+
+
+---
+
+## Sources
+
+- **Script Block Logging (4104) & Module Logging (4103) — official mechanism** — [Microsoft Learn — about_Logging_Windows (PowerShell)](https://learn.microsoft.com/en-us/powershell/module/microsoft.powershell.core/about/about_logging_windows)
+- **PowerShell as an attack tool (living-off-the-land)** — [MITRE ATT&CK T1059.001 — Command and Scripting Interpreter: PowerShell](https://attack.mitre.org/techniques/T1059/001/)
+- **Obfuscation / de-obfuscation the compiled block defeats** — [MITRE ATT&CK T1027 — Obfuscated Files or Information](https://attack.mitre.org/techniques/T1027/) · [Bohannon & Holmes — Revoke-Obfuscation (Black Hat USA 2017)](https://www.blackhat.com/docs/us-17/thursday/us-17-Bohannon-Revoke-Obfuscation-PowerShell-Obfuscation-Detection-And%20Evasion-Using-Science-wp.pdf)
+- **Defense evasion: CLM / ExecutionPolicy / AMSI tampering** — [MITRE ATT&CK T1562.001 — Impair Defenses: Disable or Modify Tools](https://attack.mitre.org/techniques/T1562/001/)
+- **Sysmon backstop (Event 7 image load, 8 CreateRemoteThread, 10 ProcessAccess) for unmanaged/in-memory PowerShell** — [Microsoft Learn — Sysmon (Sysinternals)](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
+- **Mandiant/FireEye — 4103/4104 logging background** — [Greater Visibility Through PowerShell Logging](https://cloud.google.com/blog/topics/threat-intelligence/greater-visibility/)
+- **Data set provenance** — [sbousseaden/EVTX-ATTACK-SAMPLES](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)

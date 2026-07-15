@@ -207,3 +207,17 @@ That's detection-as-code: **authored, reviewed, tested, versioned, compiled, and
 ---
 
 *This module closes the loop the DFIR track has been building toward: Modules 5–6 taught you to **parse and hunt** with detections others wrote; here you **write, validate, and test your own** — the transition from detection *consumer* to detection *engineer*.*
+
+
+---
+
+## Sources
+
+- **Sigma (vendor-neutral detection format; logsource/detection/condition/level/status/falsepositives/tags)** — [SigmaHQ docs](https://sigmahq.io/docs/)
+- **sigma-cli (sigma check validate, sigma convert -t)** — [SigmaHQ/sigma-cli](https://github.com/SigmaHQ/sigma-cli)
+- **pySigma + processing pipelines (-p, field mapping — the "fires nothing" gotcha)** — [pySigma](https://github.com/SigmaHQ/pySigma) · [Sigma pipelines docs](https://sigmahq.io/docs/digging-deeper/pipelines.html)
+- **Sigma rule specification (schema, status/level enumerations)** — [SigmaHQ/sigma-specification](https://github.com/SigmaHQ/sigma-specification)
+- **Zircolite (standalone Sigma engine over EVTX via in-memory SQLite)** — [wagga40/Zircolite](https://github.com/wagga40/Zircolite)
+- **Community rule corpus / detection-as-code CI reference** — [SigmaHQ/sigma](https://github.com/SigmaHQ/sigma)
+- **MITRE ATT&CK T1543.003 — Create or Modify System Process: Windows Service (EventID 7045)** — [attack.mitre.org/techniques/T1543/003](https://attack.mitre.org/techniques/T1543/003/)
+- **MITRE ATT&CK T1059.001 — Command & Scripting Interpreter: PowerShell (-enc/EncodedCommand)** — [attack.mitre.org/techniques/T1059/001](https://attack.mitre.org/techniques/T1059/001/)

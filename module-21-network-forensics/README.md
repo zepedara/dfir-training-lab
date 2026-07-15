@@ -212,3 +212,18 @@ When the payload *is* sealed, the metadata still fingerprints the client: **JA3 
 
 ---
 *Related modules: this network lane pairs with the host artifacts elsewhere in the lab — correlate C2/exfil timing against logon and process events from [EVTX (Module 05)](../module-05-evtx-evtxecmd) and [Sysmon/WEF (Module 10)](../module-10-sysmon-wef), tie beaconing to the [Lateral Movement (Module 08)](../module-08-lateral-movement) picture, fold packet timestamps into the [Super-Timeline (Module 18)](../module-18-super-timeline), and remember that [Velociraptor (Module 20)](../module-20-triage-velociraptor) is how you'd collect a live capture in the first place.*
+
+
+---
+
+## Sources
+
+- **tshark (Wireshark CLI: -r, -z io,phs/conv,tcp/follow, -Y, -T fields, --export-objects)** — [tshark(1) man page](https://www.wireshark.org/docs/man-pages/tshark.html)
+- **capinfos (capture vital stats: packet/byte count, duration, timestamp bounds)** — [capinfos man page](https://www.wireshark.org/docs/man-pages/capinfos.html)
+- **Zeek (log-oriented network analysis: conn/dns/http/ssl logs)** — [Zeek Documentation](https://docs.zeek.org/)
+- **TLS decryption via SSLKEYLOGFILE (backend-dependent: OpenSSL/GnuTLS/wolfSSL vs Schannel)** — [everything.curl.dev — SSLKEYLOGFILE](https://everything.curl.dev/usingcurl/tls/sslkeylogfile.html)
+- **JA3 / JA4 TLS client fingerprinting (encrypted-C2 metadata hunt)** — [FoxIO-LLC/ja4 (JA4+)](https://github.com/FoxIO-LLC/ja4)
+- **MITRE ATT&CK T1071 — Application Layer Protocol (HTTP/DNS C2)** — [attack.mitre.org/techniques/T1071](https://attack.mitre.org/techniques/T1071/)
+- **MITRE ATT&CK T1048 — Exfiltration Over Alternative Protocol (DNS/other exfil)** — [attack.mitre.org/techniques/T1048](https://attack.mitre.org/techniques/T1048/)
+- **MITRE ATT&CK T1568.002 — Dynamic Resolution: Domain Generation Algorithms (NXDOMAIN/DGA fingerprint)** — [attack.mitre.org/techniques/T1568/002](https://attack.mitre.org/techniques/T1568/002/)
+- **Practice captures (further hunting on real traffic)** — [Wireshark SampleCaptures wiki](https://wiki.wireshark.org/SampleCaptures)

@@ -450,3 +450,16 @@ See `data/README.md` for the exact provenance, license, and **build steps** behi
 
 ---
 *The "front door" module: where most intrusions begin, and where you name the next stage.*
+
+
+---
+
+## Sources
+
+- **oletools — oleid, olevba, mraptor, rtfobj (per-tool usage, AWX verdict, exit code 20)** — [decalage2/oletools Wiki (GitHub)](https://github.com/decalage2/oletools/wiki)
+- **Didier Stevens suite — oledump, pdfid, pdf-parser, zipdump (+plugins, real maldoc walkthroughs)** — [DidierStevens/DidierStevensSuite (GitHub)](https://github.com/DidierStevens/DidierStevensSuite) · [blog.didierstevens.com](https://blog.didierstevens.com/)
+- **2022 default macro blocking via Mark-of-the-Web (red SECURITY RISK banner, no one-click Enable)** — [Macros from the internet are blocked by default in Office | Microsoft Learn](https://learn.microsoft.com/en-us/microsoft-365-apps/security/internet-macros-blocked)
+- **MOTW-propagation fix for ISO/IMG carriers (Nov-2022)** — [CVE-2022-41091 — Windows Mark of the Web Security Feature Bypass | Microsoft MSRC](https://msrc.microsoft.com/en-US/security-guidance/advisory/CVE-2022-41091)
+- **Phishing attachment as initial-access technique** — [Spearphishing Attachment, T1566.001 | MITRE ATT&CK](https://attack.mitre.org/techniques/T1566/001/)
+- **RTF / Equation-Editor OLE object carrier (rtfobj)** — [CVE-2017-11882 Detail | NVD](https://nvd.nist.gov/vuln/detail/cve-2017-11882)
+- **OLE2 Compound File & VBA stream/compression formats the tools parse** — [[MS-CFB] Compound File Binary File Format | Microsoft Learn](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-cfb/) · [[MS-OVBA] Office VBA File Format Structure | Microsoft Learn](https://learn.microsoft.com/en-us/openspecs/office_file_formats/ms-ovba/)

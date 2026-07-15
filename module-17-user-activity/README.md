@@ -273,3 +273,17 @@ No single artifact carries the case. But the **same volume serial** in an LNK an
 
 ---
 *Related modules: device/USB history and Shellbags also appear via the registry in [RegRipper (Module 16)](../module-16-registry-regripper); the `$MFT` cross-reference for LNK/shellbag MFT entries is [Filesystem Timeline (Module 15)](../module-15-filesystem-timeline); execution evidence for the programs these shortcuts launched is in [Prefetch (Module 1)](../module-01-prefetch-pecmd) and [Amcache (Module 3)](../module-03-amcache-amcacheparser). Timeline Explorer background: [`research/mftecmd-timeline.md`](../research/mftecmd-timeline.md).*
+
+
+---
+
+## Sources
+
+- **Eric Zimmerman's tools (JLECmd, LECmd, SBECmd, RBCmd) — suite home** — [Eric Zimmerman's Tools](https://ericzimmerman.github.io/)
+- **JLECmd — Automatic/Custom Destinations jump-list parser** — [EricZimmerman/JLECmd](https://github.com/EricZimmerman/JLECmd)
+- **LECmd — LNK (Shell Link) parser** — [EricZimmerman/LECmd](https://github.com/EricZimmerman/LECmd)
+- **LNK TrackerDataBlock — MachineID (NetBIOS) + MAC in Droid GUID node** — [MS-SHLLINK 2.5.10 TrackerDataBlock](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-shllink/df8e3748-fba5-4524-968a-f72be06d71fc)
+- **Shellbags (SBECmd) — BagMRU in UsrClass.dat, survives folder/drive removal** — [SANS: Computer Forensic Artifacts — Windows 7 Shellbags (Tilbury)](https://www.sans.org/blog/computer-forensic-artifacts-windows-7-shellbags)
+- **Recycle Bin (RBCmd) — $I/$R pair, original path / size / deletion time** — [Magnet Forensics: Recycle Bin artifact profile](https://www.magnetforensics.com/blog/artifact-profile-recycle-bin/)
+- **USB / external-media file-open evidence → data theft** — [MITRE ATT&CK T1052: Exfiltration Over Physical Medium](https://attack.mitre.org/techniques/T1052/)
+- **Deletion / cleanup of tooling** — [MITRE ATT&CK T1070: Indicator Removal](https://attack.mitre.org/techniques/T1070/)

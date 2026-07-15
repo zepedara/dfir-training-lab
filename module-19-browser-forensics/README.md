@@ -193,3 +193,15 @@ The 48 records here tell a benign story, but the *method* is exactly what you'd 
 
 ---
 *Related modules: fold this browser timeline into the [Super-Timeline (Module 18)](../module-18-super-timeline) alongside logon events from [EVTX (Module 05)](../module-05-evtx-evtxecmd); correlate download target paths with the [Filesystem Timeline (Module 15)](../module-15-filesystem-timeline); and tie web activity to the human-at-the-keyboard picture from [User Activity (Module 17)](../module-17-user-activity).*
+
+
+---
+
+## Sources
+
+- **Hindsight (Chromium + Firefox places.sqlite parser; Apache-2.0; jsonl/sqlite/xlsx)** — [obsidianforensics/hindsight (GitHub)](https://github.com/obsidianforensics/hindsight)
+- **Chrome App-Bound Encryption for cookies ("v20", Chrome 127, July 2024)** — [Google Security Blog — Improving the security of Chrome cookies on Windows (30 Jul 2024)](https://security.googleblog.com/2024/07/improving-security-of-chrome-cookies-on.html)
+- **Chromium profile artifacts, SQLite databases, WAL/timestamp mechanics** — [SANS FOR500 — Windows Forensic Analysis](https://www.sans.org/cyber-security-courses/windows-forensic-analysis/)
+- **Steal Web Session Cookie (why Cookies is both artifact and target)** — [MITRE ATT&CK T1539 — Steal Web Session Cookie](https://attack.mitre.org/techniques/T1539/)
+- **Exfiltration over web service / web-protocol C2 (download & history context)** — [MITRE ATT&CK T1567 — Exfiltration Over Web Service](https://attack.mitre.org/techniques/T1567/) · [T1071.001 — Web Protocols](https://attack.mitre.org/techniques/T1071/001/)
+- **DPAPI-protected Chrome credentials/cookies (field reference)** — [NirSoft — ChromePass / browser password recovery notes](https://www.nirsoft.net/utils/chromepass.html)

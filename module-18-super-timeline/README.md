@@ -195,3 +195,16 @@ Frame it this way: **Plaso is the classic all-in-one, forensic-timeliner/KAPE ar
 
 ---
 *This is an advanced add-on module. Prerequisites — the two source modules it merges: [Module 05 (EvtxECmd)](../module-05-evtx-evtxecmd) and [Module 15 (Filesystem Timeline)](../module-15-filesystem-timeline). It generalises the single-source timeline of Module 15 into the multi-source technique the [Capstone](../module-11-capstone) leans on.*
+
+
+---
+
+## Sources
+
+- **Plaso / log2timeline / psort (classic super-timeline engine)** — [Plaso documentation — "super timeline all the things"](https://plaso.readthedocs.io/)
+- **MFTECmd, EvtxECmd, Timeline Explorer (EZ Tools — parsing $MFT/.evtx to CSV, UTC output)** — [Eric Zimmerman's Tools](https://ericzimmerman.github.io/)
+- **KAPE !EZParser + Mini_Timeline module (automated combined timeline)** — [KAPE Documentation (Eric Zimmerman)](https://ericzimmerman.github.io/KapeDocs/)
+- **forensic-timeliner (EZ-native super-timeline aggregator across EZ/KAPE/Chainsaw/Hayabusa CSVs)** — [acquiredsecurity/forensic-timeliner (GitHub)](https://github.com/acquiredsecurity/forensic-timeliner)
+- **Timeline Explorer (loading/filtering/colour-flagging merged CSVs)** — [AboutDFIR — Timeline Explorer](https://aboutdfir.com/toolsandartifacts/windows/timeline-explorer/)
+- **Timestomp / $SI-vs-$FN anti-forensics (why cross-source timelining matters)** — [MITRE ATT&CK T1070.006 — Indicator Removal: Timestomp](https://attack.mitre.org/techniques/T1070/006/)
+- **SANS FOR508 timeline-analysis methodology (super-timeline concept)** — [SANS FOR508 — Advanced Incident Response, Threat Hunting and Digital Forensics](https://www.sans.org/cyber-security-courses/advanced-incident-response-threat-hunting/)

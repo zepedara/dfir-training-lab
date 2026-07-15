@@ -364,3 +364,15 @@ Reconstructed from the RAM capture of user `Jaffa`'s workstation, frozen at **20
 
 ---
 *Previous: [Module 11 — Capstone investigation](../module-11-capstone). This module extends the lab into volatile-memory triage with Volatility 3.*
+
+
+---
+
+## Sources
+
+- **Volatility 3 (framework, plugins, auto-detected ISF symbols, no --profile)** — [Volatility 3 documentation (readthedocs)](https://volatility3.readthedocs.io/en/latest/)
+- **Volatility 3 source & Windows symbol packs (windows.zip)** — [volatilityfoundation/volatility3 (GitHub)](https://github.com/volatilityfoundation/volatility3)
+- **The Art of Memory Forensics (anchor→enumerate→hunt→carve; the kernel structures these plugins walk)** — [Wiley product page](https://www.wiley.com/en-us/The+Art+of+Memory+Forensics:+Detecting+Malware+and+Threats+in+Windows,+Linux,+and+Mac+Memory-p-9781118825099) · [memoryanalysis.net/amf](https://memoryanalysis.net/amf/)
+- **malfind / injected RWX code (process injection, hollowing)** — [Process Injection, T1055 | MITRE ATT&CK](https://attack.mitre.org/techniques/T1055/)
+- **netscan C2 / LSASS relevance — credential dumping** — [OS Credential Dumping: LSASS Memory, T1003.001 | MITRE ATT&CK](https://attack.mitre.org/techniques/T1003/001/)
+- **Public memory-image samples (provenance of training captures)** — [Volatility Memory Samples wiki](https://github.com/volatilityfoundation/volatility/wiki/Memory-Samples)

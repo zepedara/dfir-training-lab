@@ -496,3 +496,17 @@ Every one of those steps survived in the filesystem: the deletions were recovera
 
 ---
 *This is an advanced add-on module. Prerequisites: the artifact modules it ties together — [Module 1 (Prefetch)](../module-01-prefetch-pecmd), [Module 3 (Amcache)](../module-03-amcache-amcacheparser), [Module 5 (EvtxECmd)](../module-05-evtx-evtxecmd) — and it feeds straight into the [Capstone](../module-11-capstone) super-timeline.*
+
+
+---
+
+## Sources
+
+- **The Sleuth Kit (mmls, fls, istat, icat, mactime, fsstat)** — [The Sleuth Kit commands (TSK wiki)](https://github.com/sleuthkit/sleuthkit/wiki/The_Sleuth_Kit_commands)
+- **The Sleuth Kit — project / engine under Autopsy (Brian Carrier)** — [sleuthkit/sleuthkit](https://github.com/sleuthkit/sleuthkit)
+- **mactime — building the filesystem timeline / bodyfile** — [mactime (TSK wiki)](https://github.com/sleuthkit/sleuthkit/wiki/mactime)
+- **MFTECmd — $MFT / $J / $LogFile parser (Eric Zimmerman)** — [EricZimmerman/MFTECmd](https://github.com/EricZimmerman/MFTECmd)
+- **$SI vs $FN timestamps — timestomping detection** — [SANS: Digital Forensics — Detecting time stamp manipulation](https://www.sans.org/blog/digital-forensics-detecting-time-stamp-manipulation)
+- **Timestomping (technique + $SI/$FN kernel-vs-user distinction)** — [MITRE ATT&CK T1070.006: Indicator Removal — Timestomp](https://attack.mitre.org/techniques/T1070/006/)
+- **$UsnJrnl change journal — USN reason codes** — [Microsoft Learn: Change Journals](https://learn.microsoft.com/en-us/windows/win32/fileio/change-journals)
+- **Zone.Identifier ADS / Mark-of-the-Web (ZoneId, HostUrl)** — [MS-FSCC 2.1.5.11 Zone.Identifier Stream Name](https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-fscc/6e3f7352-d11c-4d76-8c39-2516a9df36e8)

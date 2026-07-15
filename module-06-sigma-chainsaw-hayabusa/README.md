@@ -211,3 +211,16 @@ On `MSEDGEWIN10`, an attacker who already had a foothold used **PsExec** to exec
 
 ---
 *Next: [Module 7 — Identity & Credential Theft](../module-07-identity-credential-theft).*
+
+
+---
+
+## Sources
+
+- **Sigma (vendor-neutral detection format / SigmaHQ)** — [SigmaHQ/sigma (GitHub)](https://github.com/SigmaHQ/sigma)
+- **Chainsaw (WithSecure)** — [WithSecureLabs/chainsaw (GitHub)](https://github.com/WithSecureLabs/chainsaw)
+- **Hayabusa (Yamato Security)** — [Yamato-Security/hayabusa (GitHub)](https://github.com/Yamato-Security/hayabusa)
+- **PsExec (legitimate remote-admin tool abused for lateral movement)** — [PsExec — Sysinternals (Microsoft Learn)](https://learn.microsoft.com/en-us/sysinternals/downloads/psexec)
+- **Named-pipe events (Sysmon Event 17 Pipe Created / 18 Pipe Connected)** — [Sysmon — Sysinternals (Microsoft Learn)](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
+- **PsExec / Service Execution technique mapping** — [T1569.002 Service Execution — MITRE ATT&CK](https://attack.mitre.org/techniques/T1569/002/)
+- **Evidence provenance (sample .evtx)** — [EVTX-ATTACK-SAMPLES (sbousseaden, GitHub)](https://github.com/sbousseaden/EVTX-ATTACK-SAMPLES)

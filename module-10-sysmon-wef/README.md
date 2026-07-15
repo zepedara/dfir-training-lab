@@ -213,3 +213,18 @@ See `data/README.md` for the exact provenance and license of each bundled `.evtx
 
 ---
 *Back to the [curriculum](../README.md). You can now take a triage collection and build a full incident timeline — **"Master the Triad. Close the Gap."***
+
+
+---
+
+## Sources
+
+- **Sysmon (tool, mechanism & full Event-ID map 1–29)** — [Sysmon - Sysinternals | Microsoft Learn](https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon)
+- **SwiftOnSecurity/sysmon-config (readable single-XML learning baseline)** — [SwiftOnSecurity/sysmon-config (GitHub)](https://github.com/SwiftOnSecurity/sysmon-config)
+- **olafhartong/sysmon-modular (ATT&CK-tagged production config, Merge-SysmonXml)** — [olafhartong/sysmon-modular (GitHub)](https://github.com/olafhartong/sysmon-modular)
+- **Hayabusa (Sigma-based EVTX timeline/triage, csv-timeline)** — [Yamato-Security/hayabusa (GitHub)](https://github.com/Yamato-Security/hayabusa)
+- **EvtxECmd (EVTX parser used in walkthrough)** — [EvtxECmd — Eric Zimmerman | SANS](https://www.sans.org/tools/evtxecmd) · [EricZimmerman/evtx (GitHub)](https://github.com/EricZimmerman/evtx)
+- **Windows Event Forwarding / WEF (agentless collection into ForwardedEvents)** — [Use Windows Event Forwarding to help with intrusion detection | Microsoft Learn](https://learn.microsoft.com/en-us/windows/security/operating-system-security/device-management/use-windows-event-forwarding-to-assist-in-intrusion-detection)
+- **Source-initiated subscription (wecutil qc, GPO, WinRM)** — [Setting up a Source-Initiated Subscription | Microsoft Learn](https://learn.microsoft.com/en-us/windows/win32/wec/setting-up-a-source-initiated-subscription)
+- **Zerologon (CVE-2020-1472 — unauthenticated Netlogon, 4742 machine-account reset)** — [CVE-2020-1472 Detail | NVD](https://nvd.nist.gov/vuln/detail/cve-2020-1472)
+- **Logon types (2/3/9/10) & lateral-movement artifacts** — [Logon types reference | Microsoft Learn](https://learn.microsoft.com/en-us/windows-server/identity/securing-privileged-access/reference-tools-logon-types) · [SANS Hunt Evil poster](https://www.sans.org/posters/hunt-evil/)

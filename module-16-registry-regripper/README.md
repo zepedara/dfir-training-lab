@@ -387,3 +387,16 @@ One account, one malware family, **two persistence mechanisms and a confirmed ha
 
 ---
 *Related modules: registry execution evidence also appears as [ShimCache (Module 2)](../module-02-shimcache-appcompatcache) and [Amcache (Module 3)](../module-03-amcache-amcacheparser); the persistence and logon story continues in [Event Logs (Module 5)](../module-05-evtx-evtxecmd) and [Lateral Movement (Module 8)](../module-08-lateral-movement). Research background: [`research/regripper.md`](../research/regripper.md).*
+
+
+---
+
+## Sources
+
+- **RegRipper (Harlan Carvey) — plugin-driven hive parser, rip** — [keydet89/RegRipper3.0](https://github.com/keydet89/RegRipper3.0)
+- **Using RegRipper 3.0 — profiles, plugins, dirty-hive/log handling** — [Carvey, "Effectively Using RegRipper 3.0" (OSDFCon 2020)](https://www.osdfcon.org/presentations/2020/Harlan-Carvey_Effectively-Using-RegRipper-3.pdf)
+- **UserAssist — ROT13 names, GUID subkeys, run count / focus time** — [Magnet Forensics: UserAssist artifact profile](https://www.magnetforensics.com/blog/artifact-profile-userassist/)
+- **BAM/DAM — Services\bam\State\UserSettings\<SID>, FILETIME, ~7-day window** — [Psmths/windows-forensic-artifacts: bam-dam](https://github.com/Psmths/windows-forensic-artifacts/blob/main/execution/bam-dam.md)
+- **Malicious auto-start service persistence (coreupdater)** — [MITRE ATT&CK T1543.003: Windows Service](https://attack.mitre.org/techniques/T1543/003/)
+- **Run / RunOnce autostart persistence** — [MITRE ATT&CK T1547.001: Registry Run Keys / Startup Folder](https://attack.mitre.org/techniques/T1547/001/)
+- **Shellbags (shellbags plugin) — BagMRU folder-browsing history** — [SANS: Computer Forensic Artifacts — Windows 7 Shellbags (Tilbury)](https://www.sans.org/blog/computer-forensic-artifacts-windows-7-shellbags)
