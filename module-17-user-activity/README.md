@@ -35,7 +35,7 @@ A jump list is an **OLE compound file** (the same structured-storage container a
 
 ## 2. What the tools do — the EZ user-activity family
 
-**Eric Zimmerman** (SANS FOR500/FOR508 instructor) maintains a suite of free, open-source, forensically sound parsers — each one dedicated to a single artifact, each reading the artifact **read-only and offline** and emitting a rich CSV. The four you use here:
+**Eric Zimmerman**, a widely-recognised DFIR tool author, maintains a suite of free, open-source, forensically sound parsers — each one dedicated to a single artifact, each reading the artifact **read-only and offline** and emitting a rich CSV. The four you use here:
 
 - **`JLECmd`** — **J**ump **L**ist parser. Reads `*.automaticDestinations-ms` (system-tracked, one per application) and `*.customDestinations-ms` (application-tracked). Cracks the OLE compound file, walks the `DestList` MRU stream, and decodes each embedded LNK.
 - **`LECmd`** — **L**NK (shortcut) parser. Decodes a Shell Link end to end: target path, arguments, working directory, icon, the **target file's** MAC timestamps, the **volume serial + drive type** the target lived on, and the **machine ID / MAC address** baked into the tracker block.
@@ -131,7 +131,7 @@ LECmd.exe -d artifacts --csv out --csvf lnk.csv
 - **`TargetCreated` / `TargetModified` / `TargetAccessed`** — the **target's own MAC times** captured when the shortcut was made — a second, independent timestamp source you can cross-check against the filesystem.
 - **`DriveType`** — `Fixed`, **`Removable`**, or `Network`. `Removable` immediately flags a **USB / external drive**.
 - **`VolumeSerialNumber` / `VolumeLabel`** — identifies the *specific volume*; a serial that isn't the system disk means the file lived on **another drive**.
-- **`MachineID` / `MachineMACAddress` / `TrackerCreatedOn`** — the **machine the target was on**. On a shortcut to a file on a *different* host, this is how you tie activity to a specific machine. The MAC address isn't stored as its own field — it's the **node bytes of the version-1 Droid / Birth-Droid GUIDs** in the LNK's DistributedLink Tracker (`TrackerDataBlock`): a v1 UUID embeds the originating NIC's MAC in its node component, which is *why* the shortcut attributes to the machine that created it. (Source: MS-SHLLINK `TrackerDataBlock` spec.)
+- **`MachineID` / `MachineMACAddress` / `TrackerCreatedOn`** — the **machine the target was on**. On a shortcut to a file on a *different* host, this is how you tie activity to a specific machine. The MAC address isn't stored as its own field — it's the **node bytes of the version-1 Droid / Birth-Droid GUIDs** in the LNK's DistributedLink Tracker (`TrackerDataBlock`): a v1 UUID embeds the originating NIC's MAC in its node component, which is *why* the shortcut attributes to the machine that created it. Treat it as an **attribution lead, not proof**: the MAC node is only meaningful for **version-1 (time-based) UUIDs**, and on some hosts it is randomized or zeroed. (Source: MS-SHLLINK `TrackerDataBlock` spec.)
 
 > **Forensic value — USB and external-drive tracking.** `.lnk` files are the backbone of removable-media and cross-machine investigations. When a user opens a document off a USB stick, the resulting shortcut permanently records the stick's **volume serial**, a **`Removable` drive type**, and the **machine ID** — and it *stays behind on the host after the stick is unplugged and the file is gone*. Correlate the volume serial here with the `USBSTOR`/`MountedDevices` registry keys (Module 16) and you can put a specific device, holding a specific file, on this machine at a specific time — the core of a **data-theft (T1052)** case.
 
@@ -220,7 +220,7 @@ The four artifacts above are collectable as loose files. Two more high-value use
 - **Windows Timeline (Activities Cache)** — parser **`WxTCmd`**.
   - **On disk:** `C:\Users\<user>\AppData\Local\ConnectedDevicesPlatform\L.<user>\ActivitiesCache.db` (Windows 10 **1803+**).
   - **What it shows:** an application/file **activity timeline** — which app was in focus, which document it had open, start/end times and duration — reconstructing the user's session almost like a screen-recording index.
-  - **Currency caveat:** that rich app/document-activity recording is a **Windows 10-era (1803–21H2)** behaviour; Microsoft **deprecated and then removed the Timeline feature across Windows 11 (2022–2024)**, so on a Win11 host the DB may still persist but typically holds only sparse system entries rather than the full activity history. (Sources: kacos2000 *WindowsTimeline*; Forensic Focus, 2024.)
+  - **Currency caveat:** that rich app/document-activity recording is a **Windows 10-era (1803–21H2)** behaviour; Microsoft **deprecated and then removed the Timeline feature across Windows 11 (2022–2024)**, so on a Win11 host the DB may still persist but typically holds only sparse system entries rather than the full activity history. (Sources: Microsoft — *Timeline retired in Windows 11* and activity-history upload deprecated in KB5034204; kacos2000 *WindowsTimeline*; Forensic Focus DFIR round-up, 27 Nov 2024 — all linked in Sources below.)
 
 Both are the **natural extension** of this module: jump lists/LNK/shellbags tell you *what the user opened and browsed*; SRUM tells you *how much data an app moved*; Windows Timeline tells you *the minute-by-minute session*. Together they close the loop from "a file was touched" to "this much data left, in this session, by this account."
 
@@ -264,12 +264,19 @@ No single artifact carries the case. But the **same volume serial** in an LNK an
 
 ## 11. Sources & further reading
 
-- **Eric Zimmerman's tools** — official binaries and docs: <https://ericzimmerman.github.io/> (JLECmd, LECmd, SBECmd, RBCmd, SrumECmd, WxTCmd, Timeline Explorer).
-- **Eric Zimmerman, *EZ Tools* manuals** (Leanpub) — per-tool reference for the CSV fields decoded above: <https://leanpub.com/eztools>.
-- **SANS FOR500 — Windows Forensic Analysis**, and the **SANS "EZ Tools" / Windows Forensic Analysis** cheat-sheet poster — canonical artifact-location reference (Jump Lists, LNK, Shellbags, Recycle Bin, SRUM, Timeline).
-- **13Cubed — "Introduction to Windows Forensics"** (YouTube), with dedicated episodes on **LNK files & Jump Lists**, **Shellbags**, and the Recycle Bin — clear walkthroughs of the same structures.
-- **Magnet Forensics blog** — "Forensic Analysis of Windows Shellbags" and "Understanding SRUM" — practical field write-ups on interpretation and pitfalls.
-- **MITRE ATT&CK** (investigative context): **T1074 (Data Staged)** — files gathered before exfil (surfaces in shellbags/LNK/jump lists); **T1052 (Exfiltration Over Physical Medium)** — copy-to-USB (LNK volume serial + drive type); **T1070 (Indicator Removal)** — Recycle-Bin deletion of tooling: <https://attack.mitre.org/>.
+- **Eric Zimmerman's tools** — official hub, binaries and docs (JLECmd, LECmd, SBECmd, RBCmd, SrumECmd, WxTCmd, Timeline Explorer): <https://ericzimmerman.github.io/>
+- **JLECmd — Jump List parser (source + docs)**: <https://github.com/EricZimmerman/JLECmd>
+- **Jump List AppID lookup table** — the authoritative AppID->application map that resolves `AutomaticDestinations` filenames: <https://github.com/EricZimmerman/JumpList/blob/master/JumpList/Resources/AppIDs.txt>
+- **Forensics Wiki — Jump Lists** (the CFB/OLE container, the hex `SHLLINK` streams, and the `DestList` MRU stream): <https://forensics.wiki/jump_lists/>
+- **MS-SHLLINK — Shell Link (`.LNK`) Binary File Format** (LNK internals, and the `TrackerDataBlock` / Droid GUIDs behind MachineID/MAC): <https://learn.microsoft.com/en-us/openspecs/windows_protocols/ms-shllink/16cb4ca1-9339-4d0c-a68d-bf1d6cc0f943>
+- **Forensics Wiki — Shell Item** (the shellbag / `BagMRU` shell-item structure): <https://forensics.wiki/shell_item/>
+- **kacos2000 — WindowsTimeline** (`ActivitiesCache.db` schema and ready SQL queries): <https://github.com/kacos2000/WindowsTimeline>
+- **Microsoft — Get help with Timeline** (Timeline retired in Windows 11): <https://support.microsoft.com/en-us/windows/get-help-with-timeline-febc28db-034c-d2b0-3bbe-79aa0c501039>
+- **Microsoft — Windows activity history and your privacy** (activity-history upload deprecated, KB5034204): <https://support.microsoft.com/en-us/windows/windows-activity-history-and-your-privacy-2b279964-44ec-8c2f-e0c2-6779b07d2cbd>
+- **Microsoft — `esentutl`** (`/r` recovery for a dirty `SRUDB.dat` ESE database): <https://learn.microsoft.com/en-us/windows-server/administration/windows-commands/esentutl>
+- **13Cubed — "Introduction to Windows Forensics"** (YouTube) — episodes on LNK & Jump Lists, Shellbags, and the Recycle Bin: <https://www.youtube.com/@13cubed>
+- **MITRE ATT&CK** — **T1074 (Data Staged)**, **T1052 (Exfiltration Over Physical Medium)**, **T1070 (Indicator Removal)**: <https://attack.mitre.org/>
+
 
 ---
 *Related modules: device/USB history and Shellbags also appear via the registry in [RegRipper (Module 16)](../module-16-registry-regripper); the `$MFT` cross-reference for LNK/shellbag MFT entries is [Filesystem Timeline (Module 15)](../module-15-filesystem-timeline); execution evidence for the programs these shortcuts launched is in [Prefetch (Module 1)](../module-01-prefetch-pecmd) and [Amcache (Module 3)](../module-03-amcache-amcacheparser). Timeline Explorer background: [`research/mftecmd-timeline.md`](../research/mftecmd-timeline.md).*
