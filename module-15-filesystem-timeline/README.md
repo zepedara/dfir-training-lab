@@ -395,7 +395,7 @@ The `$MFT` shows the disk's *current* state; the **`$UsnJrnl` change journal** s
 ```bash
 MFTECmd -f UsnJrnl_J --csv . --csvf usnjrnl.csv
 ```
-- **`-f UsnJrnl_J`** — the raw `$J` stream. It was carved with `icat` from `$Extend\$UsnJrnl:$J` — the *same* `icat`-by-attribute technique you used to pull the `$MFT` in Step 6 (`icat -o 128 usn.vhd 38-128-3`, where `38-128-3` is `$UsnJrnl`'s `$DATA` stream named `$J`).
+- **`-f UsnJrnl_J`** — the raw `$J` stream. It was carved with `icat` from `$Extend\$UsnJrnl:$J` — the *same* `icat`-by-attribute technique you used to pull the `$MFT` in Step 6 (`icat -o 128 usn.vhd 38-128-3` — on the separate scratch volume that generated this artifact, illustrating the technique — where `38-128-3` is `$UsnJrnl`'s `$DATA` stream named `$J`).
 - Each row is one change: a **name**, a **UTC timestamp**, the file and parent MFT references (for path reconstruction), and a **reason** (`UpdateReasons`) — the bitwise-OR reason set decoded to text.
 
 Now read just the three columns that tell the story — name, time, reason:
@@ -486,11 +486,11 @@ Every one of those steps survived in the filesystem: the deletions were recovera
 - The Sleuth Kit — official site & wiki (per-tool man pages: `mmls`, `fls`, `icat`, `istat`, `mactime`): <https://www.sleuthkit.org/> · <https://github.com/sleuthkit/sleuthkit/wiki>
 - Brian Carrier, *File System Forensic Analysis* (Addison-Wesley) — the definitive reference for NTFS internals and the TSK layers.
 - MFTECmd & Timeline Explorer — Eric Zimmerman: <https://github.com/EricZimmerman/MFTECmd> · <https://ericzimmerman.github.io/>
-- AboutDFIR — MFTECmd reference & command cheatsheet (`$MFT`/`$J`/`$LogFile` parsing, the timestomp columns): <https://aboutdfir.com/>
+- AboutDFIR — MFTECmd reference & command cheatsheet (`$MFT`/`$J`/`$LogFile` parsing, the timestomp columns): <https://aboutdfir.com/toolsandartifacts/windows/mft-explorer-mftecmd/>
 - Kroll — "Detecting and Analyzing Timestomping with KAPE" — the `$SI`-vs-`$FN` + `$UsnJrnl` convergence method in practice: <https://www.kroll.com/>
 - Microsoft Learn — NTFS Master File Table and the `$STANDARD_INFORMATION` / `$FILE_NAME` attributes (the two timestamp sets).
 - 13Cubed (Richard Davis) — "NTFS Timestamps / Timestomping", "MFT & the $UsnJrnl", and "MFTECmd" episodes (the `$SI` vs `$FN`, sub-second-precision, and `USN_REASON_BASIC_INFO_CHANGE` detection).
-- SANS FOR500 / FOR508 — bodyfile→`mactime` timelining and `$MFT`/`$UsnJrnl` super-timeline methodology.
+- **Filesystem timelining & super-timeline methodology (public references)** — bodyfile→`mactime` (TSK `mactime` man page: <https://www.sleuthkit.org/sleuthkit/man/mactime.html>) and `$MFT`/`$UsnJrnl` parsing (MFTECmd: <https://github.com/EricZimmerman/MFTECmd>; MS Learn `USN_RECORD_V2`: <https://learn.microsoft.com/en-us/windows/win32/api/winioctl/ns-winioctl-usn_record_v2>). Brian Carrier, *File System Forensic Analysis* (above) remains the reference text for the NTFS internals.
 - Plaso / log2timeline — the super-timeline merger (heavier alternative, not installed on the lab VM): <https://plaso.readthedocs.io/>
 - DFIR Madness — "The Stolen Szechuan Sauce" (Case 001), the intrusion the lab's narrative is built on: <https://dfirmadness.com/the-stolen-szechuan-sauce/>
 

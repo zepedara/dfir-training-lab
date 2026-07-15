@@ -1,9 +1,9 @@
 # Module 11 — Capstone: APT29 (Cozy Bear) — MITRE ATT&CK Evals
 
-> **The final exam — on a real benchmark.** You've spent Modules 1-10 learning the craft on Case-001. Now you prove it against a fresh, reputable, objectively-gradable dataset: the **MITRE Engenuity ATT&CK Evaluation of APT29 (Cozy Bear)**. You're handed 196,081 pre-recorded Windows events from a full simulated intrusion, and you reconstruct the kill chain — stage by stage, artifact by artifact — then **grade yourself against a published answer key**. Work each stage before you read its interpretation.
+> **The final exam — on a real benchmark.** You've spent Modules 1-10 learning the craft on Case-001. Now you prove it against a fresh, reputable, objectively-gradable dataset: the **MITRE ATT&CK Evaluation of APT29 (Cozy Bear)**. You're handed 196,081 pre-recorded Windows events from a full simulated intrusion, and you reconstruct the kill chain — stage by stage, artifact by artifact — then **grade yourself against a published answer key**. Work each stage before you read its interpretation.
 
 > **Why this benchmark.** Case-001 (Modules 1-10) taught you the techniques on a single, story-driven intrusion. This capstone is different **on purpose**: it is a **standalone benchmark case** built on data the whole industry knows and trusts.
-> - **Reputable.** The MITRE Engenuity ATT&CK Evaluations run real red-team emulations of named adversaries against instrumented environments. APT29 is one of their canonical rounds. Every serious EDR vendor is measured against it.
+> - **Reputable.** The MITRE ATT&CK Evaluations run real red-team emulations of named adversaries against instrumented environments. APT29 is one of their canonical rounds. A large cohort of endpoint-security vendors (roughly two dozen in the APT29 round) has been evaluated against it.
 > - **ATT&CK-mapped.** Every action the emulation performs is tagged to a specific ATT&CK technique ID, so "did I find it?" has an unambiguous answer.
 > - **Gradable.** Because the emulation plan and technique mapping are published, we ship an **answer key** ([`data/APT29-ANSWER-KEY.md`](data/APT29-ANSWER-KEY.md)). You can score your own reconstruction — coverage, evidence traceability, signal-vs-noise, detection gaps — the way the evals themselves score a product.
 >
@@ -13,7 +13,7 @@
 
 ## 1. The evidence
 
-The dataset is **`apt29_day1.json`** — the OTRF [`detection-hackathon-apt29`](https://github.com/OTRF/detection-hackathon-apt29) recording of **day 1** of the MITRE Engenuity APT29 evaluation, in **Mordor format**: one Windows event per line as JSON, drawn from four channels:
+The dataset is **`apt29_day1.json`** — the OTRF [`detection-hackathon-apt29`](https://github.com/OTRF/detection-hackathon-apt29) recording of **day 1** of the MITRE ATT&CK APT29 evaluation, in **Mordor format**: one Windows event per line as JSON, drawn from four channels:
 
 | Channel | What it carries here |
 |---|---|
@@ -160,7 +160,7 @@ Narrated in kill-chain terms: the attacker **executed** via living-off-the-land 
 Score your reconstruction against **[`data/APT29-ANSWER-KEY.md`](data/APT29-ANSWER-KEY.md)** — it holds the full ATT&CK technique → evidence table and the rubric. Assess yourself on:
 
 1. **Coverage** — did you find all the stages? (Each is one `apt29_hunt.py` subcommand.)
-2. **Evidence-to-technique traceability** — for every ATT&CK ID, can you cite the *specific* event (EventID + field), not just the technique name? That is the FOR508 / DFIR-Report standard.
+2. **Evidence-to-technique traceability** — for every ATT&CK ID, can you cite the *specific* event (EventID + field), not just the technique name? That evidence-first discipline — every ATT&CK ID backed by a concrete artifact — is the practice modelled in public write-ups like **The DFIR Report** (<https://thedfirreport.com/>) and in **MITRE ATT&CK**'s own detection guidance.
 3. **Signal vs. noise** — did you separate the real LSASS dump (`0x1FFFFF`, `0x1478`) from the ~830 benign `0x1000` query-only accesses? (Module 07's GrantedAccess lesson, applied at scale.)
 4. **The DCSync needle** — did you catch the single 4662 event in 196,081? That's the capstone's marquee find.
 5. **Detection gaps** — where is a stage *thin* in the telemetry? The MITRE evals methodology explicitly scores visibility gaps, not just hits. Note them.
@@ -190,7 +190,8 @@ Before you read the answer key, prove you can do these unaided:
 > **You learned the craft on Case-001. Here you proved it on the benchmark the industry uses.**
 
 ## Sources & further reading
-- **MITRE Engenuity ATT&CK Evaluations — APT29:** <https://attackevals.mitre-engenuity.org/enterprise/apt29>
+- **MITRE ATT&CK — APT29 (Group G0016)** — the attribution (Cozy Bear / The Dukes / SVR): <https://attack.mitre.org/groups/G0016/>
+- **MITRE ATT&CK Evaluations — APT29:** <https://evals.mitre.org/enterprise/apt29/>
 - **OTRF `detection-hackathon-apt29`** (the telemetry recording): <https://github.com/OTRF/detection-hackathon-apt29>
 - **SANS "Hunt Evil" poster** (lateral-movement artifacts by technique): <https://www.sans.org/posters/hunt-evil/>
 - **Lockheed Martin — Cyber Kill Chain:** <https://www.lockheedmartin.com/en-us/capabilities/cyber/cyber-kill-chain.html>

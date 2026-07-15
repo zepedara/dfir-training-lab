@@ -1,7 +1,7 @@
 # Module 18 — The Super Timeline: correlating filesystem + event-log activity in one view
 
 **Deck mapping:** *Intrusion Hunting Playbook* → "The super-timeline: one clock for every artifact" (the capstone timelining technique that sits above every single-artifact module).
-**Goal:** take two artifacts you already parsed in earlier modules — the **`$MFT`** filesystem table (Module 15) and a folder of **Windows event logs** (Module 05) — normalize each source's timestamps to a common column, **merge them into one time-sorted CSV**, and then *read across sources*: pivot on a single keyword and watch filesystem events and event-log events line up on the same clock. This is the backbone of the FOR508 timeline methodology, built here from scratch so you can see exactly what a super-timeline *is*.
+**Goal:** take two artifacts you already parsed in earlier modules — the **`$MFT`** filesystem table (Module 15) and a folder of **Windows event logs** (Module 05) — normalize each source's timestamps to a common column, **merge them into one time-sorted CSV**, and then *read across sources*: pivot on a single keyword and watch filesystem events and event-log events line up on the same clock. This is the backbone of super-timeline (timeline-analysis) methodology, built here from scratch so you can see exactly what a super-timeline *is*.
 
 > **Evidence note.** This module creates **no new evidence and runs nothing dangerous.** It *reuses inert artifacts already in the lab*: the `$MFT` carved in [Module 15](../module-15-filesystem-timeline) and the `.evtx` logs parsed in [Module 05](../module-05-evtx-evtxecmd). A one-time helper (`data/get-data.sh`) copies those two sets into this module's `evidence/` folder — that copy is **already staged for you**, so every runnable command below works out of the box. Because the two artifact sets come from **two different lab scenarios** (the Case-001 disk and the MSEDGEWIN10 log set), the merged result here demonstrates the *technique*, not a single unified host story — knowing that about your own evidence is itself the DFIR discipline this lab keeps drilling.
 
@@ -15,7 +15,7 @@ Every artifact a Windows machine leaves behind carries **timestamps**: a file's 
 
 You cannot answer that by flipping between six spreadsheets that each sort on their own clock. A **super timeline** answers it by putting **every artifact's events onto one shared clock** — one file, one `Time` column, sorted ascending — so that filesystem activity and event-log activity **interleave in true chronological order**. Now a single scroll (or a single keyword filter) shows you the file creation *and* the process launch *and* the logon that all belong to the same moment. Correlation stops being detective work you do in your head and becomes something you can *see*.
 
-That merged, cross-source, time-sorted view is the **super timeline**, and building/reading it is the core skill of SANS FOR508's timeline methodology.
+That merged, cross-source, time-sorted view is the **super timeline**, and building/reading it is the core skill of super-timeline analysis.
 
 ### How this differs from Module 15
 [Module 15](../module-15-filesystem-timeline) also built a "timeline," but a **single-source** one: it dumped the `$MFT`/`$UsnJrnl` to a filesystem timeline and read *that* in isolation. Powerful — it caught a timestomp — but it only ever saw the **filesystem**. This module takes the **next step up**: it keeps that filesystem timeline as *one input* and **combines** it with a second, completely different source (the event logs), so you can pivot across layers. Module 15 = the spine; Module 18 = the whole skeleton on one clock.
@@ -153,7 +153,7 @@ That interleaving — a filesystem create adjacent to the event-log activity aro
 
 - **forensic-timeliner** (<https://github.com/acquiredsecurity/forensic-timeliner>) — the modern, **EZ-native** super-timeline builder. Point it at a folder of **EZ Tools / KAPE / Chainsaw / Hayabusa** CSVs and it normalizes and merges them into one Timeline Explorer-ready timeline. This is the direct, grown-up version of what you just did by hand — the same idea, every artifact type, one command.
 - **KAPE `!EZParser` + the `Mini_Timeline` module** — KAPE parses a triage collection with the EZ tools, and its `Mini_Timeline` / `Mini_Timeline_Slice_by_Range` modules stitch the resulting CSVs into a combined timeline (optionally windowed to a date range). Mari DeGrazia's SANS webcast (Section 8) walks this end-to-end.
-- **Plaso / log2timeline** (<https://plaso.readthedocs.io/>) — the **classic** super-timeline engine: `log2timeline.py` ingests a huge range of sources into a storage file and `psort.py` sorts/filters it. It is the reference tool for this technique, but it has **no maintained Windows binaries** (native Windows builds were discontinued ~2020) — it runs via Docker or a Python install, and isn't on the lab VM. That is precisely why this lab teaches the merge the **EZ-native way** — MFTECmd/EvtxECmd → CSV → merge → Timeline Explorer — which runs anywhere the EZ tools do.
+- **Plaso / log2timeline** (<https://plaso.readthedocs.io/>) — the **classic** super-timeline engine: `log2timeline.py` ingests a huge range of sources into a storage file and `psort.py` sorts/filters it. It is the reference tool for this technique, but it has **no maintained Windows binaries** (Windows install is Docker-only, per the Plaso User's Guide) — it runs via Docker or a Python install, and isn't on the lab VM. That is precisely why this lab teaches the merge the **EZ-native way** — MFTECmd/EvtxECmd → CSV → merge → Timeline Explorer — which runs anywhere the EZ tools do.
 
 Frame it this way: **Plaso is the classic all-in-one, forensic-timeliner/KAPE are the EZ-native automations, and `merge_timeline.py` is the ten-line version that shows you what all three are actually doing** — parse per source, normalize on a time column, sort.
 
@@ -176,7 +176,7 @@ Frame it this way: **Plaso is the classic all-in-one, forensic-timeliner/KAPE ar
 - It is built in two moves: **parse each source to CSV** (MFTECmd for the `$MFT`, EvtxECmd for the `.evtx`), then **normalize + merge on a common timestamp column** and sort. `merge_timeline.py` is that second move in ten readable lines.
 - The merger is **extensible by design** — one `(glob, source, time-column, description)` tuple per artifact type. Add registry, Prefetch, Amcache, or browser CSVs the same way.
 - Keep every source in **one time zone (UTC)** before merging, or the interleave is a lie.
-- Module 15 built a **single-source** filesystem timeline; this module **combines sources** — the same technique the whole FOR508 timeline methodology rests on.
+- Module 15 built a **single-source** filesystem timeline; this module **combines sources** — the same technique all super-timeline tooling (Plaso, KAPE, forensic-timeliner) rests on.
 - In production the merge is automated by **forensic-timeliner** and **KAPE's `Mini_Timeline`** (EZ-native) or the classic **Plaso/log2timeline** (no maintained Windows binaries — runs via Docker/Python, hence the EZ approach here). All of them do exactly what you just did by hand.
 
 ---
@@ -185,12 +185,12 @@ Frame it this way: **Plaso is the classic all-in-one, forensic-timeliner/KAPE ar
 
 - **forensic-timeliner** — the EZ-native super-timeline aggregator (EZ / KAPE / Chainsaw / Hayabusa CSVs → one Timeline Explorer timeline): <https://github.com/acquiredsecurity/forensic-timeliner>
 - **KAPE** — Eric Zimmerman: the `!EZParser` + `Mini_Timeline` / `Mini_Timeline_Slice_by_Range` modules that build the combined timeline: <https://ericzimmerman.github.io/KapeDocs/>
-- **SANS webcast — "Triage Collection and Timeline Generation with KAPE"** (Mari DeGrazia) — collecting a triage image and generating the mini-timeline end-to-end: <https://www.sans.org/webcasts/triage-collection-timeline-generation-kape/>
-- **13Cubed (Richard Davis) — "Introduction to MFTECmd"** — parsing the `$MFT` to the CSV that feeds the filesystem half of the timeline: <https://www.youtube.com/watch?v=Svff0Fj5Xgc> · channel: <https://www.13cubed.com/>
+- **SANS webcast — "Triage Collection and Timeline Generation with KAPE"** (Mari DeGrazia) — collecting a triage image and generating the mini-timeline end-to-end: <https://www.sans.org/blog/triage-collection-and-timeline-generation-with-kape>
+- **13Cubed (Richard Davis) — "Introduction to MFTECmd"** — parsing the `$MFT` to the CSV that feeds the filesystem half of the timeline: <https://www.youtube.com/watch?v=_qElVZJqlGY> · channel: <https://www.13cubed.com/>
 - **AboutDFIR — Timeline Explorer** (loading, filtering, colour rules, bookmarking merged CSVs): <https://aboutdfir.com/toolsandartifacts/windows/timeline-explorer/>
 - **Eric Zimmerman tool docs** — MFTECmd, EvtxECmd, Timeline Explorer (usage, columns, the Maps model): <https://ericzimmerman.github.io/>
-- **Plaso / log2timeline** — the classic super-timeline engine (`log2timeline.py` + `psort.py`; no maintained Windows binaries since ~2020 — runs via Docker or a Python install): <https://plaso.readthedocs.io/>
-- **SANS FOR508** — the super-timeline / timeline-analysis methodology this module distils.
+- **Plaso / log2timeline** — the classic super-timeline engine (`log2timeline.py` + `psort.py`; no maintained Windows binaries — Windows install is Docker-only, runs via Docker or a Python install): <https://plaso.readthedocs.io/>
+- **Super-timeline / timeline-analysis methodology** — Forensics Wiki: <https://forensics.wiki/timeline_analysis/> and Plaso docs: <https://plaso.readthedocs.io/>.
 - **MITRE ATT&CK — T1070.006 (Indicator Removal: Timestomp)** — the anti-forensic technique that makes a *cross-source* timeline necessary (a faked `$SI` date is exposed the moment it sits next to real event-log activity): <https://attack.mitre.org/techniques/T1070/006/>
 
 ---
@@ -207,4 +207,4 @@ Frame it this way: **Plaso is the classic all-in-one, forensic-timeliner/KAPE ar
 - **forensic-timeliner (EZ-native super-timeline aggregator across EZ/KAPE/Chainsaw/Hayabusa CSVs)** — [acquiredsecurity/forensic-timeliner (GitHub)](https://github.com/acquiredsecurity/forensic-timeliner)
 - **Timeline Explorer (loading/filtering/colour-flagging merged CSVs)** — [AboutDFIR — Timeline Explorer](https://aboutdfir.com/toolsandartifacts/windows/timeline-explorer/)
 - **Timestomp / $SI-vs-$FN anti-forensics (why cross-source timelining matters)** — [MITRE ATT&CK T1070.006 — Indicator Removal: Timestomp](https://attack.mitre.org/techniques/T1070/006/)
-- **SANS FOR508 timeline-analysis methodology (super-timeline concept)** — [SANS FOR508 — Advanced Incident Response, Threat Hunting and Digital Forensics](https://www.sans.org/cyber-security-courses/advanced-incident-response-threat-hunting/)
+- **Super-timeline / timeline-analysis methodology (concept + formats)** — [Forensics Wiki: Timeline Analysis](https://forensics.wiki/timeline_analysis/); [Plaso docs](https://plaso.readthedocs.io/)
