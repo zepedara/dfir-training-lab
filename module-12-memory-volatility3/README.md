@@ -212,7 +212,7 @@ vol -q -f Challenge.raw windows.handles --pid 3716
 ```bash
 vol -q -f Challenge.raw windows.malfind
 ```
-- **`windows.malfind`** is the **#1 "is there injected malware?" plugin.** It scans every process's *private* memory for regions that are **committed, executable, and not backed by any file on disk**, with **`PAGE_EXECUTE_READWRITE`** (RWX) protection — the signature of **code injection, process hollowing, and reflective DLL loading**. For each hit it prints a hex + disassembly preview.
+- **`windows.malfind`** is the **#1 "is there injected malware?" plugin.** It scans every process's *private* memory for regions that are **committed, executable, and not backed by any file on disk**, with **`PAGE_EXECUTE_READWRITE`** (RWX) protection — the signature of **code injection and reflective DLL loading** (and often, though *not always*, process hollowing: classic hollowing can replace a **mapped image** and leave no private RWX region, so `malfind` can miss it — corroborate, as below). For each hit it prints a hex + disassembly preview.
 
 **Real output (trimmed — four regions were flagged):**
 ```
@@ -344,13 +344,23 @@ Reconstructed from the RAM capture of user `Jaffa`'s workstation, frozen at **20
 
 ## 10. Sources & further reading
 
-- Volatility 3 — official documentation (plugin reference, symbol tables / ISF): <https://volatility3.readthedocs.io/>
-- Volatility 3 — source & symbol packs, Volatility Foundation: <https://github.com/volatilityfoundation/volatility3>
-- Public memory samples list (provenance of training images): <https://github.com/volatilityfoundation/volatility/wiki/Memory-Samples>
+- Volatility 3 — official documentation (plugin reference, usage): <https://volatility3.readthedocs.io/en/latest/>
+- Volatility 3 — *Basics* (why there is no more `--profile`): <https://volatility3.readthedocs.io/en/latest/basics.html>
+- Volatility 3 — *Symbol Tables* / ISF (the auto-detection that replaced profiles): <https://volatility3.readthedocs.io/en/latest/symbol-tables.html>
+- Volatility 3 — source & symbol packs (Volatility Foundation): <https://github.com/volatilityfoundation/volatility3>
+- Volatility 3 — releases (the counter-intuitive 2.x tag scheme): <https://github.com/volatilityfoundation/volatility3/releases>
+- Volatility 2 — archived / Python-2 end-of-life repo (legacy `--profile` syntax): <https://github.com/volatilityfoundation/volatility>
+- `windows.malfind` source — the exact RWX / private-`VadS` / `MZ` logic this module relies on: <https://github.com/volatilityfoundation/volatility3/blob/develop/volatility3/framework/plugins/windows/malware/malfind.py>
+- `windows.psscan` source — the `Proc` pool-tag scan behind the hidden-process hunt: <https://github.com/volatilityfoundation/volatility3/blob/develop/volatility3/framework/plugins/windows/psscan.py>
+- `windows.netscan` source — the `TcpL`/`TcpE`/`UdpA` pool tags it carves: <https://github.com/volatilityfoundation/volatility3/blob/develop/volatility3/framework/plugins/windows/netscan.py>
+- `windows.netstat` source — why the linked-list plugin needs `tcpip.sys` symbols (and fails offline): <https://github.com/volatilityfoundation/volatility3/blob/develop/volatility3/framework/plugins/windows/netstat.py>
+- Microsoft — *An Introduction to Pool Tags* (the basis for `psscan`/`netscan` pool-tag scanning): <https://techcommunity.microsoft.com/blog/askperf/an-introduction-to-pool-tags/372983>
+- MITRE ATT&CK — *Process Injection* (T1055), the threat class `malfind` hunts: <https://attack.mitre.org/techniques/T1055/>
+- forensics.wiki — memory-acquisition tools (DumpIt, WinPmem, and the raw formats Volatility reads): <https://forensics.wiki/tools_memory_imaging/>
 - *The Art of Memory Forensics* (Ligh, Case, Levy, Walters) — the foundational text on the kernel structures these plugins walk.
-- 13Cubed — "Investigating Windows Memory" / Volatility 3 walkthroughs (practical `malfind`/`netscan` tradecraft).
-- Microsoft Learn — `_EPROCESS`, pool tags, and PDB/symbol-server background.
-- Sample image provenance, name, license, and how to fetch it: see **[`data/README.md`](data/README.md)**.
+- 13Cubed — *Investigating Windows Memory* / Volatility 3 walkthroughs (practical `malfind`/`netscan` tradecraft): <https://www.youtube.com/@13cubed>
+- Sample image provenance, name, license, and how to fetch it: see **[`data/README.md`](data/README.md)** (image list on the legacy — but still authoritative — Volatility wiki: <https://github.com/volatilityfoundation/volatility/wiki/Memory-Samples>).
+
 
 ---
 *Previous: [Module 11 — Capstone investigation](../module-11-capstone). This module extends the lab into volatile-memory triage with Volatility 3.*
