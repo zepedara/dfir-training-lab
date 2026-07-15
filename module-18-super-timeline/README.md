@@ -42,7 +42,7 @@ SOURCES = [
 
 Read that as: *"for MFT CSVs, the clock is `LastModified0x10` and the human label is the file name; for EVTX CSVs, the clock is `TimeCreated` and the label is the event's mapped description."* It reads every matching CSV, emits one `(Time, Source, Description)` row per record, sorts on `Time`, and writes `super_timeline.csv`. **It is extensible on purpose:** to fold in another artifact you parsed elsewhere, add one tuple — e.g. `("*registry.csv", "REG", "LastWriteTimestamp", ["ValueName","KeyPath"])` for RegRipper/Registry Explorer output, or a Prefetch/browser-history CSV — and re-run. That one-line-per-source pattern is exactly how the production aggregators (Section 6) work, just scaled up.
 
-> **Why keep everything in one time zone?** Merging only makes sense if the clocks agree. EZ Tools emit UTC by default and this data is all UTC, so the sort is honest. On real evidence, normalize every source to **UTC before merging** (EvtxECmd `--sync`/local-time flags, `mactime -z UTC`, etc.) or your interleave will be off by whatever the zone offsets are.
+> **Why keep everything in one time zone?** Merging only makes sense if the clocks agree. **EZ Tools (EvtxECmd/MFTECmd) emit UTC by default**, and this data is all UTC, so the sort is honest. (Note: EvtxECmd's `--sync` is unrelated to time zones — it just updates EvtxECmd's event Maps from GitHub.) On real evidence, the honest rule is: EZ Tools already emit UTC; for any source that *doesn't* — e.g. `mactime -z UTC` — **force UTC before merging**, or your interleave will be off by whatever the zone offsets are.
 
 ---
 
@@ -143,6 +143,8 @@ That interleaving — a filesystem create adjacent to the event-log activity aro
 
 **Triage discipline:** the merged timeline does not *judge* — it *arranges*. A 2019 row is not automatically evil (real OS files are old — that is Module 15's `win32k.sys` control). What the super timeline gives you is **adjacency**: it puts the questionable file next to the log activity of its moment so you can decide with context instead of guessing. The 2019-vs-2026 spread you see here is the same timestomp tell Module 15 proved at the `$SI`-vs-`$FN` level — on the merged timeline it shows up as a lone ancient date sitting in an otherwise-2026 story.
 
+> **A third filesystem source — the USN journal.** MFTECmd doesn't only parse the `$MFT`; it also parses **`$J` / `$UsnJrnl`**, the change journal, which records per-change **USN reason codes** (file create, rename, data-overwrite, delete). That makes it a natural *third* timeline input — add it with one more `SOURCES` tuple exactly as you would registry or Prefetch. It also closes a blind spot: the `Time` column here is `LastModified0x10`, i.e. **`$SI`** — the same `$Standard_Information` timestamp an attacker can **timestomp**. A super-timeline built only on `$SI` inherits `$SI`'s spoofability, so when a date looks wrong, pull **`$FN`** (`$File_Name`, kernel-only-writable) and the `$J` rename/create records to confirm the real order of events.
+
 ---
 
 ## 6. Where this goes in production — the tools that automate the merge
@@ -151,7 +153,7 @@ That interleaving — a filesystem create adjacent to the event-log activity aro
 
 - **forensic-timeliner** (<https://github.com/acquiredsecurity/forensic-timeliner>) — the modern, **EZ-native** super-timeline builder. Point it at a folder of **EZ Tools / KAPE / Chainsaw / Hayabusa** CSVs and it normalizes and merges them into one Timeline Explorer-ready timeline. This is the direct, grown-up version of what you just did by hand — the same idea, every artifact type, one command.
 - **KAPE `!EZParser` + the `Mini_Timeline` module** — KAPE parses a triage collection with the EZ tools, and its `Mini_Timeline` / `Mini_Timeline_Slice_by_Range` modules stitch the resulting CSVs into a combined timeline (optionally windowed to a date range). Mari DeGrazia's SANS webcast (Section 8) walks this end-to-end.
-- **Plaso / log2timeline** (<https://plaso.readthedocs.io/>) — the **classic** super-timeline engine: `log2timeline.py` ingests a huge range of sources into a storage file and `psort.py` sorts/filters it. It is the reference tool for this technique, but it is **not native-Windows / not on the lab VM** (heavy, Python-stack). That is precisely why this lab teaches the merge the **EZ-native way** — MFTECmd/EvtxECmd → CSV → merge → Timeline Explorer — which runs anywhere the EZ tools do.
+- **Plaso / log2timeline** (<https://plaso.readthedocs.io/>) — the **classic** super-timeline engine: `log2timeline.py` ingests a huge range of sources into a storage file and `psort.py` sorts/filters it. It is the reference tool for this technique, but it has **no maintained Windows binaries** (native Windows builds were discontinued ~2020) — it runs via Docker or a Python install, and isn't on the lab VM. That is precisely why this lab teaches the merge the **EZ-native way** — MFTECmd/EvtxECmd → CSV → merge → Timeline Explorer — which runs anywhere the EZ tools do.
 
 Frame it this way: **Plaso is the classic all-in-one, forensic-timeliner/KAPE are the EZ-native automations, and `merge_timeline.py` is the ten-line version that shows you what all three are actually doing** — parse per source, normalize on a time column, sort.
 
@@ -175,7 +177,7 @@ Frame it this way: **Plaso is the classic all-in-one, forensic-timeliner/KAPE ar
 - The merger is **extensible by design** — one `(glob, source, time-column, description)` tuple per artifact type. Add registry, Prefetch, Amcache, or browser CSVs the same way.
 - Keep every source in **one time zone (UTC)** before merging, or the interleave is a lie.
 - Module 15 built a **single-source** filesystem timeline; this module **combines sources** — the same technique the whole FOR508 timeline methodology rests on.
-- In production the merge is automated by **forensic-timeliner** and **KAPE's `Mini_Timeline`** (EZ-native) or the classic **Plaso/log2timeline** (not native-Windows, hence the EZ approach here). All of them do exactly what you just did by hand.
+- In production the merge is automated by **forensic-timeliner** and **KAPE's `Mini_Timeline`** (EZ-native) or the classic **Plaso/log2timeline** (no maintained Windows binaries — runs via Docker/Python, hence the EZ approach here). All of them do exactly what you just did by hand.
 
 ---
 
@@ -187,7 +189,7 @@ Frame it this way: **Plaso is the classic all-in-one, forensic-timeliner/KAPE ar
 - **13Cubed (Richard Davis) — "Introduction to MFTECmd"** — parsing the `$MFT` to the CSV that feeds the filesystem half of the timeline: <https://www.youtube.com/watch?v=Svff0Fj5Xgc> · channel: <https://www.13cubed.com/>
 - **AboutDFIR — Timeline Explorer** (loading, filtering, colour rules, bookmarking merged CSVs): <https://aboutdfir.com/toolsandartifacts/windows/timeline-explorer/>
 - **Eric Zimmerman tool docs** — MFTECmd, EvtxECmd, Timeline Explorer (usage, columns, the Maps model): <https://ericzimmerman.github.io/>
-- **Plaso / log2timeline** — the classic super-timeline engine (`log2timeline.py` + `psort.py`; not native-Windows): <https://plaso.readthedocs.io/>
+- **Plaso / log2timeline** — the classic super-timeline engine (`log2timeline.py` + `psort.py`; no maintained Windows binaries since ~2020 — runs via Docker or a Python install): <https://plaso.readthedocs.io/>
 - **SANS FOR508** — the super-timeline / timeline-analysis methodology this module distils.
 - **MITRE ATT&CK — T1070.006 (Indicator Removal: Timestomp)** — the anti-forensic technique that makes a *cross-source* timeline necessary (a faked `$SI` date is exposed the moment it sits next to real event-log activity): <https://attack.mitre.org/techniques/T1070/006/>
 

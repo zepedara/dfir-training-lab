@@ -35,13 +35,23 @@ A Sigma rule is a small YAML document with four parts that matter here:
 - **`logsource`** — *which* logs the rule applies to (product / service / category). It's a filter: a rule scoped to `service: system` never even looks at PowerShell script logs. Get this wrong and a perfect rule matches nothing.
 - **`detection`** — one or more named **selections** (field/value conditions), e.g. `EventID: 7045`, or `ScriptBlockText|contains: '-enc'`. The `|contains`, `|startswith`, `|endswith` suffixes are **modifiers** that change how the value is matched.
 - **`condition`** — how the selections combine (`selection`, `selection1 and not filter`, `1 of them`, …). This is the boolean logic of the rule.
-- **`level`** — severity (`informational` → `low` → `medium` → `high` → `critical`). It sets reading order downstream, not importance.
+- **`level`** — the rule's **severity / criticality** (`informational` → `low` → `medium` → `high` → `critical`). Per the Sigma spec this *is* how important a match is: `informational`/`low`/`medium` are informative, while `high` and `critical` warrant prompt analyst review. It drives alert prioritisation downstream, so set it to match the real impact of a true positive.
+
+Three more fields separate a hobby rule from one a team will actually trust and maintain — real detection engineers rely on them:
+
+- **`status`** — the rule's maturity: `experimental` (just written, unproven), `test` (being validated), or `stable` (trusted in production). It tells a reviewer how much to lean on the rule.
+- **`falsepositives`** — a plain-text list of the known benign things that could trip the rule (e.g. *"legitimate admin installing a service"*). It makes the rule **FP-aware** and gives the triaging analyst the first thing to check.
+- **`tags`** — the ATT&CK (and other) mappings, e.g. `attack.t1543.003` for a service install. Tags make a rule **reviewable and pivotable** — you can see at a glance which technique it covers and find every rule for a tactic.
+
+Together `status` + `falsepositives` + `tags` are what make a rule *reviewable and FP-aware* — exactly the quality bar this module argues for.
 
 ### (b) Validate — `sigma check`
 Before you convert or test anything, ask sigma-cli: *is this even a well-formed Sigma rule?* `sigma check` parses the YAML, verifies the schema, flags duplicate IDs, dead references, and structural mistakes. It's your **linter** — the fast "does it compile?" gate. A clean check does **not** mean the rule is *good*; it means it's *valid*.
 
 ### (c) Convert — `sigma convert -t <backend> -p <pipeline>`
 Conversion compiles your abstract Sigma rule into the **concrete query language** of a target system. `-t sqlite` emits SQL; `-t splunk` emits SPL; and so on. This is the "one rule, many targets" payoff made visible.
+
+> **First-run gotcha:** each backend is a separate pySigma plugin, so a target only becomes available *after* you install it — `sigma plugin install <backend>` (e.g. `sigma plugin install splunk`). A `sigma convert -t splunk` that errors with an unknown/unsupported backend usually just means the plugin isn't installed yet, not that your rule is wrong. (The lab's `sqlite` backend is pre-installed for you.)
 
 **The single most important concept in this module is the processing pipeline, `-p`.** A Sigma rule names **logical** fields (`Image`, `ScriptBlockText`, `EventID`). But the actual event stores those values under *specific, backend-dependent field names* — Sysmon's `Image`, an ECS index's `process.executable`, Zircolite's flattened column. A **pipeline** is the translation table that maps Sigma's abstract field names onto the target's real ones (and can add index conditions, rename fields, drop unsupported ones).
 
@@ -115,7 +125,7 @@ zircolite --evtx evtx -r rules -c fieldMappings.yaml -o detect.json
 ```
 - **`--evtx evtx`** — the folder of target `.evtx` (the staged Module 8 + Module 6 logs).
 - **`-r rules`** — the folder of Sigma rules to run (**both** shipped rules).
-- **`-c fieldMappings.yaml`** — Zircolite's field-mapping/config (its equivalent of a pipeline: how it flattens and names event fields).
+- **`-c fieldMappings.yaml`** — Zircolite's field-mapping/config (its equivalent of a pipeline: how it flattens and names event fields). (Zircolite's upstream default is named `fieldMappings.json`; this lab ships a `.yaml` copy of the same config, so don't be thrown if the tool's own repo shows the `.json` name.)
 - **`-o detect.json`** — write detections here.
 
 **Expected output (summary lines):**

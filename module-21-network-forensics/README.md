@@ -3,7 +3,7 @@
 **Deck mapping:** *Advanced Intrusion Forensic Hunting* → "Network Forensic Analysis" / evidence on the wire — reconstructing C2, exfil, and reconnaissance from a packet capture.
 **Goal:** learn to triage a **PCAP** from the command line with **tshark**, the Wireshark CLI. Where the rest of this lab reads artifacts a host *left on disk*, network forensics reads the *other* half of the story — what actually crossed the wire. You'll take a small capture and, using nothing but tshark, answer the questions that decide network cases: **what protocols are in here, who talked to whom, what did they request, and which lookup looks wrong.** tshark runs **natively** on the lab VM (Git Bash on Windows; `tshark` is on your `PATH` as a shim), so everything below is copy-paste runnable and **offline** — no live capture, no interface, no Npcap needed.
 
-> **Evidence note.** The capture in `data/capture.pcap` is a **crafted, benign, 8-packet** teaching file built with **Scapy** (`data/make_pcap.py`) — no live interface, no real traffic, no malware. It contains a normal **DNS** query/response and a plain-text **HTTP GET → 200 OK** to `example.com`, an **IANA-reserved test domain** that hosts no real service or C2, plus **one DGA-style `NXDOMAIN` lookup** (`kq3v9x7zpl2m8w.example.org`) so you have something *benign-but-suspicious* to hunt. Everything resolves to documentation-range or reserved addresses. We never alter evidence, so tshark's output shows the file's real baked-in values. The pcap **ships pre-built** — you do not need Scapy to do this module.
+> **Evidence note.** The capture in `data/capture.pcap` is a **crafted, benign, 8-packet** teaching file built with **Scapy** (`data/make_pcap.py`) — no live interface, no real traffic, no malware. It contains a normal **DNS** query/response and a plain-text **HTTP GET → 200 OK** to `example.com` — an **IANA-reserved example domain** (RFC 2606, safe to use in documentation) that hosts no real **target/C2** service — plus **one DGA-style `NXDOMAIN` lookup** (`kq3v9x7zpl2m8w.example.org`) so you have something *benign-but-suspicious* to hunt. (Note: the baked-in address `93.184.216.34` is a **real, globally-routable public IP** — the historic real `example.com` A record — not an RFC 5737 documentation range; the *domain* is the reserved-for-examples part, and nothing here is contacted because the capture is read entirely offline.) We never alter evidence, so tshark's output shows the file's real baked-in values. The pcap **ships pre-built** — you do not need Scapy to do this module.
 
 ---
 
@@ -78,6 +78,8 @@ eth                                      frames:8 bytes:660
 ```
 
 **How to read it:** all **8 frames** are Ethernet → IP, then the tree forks — **3 frames of UDP/DNS** and **5 frames of TCP**, of which **2** carry **HTTP** (the GET request and the 200 response; the response body shows as `data-text-lines`). In ten seconds you've learned the *shape* of the capture: a little DNS, one small web conversation, nothing else. On a real capture this single view is where triage begins — it tells you instantly whether you're looking at plain HTTP, a sea of TLS, unexpected protocols (IRC, SMB, raw TCP on odd ports), or tunneling, and where to point your filters next.
+
+> **Even before `io,phs`, run `capinfos`.** `capinfos capture.pcap` (a Wireshark companion tool) prints the capture's vital statistics in one shot — **packet count, byte count, capture duration, and the first/last timestamp bounds**. On a real, unknown capture that's the true first triage move: it tells you *how big* the evidence is and *what time window* it covers before you dissect a single packet — the frame of reference for everything the protocol hierarchy then shows you. (Source: Wireshark `capinfos` man page.)
 
 ### 4b. HTTP requests — what was fetched
 
@@ -164,11 +166,13 @@ Two moves that turn triage into recovery. Neither is needed for this tiny captur
 
 Most real traffic is **TLS-encrypted**, and a capture of encrypted traffic shows you only the *metadata* (endpoints, timing, SNI, certificate) — not the payload. You can decrypt it, but **only with the session keys**, and those must be captured **at the time of the connection**:
 
-- Set the **`SSLKEYLOGFILE`** environment variable *before* the client runs. Clients that honor it — **curl, Chrome, Firefox, and most OpenSSL/NSS-based tools** — will append their per-session TLS secrets to that file as they connect.
-- **Important gotcha:** **.NET / PowerShell `Invoke-WebRequest` does NOT honor `SSLKEYLOGFILE`** (it uses Windows SChannel, not OpenSSL/NSS). Neither do many native Windows components. So a key-log strategy covers curl and browsers but **misses** a lot of Windows-native traffic — know the gap before you rely on it.
+- Set the **`SSLKEYLOGFILE`** environment variable *before* the client runs. Clients that honor it will append their per-session TLS secrets to that file as they connect — **Chrome, Firefox, and OpenSSL/NSS-based tools** do.
+- **Important gotcha — it's the TLS *backend*, not the program name, that decides.** `SSLKEYLOGFILE` support is a property of the TLS library a client is built against: **OpenSSL, GnuTLS, and wolfSSL honor it; Windows Schannel does not.** So curl honors it **only when built with OpenSSL/GnuTLS/wolfSSL** — and the **`curl.exe` bundled with Windows 10/11 is built against Schannel and silently ignores it** (as does .NET / PowerShell `Invoke-WebRequest`, and many native Windows components). To key-log a request from a Windows box, use an **OpenSSL-built curl or a browser**, not the in-box `curl.exe`. Know the gap before you rely on it. (Sources: everything.curl.dev `SSLKEYLOGFILE`; curl issue #13672.)
 - With the key log in hand, Wireshark/tshark decrypts the HTTPS: point tshark at it (`-o tls.keylog_file:<path>`), or bake the secrets **into** the pcap itself with **`editcap --inject-secrets tls <keylog> in.pcap out.pcapng`** so the capture is self-decrypting and portable.
 
 The lesson: **decryption is a collection-time decision.** If nobody set `SSLKEYLOGFILE` (or captured the server's private key for RSA key-exchange, which modern forward-secret ciphers defeat anyway), the TLS payload stays sealed and you work the metadata.
+
+When the payload *is* sealed, the metadata still fingerprints the client: **JA3 / JA4 TLS-client fingerprinting** hashes the ordered set of fields in the TLS `ClientHello` (versions, cipher suites, extensions) into a compact string that often identifies the *tool* behind an encrypted session — a specific malware family, a Cobalt Strike profile, or a scripted client masquerading as a browser — even though you can't read one byte of the traffic. It's the modern metadata hunt for encrypted C2: pivot on the JA3/JA4 hash the way you'd pivot on a `User-Agent` in cleartext. (Source: FoxIO JA4+.)
 
 ### (b) Zeek — the log-oriented complement to tshark
 
@@ -193,7 +197,7 @@ The lesson: **decryption is a collection-time decision.** If nobody set `SSLKEYL
 - **The triage rhythm is fixed:** **protocol hierarchy → filter → extract → follow/carve.** `-z io,phs` first (the shape of the capture), then `-Y` to narrow, `-T fields -e` to tabulate, `follow`/`--export-objects` to reassemble and recover.
 - **The flags that do the work:** `-r` (read evidence), `-z` (`io,phs`, `conv,tcp`, `endpoints,ip`, `http,tree`, `dns,tree`, `expert`), `-Y` (display filter), `-T fields -e` (extract), `--export-objects` (carve files), `-z follow,tcp,ascii,n` (reassemble a stream). Add **`-q`** with any `-z` report.
 - **DNS is the hunting ground.** A **long, high-entropy label** that returns **NXDOMAIN** is the fingerprint of a **DGA** or **tunnel** — length + entropy + NXDOMAIN together. TCP **conversations** expose beacons (regular, tiny, repeated) and exfil (large outbound byte counts).
-- **TLS is a collection-time decision** — `SSLKEYLOGFILE` before capture (curl/browsers honor it, **`Invoke-WebRequest` does not**), then decrypt or `editcap --inject-secrets tls`. **Zeek** is the log-scale complement to tshark, but it's **Linux/macOS**, so this module stays on tshark.
+- **TLS is a collection-time decision** — `SSLKEYLOGFILE` before capture (honored by the **TLS backend**: OpenSSL/GnuTLS/wolfSSL yes, **Windows Schannel no** — so browsers and an OpenSSL-built curl work, but the **in-box Windows `curl.exe` and `Invoke-WebRequest` do not**), then decrypt or `editcap --inject-secrets tls`. **Zeek** is the log-scale complement to tshark, but it's **Linux/macOS**, so this module stays on tshark.
 
 ---
 

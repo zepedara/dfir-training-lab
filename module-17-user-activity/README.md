@@ -131,7 +131,7 @@ LECmd.exe -d artifacts --csv out --csvf lnk.csv
 - **`TargetCreated` / `TargetModified` / `TargetAccessed`** — the **target's own MAC times** captured when the shortcut was made — a second, independent timestamp source you can cross-check against the filesystem.
 - **`DriveType`** — `Fixed`, **`Removable`**, or `Network`. `Removable` immediately flags a **USB / external drive**.
 - **`VolumeSerialNumber` / `VolumeLabel`** — identifies the *specific volume*; a serial that isn't the system disk means the file lived on **another drive**.
-- **`MachineID` / `MachineMACAddress` / `TrackerCreatedOn`** — the **machine the target was on**. On a shortcut to a file on a *different* host, this is how you tie activity to a specific machine.
+- **`MachineID` / `MachineMACAddress` / `TrackerCreatedOn`** — the **machine the target was on**. On a shortcut to a file on a *different* host, this is how you tie activity to a specific machine. The MAC address isn't stored as its own field — it's the **node bytes of the version-1 Droid / Birth-Droid GUIDs** in the LNK's DistributedLink Tracker (`TrackerDataBlock`): a v1 UUID embeds the originating NIC's MAC in its node component, which is *why* the shortcut attributes to the machine that created it. (Source: MS-SHLLINK `TrackerDataBlock` spec.)
 
 > **Forensic value — USB and external-drive tracking.** `.lnk` files are the backbone of removable-media and cross-machine investigations. When a user opens a document off a USB stick, the resulting shortcut permanently records the stick's **volume serial**, a **`Removable` drive type**, and the **machine ID** — and it *stays behind on the host after the stick is unplugged and the file is gone*. Correlate the volume serial here with the `USBSTOR`/`MountedDevices` registry keys (Module 16) and you can put a specific device, holding a specific file, on this machine at a specific time — the core of a **data-theft (T1052)** case.
 
@@ -220,6 +220,7 @@ The four artifacts above are collectable as loose files. Two more high-value use
 - **Windows Timeline (Activities Cache)** — parser **`WxTCmd`**.
   - **On disk:** `C:\Users\<user>\AppData\Local\ConnectedDevicesPlatform\L.<user>\ActivitiesCache.db` (Windows 10 **1803+**).
   - **What it shows:** an application/file **activity timeline** — which app was in focus, which document it had open, start/end times and duration — reconstructing the user's session almost like a screen-recording index.
+  - **Currency caveat:** that rich app/document-activity recording is a **Windows 10-era (1803–21H2)** behaviour; Microsoft **deprecated and then removed the Timeline feature across Windows 11 (2022–2024)**, so on a Win11 host the DB may still persist but typically holds only sparse system entries rather than the full activity history. (Sources: kacos2000 *WindowsTimeline*; Forensic Focus, 2024.)
 
 Both are the **natural extension** of this module: jump lists/LNK/shellbags tell you *what the user opened and browsed*; SRUM tells you *how much data an app moved*; Windows Timeline tells you *the minute-by-minute session*. Together they close the loop from "a file was touched" to "this much data left, in this session, by this account."
 
