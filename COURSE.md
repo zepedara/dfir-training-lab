@@ -39,7 +39,7 @@ Two big arcs run through the core modules:
 
 A **capstone (Module 11)** then makes you work one full intrusion end-to-end, using everything from Parts A and B.
 
-After the capstone, a set of **advanced add-on modules (12, 14, 15, 16)** goes *below* the artifact layer — into raw **memory** and raw **disk** — and out to the malicious-document front door. (There is **no Module 13**: the number is intentionally **reserved/held** for a future module, so the advanced track runs **12 → 14 → 15 → 16**. The gap is deliberate, not a missing file.)
+After the capstone, three **advanced tracks** extend the lab in any order: **Part C — Host Forensics Deep-Dive (12, 14, 15, 16, 17, 19)** goes *below* the artifact layer into raw memory, raw disk, the registry, user activity and browsers; **Part D — Timeline, Triage & Detection at Scale (18, 20, 21, 22)** fuses one super-timeline, collects at fleet scale, crosses the wire, and turns findings into detections; **Part E — Anti-Forensics (23, 25)** shows how wiping and timestomping betray themselves in NTFS. (Three numbers are **reserved/held** for in-development modules and skipped on purpose: **13** a future core module, **24** Volume Shadow Copy forensics, **26** advanced record carving. The gaps are deliberate, not missing files.)
 
 > **What's one case and what's a technique sample (read this once).** The **Case-001 host** (the `DESKTOP-SDN1RPT` desktop and its `CITADEL-DC01` server) is the real, single, documented intrusion that carries **Part A (Modules 1-4)** and the registry/filesystem advanced modules (**15-16**) — one host, one real clock, verifiable answers. **Part B (Modules 5-10)** and the **malicious-documents module (14)** instead teach each technique on **representative public captures** — real attacks, but from *different* hosts and clocks (EVTX-ATTACK-SAMPLES, hayabusa-sample-evtx) — because no public dataset makes a fictional binary perform every technique. The **capstone (11)** fuses them into one kill-chain narrative, pinning real timestamps where the host data provides them and ordering the technique samples logically. Knowing which evidence is one case and which is a representative sample is itself a DFIR skill — each module's `data/README.md` states exactly which it is.
 
@@ -102,9 +102,9 @@ Module 4 then **scales** the Triad: instead of one host, you stack the same arti
 11. **[Module 11 — Capstone investigation](module-11-capstone)**
     *One intrusion, end-to-end.* You are handed a triage collection and must work a complete case across the Triad, event logs, credential theft, lateral movement, and PowerShell — producing a **timeline + findings report**. Guiding questions first, then a walkthrough, then the full solution. This is where the core modules become one skill.
 
-### Part C — Advanced add-on modules
+### Part C — Host Forensics Deep-Dive
 
-These extend the lab *beneath* the OS-artifact layer and out to initial access. Each is self-contained; take them after the capstone, in any order. **There is no Module 13** — the number is reserved/held for a future module, so the track is **12 → 14 → 15 → 16**.
+These three advanced tracks are self-contained; take them after the capstone, in any order. Part C goes *beneath* the OS-artifact layer — raw memory, raw disk, the registry — and out to the initial-access front door. (**No Module 13/24/26**: those numbers are reserved for in-development modules — a future core module, Volume Shadow Copy forensics, and advanced record carving — and skipped on purpose.)
 
 12. **[Module 12 — Memory forensics](module-12-memory-volatility3)** · tool: `Volatility 3` (`vol`)
     *What was alive in RAM at the moment of capture.* You analyse a Windows memory image and reconstruct running processes and ancestry, hunt hidden processes (`psscan` vs `pslist`), read launch command lines, look for injected code (`malfind`), map network connections (`netscan`) and service persistence (`svcscan`), then **carve a suspect binary back out of RAM**. **You'll learn:** that *disk can lie but memory tells the truth at capture time*, why Volatility 3 needs no profile, and how a clean injection/C2/persistence result is itself a finding (here it scopes an **insider data-staging** case).
@@ -117,6 +117,38 @@ These extend the lab *beneath* the OS-artifact layer and out to initial access. 
 
 16. **[Module 16 — Registry forensics](module-16-registry-regripper)** · tools: RegRipper (`rip`)
     *The configuration database that never forgets.* You triage the Case 001 registry hives with RegRipper's plugins to recover **persistence** (a `coreupdater` auto-start **service** and a fileless **Run-key**), **accounts** (SAM), **program execution** (UserAssist — proof a human launched the malware through the GUI), **USB/device history** (USBSTOR), the **time zone** (to anchor your clock), and **shellbags** (the folders a user browsed). **You'll learn:** which hive answers which question, how a key's **LastWrite** time often *is* the event timestamp, and how registry evidence corroborates the Triad and the event-log timeline.
+
+17. **[Module 17 — User activity](module-17-user-activity)** · tools: `JLECmd`/`LECmd`/`SBECmd`/`RBCmd`
+    *What the human actually did.* Jump Lists, LNK shortcuts, ShellBags and the Recycle Bin reconstruct the files, folders and removable drives a user opened, ran and deleted. **You'll learn:** to place a *person* behind the activity — which account touched what, from where, and when.
+
+19. **[Module 19 — Browser forensics](module-19-browser-forensics)** · tool: `Hindsight`
+    *Where the user went and what they downloaded.* You parse a Chromium profile — history, downloads, and the **packed `transition` integer** that separates a *typed* URL (intent) from an auto-loaded resource — plus the Session/Tabs files showing what was open at seizure. **You'll learn:** to read browser *intent*, not just browser noise.
+
+### Part D — Timeline, Triage & Detection at Scale
+
+Fuse every artifact onto one clock, collect at fleet scale, cross the wire, and turn findings into repeatable detections.
+
+18. **[Module 18 — Super timeline](module-18-super-timeline)** · tools: `MFTECmd` + `mactime`
+    *Every artifact on one clock.* You merge the `$MFT` filesystem timeline with parsed event logs into a single super-timeline, and learn the traps — per-host **clock skew** (distinct from time-zone) and the **MACB** pitfalls (disabled last-access, born-after-modified on copy). **You'll learn:** to interleave sources without drawing false cross-host adjacency.
+
+20. **[Module 20 — Triage at scale](module-20-triage-velociraptor)** · tool: `Velociraptor` (VQL)
+    *Collect from one host — or ten thousand.* You run KAPE-style triage collections and hunts with **VQL**, pivoting plugin-to-plugin with `foreach()` and analysing results in **notebooks**. **You'll learn:** how enterprise IR scopes an intrusion across a fleet without imaging every disk.
+
+21. **[Module 21 — Network forensics](module-21-network-forensics)** · tools: `tshark` / `Zeek`
+    *Cross the wire.* You carve HTTP/DNS/TLS metadata from a PCAP, **measure a beacon's interval** (`frame.time_delta_displayed`), and catch a service hiding on a non-standard port (**port ≠ protocol**). **You'll learn:** to turn raw packets into an attacker-comms narrative (ATT&CK T1071/T1571).
+
+22. **[Module 22 — Detection engineering](module-22-detection-engineering)** · tools: `Sigma` / `Chainsaw` / `Zircolite`
+    *Turn a finding into a repeatable detection.* You write, test and tune **Sigma** rules — including **correlation** rules for multi-event patterns — and learn **hunting-query vs alerting-rule** (recall vs precision). **You'll learn:** to convert one investigation's IOCs into detections that catch the next intrusion.
+
+### Part E — Anti-Forensics *(FOR508.5)*
+
+How attackers try to erase their tracks — and why NTFS remembers anyway. Builds directly on the NTFS internals of Modules 15 & 18.
+
+23. **[Module 23 — Anti-Forensics: Wiping tool-marks](module-23-anti-forensics-wiping)** · tool: `MFTECmd`
+    *Wiping destroys content, not the record of wiping.* From an inert `$UsnJrnl`/`$MFT`, you detect **SDelete** (26-rename chain), **`cipher /w`** (`EFSTMPWP` folder), Eraser and BCWipe by their tool-marks — and **recover a securely-wiped file's original name**. **You'll learn:** that NTFS journals the delete *before* the data dies (ATT&CK T1070.004 / T1485).
+
+25. **[Module 25 — Anti-Forensics: `$LogFile` transaction analysis](module-25-anti-forensics-logfile)** · tool: LogFileParser
+    *NTFS's lowest-level flight recorder.* You read the `$LogFile` redo/undo **opcodes** to reconstruct create / rename / ADS / delete at the transaction level — separating a rename from a move from a new file, and recovering names after `$MFT` reuse. **You'll learn:** the opcode→action grammar that survives when the higher-level journals have already wrapped.
 
 ---
 
@@ -199,7 +231,7 @@ Each module ships its sample data in `data/` (committed to the repo), so you can
 ## 8. Suggested study plan
 
 - **Work 1 → 11, in order.** Part A teaches single-host execution proof; Part B teaches intrusion hunting; the capstone fuses them. The pivots only make sense forward.
-- **Then take the advanced add-ons (12, 14, 15, 16).** After the capstone, go below the artifact layer — memory (**12**) and disk (**15**) — out to initial access (**14**), and into the registry (**16**). They are self-contained and can be done in any order. (Remember: **no Module 13** — it's reserved.)
+- **Then take the advanced tracks (12, 14–23, 25).** After the capstone, go below the artifact layer in any order: **Part C** host deep-dive (memory 12, maldocs 14, disk 15, registry 16, user activity 17, browser 19), **Part D** scale & detection (super-timeline 18, Velociraptor 20, network 21, detection engineering 22), and **Part E** anti-forensics (wiping 23, `$LogFile` 25). They are self-contained. (Remember: **13/24/26** are reserved for in-development modules.)
 - **Do the exercises.** Each module ends with 4-6 *try-it-yourself* questions on the real data. They are where the learning sticks. Worked answers live in **[ANSWER-KEY.md](ANSWER-KEY.md)** (instructor material — try first, then check).
 - **Keep the [GLOSSARY](GLOSSARY.md) open** in another tab for any unfamiliar term.
 - **Take notes as a timeline.** From Module 1, start a running `YYYY-MM-DD HH:MM:SS UTC | host | what | artifact` log. By the capstone you will be building one for real.
@@ -221,12 +253,22 @@ Each module ships its sample data in `data/` (committed to the repo), so you can
 | 9 PowerShell | what did they type? | event analysis | **4104/4103**, Sysmon **7/8/10** |
 | 10 Sysmon + WEF | how do we see all this? | concepts | Sysmon ID map; WEF `ForwardedEvents` |
 | 11 Capstone | put it all together | all of the above | timeline + findings |
-| *— advanced add-ons (no Module 13) —* | | | |
+| *— Part C · Host Forensics Deep-Dive —* | | | |
 | 12 Memory forensics | what was running/connected in RAM? | Volatility 3 (`vol`) | processes, `malfind`, `netscan`, `svcscan` |
 | 14 Malicious documents | how did they get in? | oletools + Didier Stevens | VBA auto-exec, PDF `/OpenAction`/`/Launch`, carved IOCs |
 | 15 Filesystem & timelines | what's on disk / deleted / faked? | The Sleuth Kit + MFTECmd | `$MFT`, `$SI` vs `$FN` (timestomp), recovered files, timeline |
 | 16 Registry forensics | what persisted / who logged on / what ran? | RegRipper | Run keys, services, UserAssist, USBSTOR, SAM, shellbags |
+| 17 User activity | what did the person do? | JLECmd/LECmd/SBECmd/RBCmd | Jump Lists, LNK, ShellBags, Recycle Bin |
+| 19 Browser forensics | where did they go / download? | Hindsight | history, downloads, packed `transition`, sessions |
+| *— Part D · Timeline, Triage & Detection at Scale —* | | | |
+| 18 Super timeline | every artifact on one clock? | MFTECmd + mactime | `$MFT`+evtx merge, clock skew, MACB traps |
+| 20 Triage at scale | collect across a fleet? | Velociraptor (VQL) | KAPE targets, `foreach()`, notebooks |
+| 21 Network forensics | what crossed the wire? | tshark / Zeek | HTTP/DNS/TLS, beacon interval, port≠protocol |
+| 22 Detection engineering | make it repeatable? | Sigma / Chainsaw / Zircolite | rules, correlation, hunt-vs-alert |
+| *— Part E · Anti-Forensics (FOR508.5) —* | | | |
+| 23 Wiping tool-marks | who wiped what? | MFTECmd (`$J`/`$MFT`) | SDelete 26-rename, EFSTMPWP, name recovery |
+| 25 `$LogFile` analysis | what did the transactions do? | LogFileParser | redo/undo opcodes: create/rename/ADS/delete |
 
 ---
 
-*Start with **[Module 1 — Prefetch](module-01-prefetch-pecmd)**. By Module 11 you'll take a triage collection and build a full incident timeline — exactly the decks' goal: **"Master the Triad. Close the Gap."** Then take the advanced add-ons (**12, 14, 15, 16**) to go below the artifact layer and out to the front door.*
+*Start with **[Module 1 — Prefetch](module-01-prefetch-pecmd)**. By Module 11 you'll take a triage collection and build a full incident timeline — exactly the decks' goal: **"Master the Triad. Close the Gap."** Then take the advanced tracks — **Part C** (12, 14, 15, 16, 17, 19), **Part D** (18, 20, 21, 22), and **Part E** anti-forensics (23, 25) — to go below the artifact layer, across the wire, and into how attackers try to erase their tracks.*
