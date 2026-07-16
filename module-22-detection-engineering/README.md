@@ -62,6 +62,9 @@ Burn this in: **when a rule validates cleanly and converts without error but sti
 
 The reason Zircolite is a great *teaching* engine: it makes detection **concrete**. A detection isn't magic — it is literally **a query over a table of structured events**. You can see the SQL, and you can see the rows it returns.
 
+### (e) Beyond single events — correlation rules
+Both rules in this module are **single-event**: each fires on one log line in isolation. But the most important detections are often *relationships between events* — "many failed logons **then** a success" (a spray that worked), "one process spawns an unusual number of distinct children," "these three techniques within five minutes." Modern **Sigma (v2)** expresses these with a **correlation rule**: a second YAML document that references one or more base rules and aggregates their matches over a `timespan` with an optional `group-by`. The core types are **`event_count`** (fire when a base rule matches ≥ N times — brute force), **`value_count`** (fire on an unusual number of *distinct* values of a field — one account touching many hosts), and **`temporal`** / **`temporal_ordered`** (fire when several *different* rules all match inside the window, unordered or in a required order — a kill-chain sequence), each with a `condition` threshold operator (`gte`, `lt`, `eq`). This is how detection engineering graduates from "was this one event bad?" to "does this *pattern* of events tell a story?" — and Zircolite executes correlations as `GROUP BY … HAVING` SQL over the same in-memory table, so the loop you already learned extends to them unchanged. (SigmaHQ — *Correlations*.)
+
 ---
 
 ## 3. Setup
@@ -157,6 +160,8 @@ The coverage number (1/2, 3 matches) is the doorway to the single most important
 - **A good rule maximises TP on bad *and* FP-silence on good.** Both. Our broad `new_service.yml` nails the TP but would light up on **every legitimate service install** on a real host — high TP, terrible FP profile. That's why its own description says *refine it* (see Try-it-yourself #3).
 
 > **The vanity metric to distrust: rule count.** "Our SOC has 6,000 detections" tells you nothing about whether you'd catch an intrusion. A thousand untested, noisy, overlapping rules is *worse* than fifty rules each proven against known-bad and known-good samples — the thousand bury real alerts in false positives and nobody can maintain them. **Measure coverage and precision against labeled samples, never rule count.**
+
+> **Hunting query vs alerting rule — know which you're building.** The broad `new_service.yml` (every 7045, no filter) is only a "bad rule" relative to a *destination*. An **alerting rule** auto-escalates — it pages someone — so it must be precise (a `high`/`critical` `level`, tuned so a match almost always means action). A **hunting query** is deliberately broad, tolerates noise, and is *reviewed by an analyst* rather than auto-actioned — its job is to surface a population to sift. Your broad 7045 rule is a perfectly good **hunt** (show me every service install, I'll eyeball them) and a terrible **alert** (it would page on every legitimate install), and Try-it-yourself #3's refinement is exactly **promoting a hunt into an alert** — adding the path/allow-list filters that raise fidelity until it earns the right to auto-escalate. Knowing which of the two you're building, *before* you tune it, is what stops you drowning analysts in false pages or discarding a useful hunt as "too noisy." (A detection-engineering concept tied to the `level` field — Sigma has no separate "hunting" status keyword.)
 
 ---
 
