@@ -70,7 +70,7 @@ Open **Git Bash** on the lab VM and change into this module's data directory:
 cd module-17-user-activity/data
 ```
 - **Every command below runs from inside `data/`**, so artifacts are named with the simple relative path `artifacts`.
-- The EZ tools are installed **natively on the lab VM and already on your `PATH`** as `.exe` — you call `JLECmd.exe`, `LECmd.exe`, `SBECmd.exe`, `RBCmd.exe` directly. No container, no Docker. The VM is kept **offline** so evidence never phones home.
+- The EZ tools are installed **natively on the lab VM and already on your `PATH`** as `.exe` — you call `JLECmd.exe`, `LECmd.exe`, `SBECmd.exe`, `RBCmd.exe` directly. No container, no Docker. The VM is kept **offline** so evidence never phones home. *(Tool-currency note: current EZ Tools ship as **.NET 9** builds — Eric Zimmerman migrated off .NET 6 after its Nov-2024 end-of-life — so a VM that refreshes these `.exe`s needs the .NET 9 runtime present.)*
 - Each tool writes its CSV into an **`out/`** directory (created on first run). Open those CSVs in **Timeline Explorer**, or read them here with `head`/`grep`.
 
 ---

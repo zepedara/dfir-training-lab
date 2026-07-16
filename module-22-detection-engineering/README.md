@@ -128,7 +128,7 @@ zircolite --evtx evtx -r rules -c fieldMappings.yaml -o detect.json
 ```
 - **`--evtx evtx`** — the folder of target `.evtx` (the staged Module 8 + Module 6 logs).
 - **`-r rules`** — the folder of Sigma rules to run (**both** shipped rules).
-- **`-c fieldMappings.yaml`** — Zircolite's field-mapping/config (its equivalent of a pipeline: how it flattens and names event fields). (Zircolite's upstream default is named `fieldMappings.json`; this lab ships a `.yaml` copy of the same config, so don't be thrown if the tool's own repo shows the `.json` name.)
+- **`-c fieldMappings.yaml`** — Zircolite's field-mapping/config (its equivalent of a pipeline: how it flattens and names event fields). (Currency note: newer Zircolite reorganised this — the current upstream default is **`config/config.yaml`**; the old standalone `fieldMappings.json` was **retired**, and field mappings, exclusions, and transforms now all live in that unified YAML. This lab passes its own `fieldMappings.yaml` explicitly with `-c`, so the command is unaffected — just don't expect to find a `fieldMappings.json` in the current repo.)
 - **`-o detect.json`** — write detections here.
 
 **Expected output (summary lines):**

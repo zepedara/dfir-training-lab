@@ -109,7 +109,7 @@ Two journals, at two different levels:
 
 #### Useful techniques for searching journals
 - **Pivot on reason flags.** Filter the parsed `$J` CSV to `FILE_DELETE` to enumerate everything deleted in the window (with names/timestamps that survive the file); to `FILE_CREATE` to catch dropped tooling; to `RENAME_OLD_NAME`+`RENAME_NEW_NAME` pairs (same USN-adjacent) to see staging where an attacker renames a payload into place.
-- **Reconstruct paths** by chaining each record's **parent reference** up through the `$MFT` — the journal stores references, not full paths, so join `$J` against the `$MFT` output on the parent entry.
+- **Reconstruct paths** by chaining each record's **parent reference** up through the `$MFT` — the journal stores references, not full paths, so join `$J` against the `$MFT` output on the parent entry. (MFTECmd can perform this join for you: pass `-m <path-to-$MFT>` alongside `-f <$J>` and it resolves each USN record's parent reference against the `$MFT`, writing the full path straight into the CSV — the walkthrough command omits `-m` on purpose so you see the manual chain the switch automates.)
 - **Bracket by time**, not by reading it all: once `istat`/MFTECmd hand you the incident window, filter both journals to it (the same windowing you use with `mactime` below).
 - **Corroborate timestomping**: a `BASIC_INFO_CHANGE` in `$J` whose *own* timestamp lands in the incident window, on a file whose `$SI` claims to be years old, converges on the real tamper moment.
 - **Watch for the gap**: a stretch of `$J` that is suspiciously empty, or a `$LogFile`/`$UsnJrnl` that was reset, is itself an indicator (see file-wiping and countermeasures below).
