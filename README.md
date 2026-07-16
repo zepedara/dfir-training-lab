@@ -67,9 +67,11 @@ The lab runs in five arcs. **Work Part A → the Capstone (Modules 1–11) in or
 | # | Module | Tool | Focus | Data |
 |---|---|---|---|---|
 | 23 | [Wiping tool-marks](module-23-anti-forensics-wiping) | `MFTECmd` (`$J`/`$MFT`) | detect SDelete / cipher / Eraser / BCWipe by their marks; recover a wiped file's **name** | inert scratch-VHD `$J` + `$MFT` |
+| 24 | [VSS destruction & recovery](module-24-anti-forensics-vss) | `EvtxECmd` (+ libvshadow) | detect shadow-copy destruction (T1490); recover from surviving shadows | inert T1490 `4688` evtx |
 | 25 | [`$LogFile` transaction analysis](module-25-anti-forensics-logfile) | LogFileParser (pre-parsed) | read redo/undo opcodes to reconstruct create / rename / ADS / delete | inert scratch-VHD `$LogFile` |
+| 26 | [Carving unallocated space](module-26-anti-forensics-carving) | The Sleuth Kit + `grep` | metadata-recovery vs carving; recover a deleted BitLocker key | inert scratch NTFS image |
 
-> **Reserved module numbers.** There is **no Module 13** (held for a future core module), **no Module 24** (reserved for *Volume Shadow Copy forensics*, in development), and **no Module 26** (reserved for *advanced record carving*, in development). The gaps are deliberate placeholders, not missing files.
+> **Reserved module number.** There is **no Module 13** — the number is held for a future core module and skipped on purpose. The gap is deliberate, not a missing file.
 
 ---
 
@@ -86,4 +88,4 @@ All data is bundled in each module's `data/` folder (or fetched by a per-module 
 ## Suggested path
 Work **1 → 11, in order.** Part A proves execution on a single host (the real **DFIR-Madness Case-001** host); Part B teaches intrusion-hunting techniques on **representative public captures**; the **capstone (11)** fuses both into one composite kill-chain. Then take the advanced tracks in any order: **Part C** (host deep-dive: memory, disk, registry, user activity, browser), **Part D** (super-timeline, fleet triage, network, detection engineering), and **Part E** (anti-forensics — how wiping and timestomping betray themselves in NTFS). By the capstone you can take a triage collection and build a full incident timeline — exactly the decks' goal: *"Master the Triad. Close the Gap."*
 
-*All modules **1–12, 14–23, 25** are complete (see the reserved-number note above for the 13/24/26 gaps). Each has a full walkthrough, real bundled data, guided exercises, and an **answers / what to find** section.*
+*All modules **1–12, 14–26** are complete (there is **no Module 13** — see the reserved-number note above). Each has a full walkthrough, real bundled data, guided exercises, and an **answers / what to find** section.*

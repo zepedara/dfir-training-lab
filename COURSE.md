@@ -39,7 +39,7 @@ Two big arcs run through the core modules:
 
 A **capstone (Module 11)** then makes you work one full intrusion end-to-end, using everything from Parts A and B.
 
-After the capstone, three **advanced tracks** extend the lab in any order: **Part C — Host Forensics Deep-Dive (12, 14, 15, 16, 17, 19)** goes *below* the artifact layer into raw memory, raw disk, the registry, user activity and browsers; **Part D — Timeline, Triage & Detection at Scale (18, 20, 21, 22)** fuses one super-timeline, collects at fleet scale, crosses the wire, and turns findings into detections; **Part E — Anti-Forensics (23, 25)** shows how wiping and timestomping betray themselves in NTFS. (Three numbers are **reserved/held** for in-development modules and skipped on purpose: **13** a future core module, **24** Volume Shadow Copy forensics, **26** advanced record carving. The gaps are deliberate, not missing files.)
+After the capstone, three **advanced tracks** extend the lab in any order: **Part C — Host Forensics Deep-Dive (12, 14, 15, 16, 17, 19)** goes *below* the artifact layer into raw memory, raw disk, the registry, user activity and browsers; **Part D — Timeline, Triage & Detection at Scale (18, 20, 21, 22)** fuses one super-timeline, collects at fleet scale, crosses the wire, and turns findings into detections; **Part E — Anti-Forensics (23, 24, 25, 26)** shows how wiping, shadow-destruction and timestomping betray themselves — and how deleted evidence is recovered. (**Module 13** is **reserved/held** for a future core module and skipped on purpose; the gap is deliberate, not a missing file.)
 
 > **What's one case and what's a technique sample (read this once).** The **Case-001 host** (the `DESKTOP-SDN1RPT` desktop and its `CITADEL-DC01` server) is the real, single, documented intrusion that carries **Part A (Modules 1-4)** and the registry/filesystem advanced modules (**15-16**) — one host, one real clock, verifiable answers. **Part B (Modules 5-10)** and the **malicious-documents module (14)** instead teach each technique on **representative public captures** — real attacks, but from *different* hosts and clocks (EVTX-ATTACK-SAMPLES, hayabusa-sample-evtx) — because no public dataset makes a fictional binary perform every technique. The **capstone (11)** fuses them into one kill-chain narrative, pinning real timestamps where the host data provides them and ordering the technique samples logically. Knowing which evidence is one case and which is a representative sample is itself a DFIR skill — each module's `data/README.md` states exactly which it is.
 
@@ -104,7 +104,7 @@ Module 4 then **scales** the Triad: instead of one host, you stack the same arti
 
 ### Part C — Host Forensics Deep-Dive
 
-These three advanced tracks are self-contained; take them after the capstone, in any order. Part C goes *beneath* the OS-artifact layer — raw memory, raw disk, the registry — and out to the initial-access front door. (**No Module 13/24/26**: those numbers are reserved for in-development modules — a future core module, Volume Shadow Copy forensics, and advanced record carving — and skipped on purpose.)
+These three advanced tracks are self-contained; take them after the capstone, in any order. Part C goes *beneath* the OS-artifact layer — raw memory, raw disk, the registry — and out to the initial-access front door. (**No Module 13**: that number is reserved for a future core module and skipped on purpose.)
 
 12. **[Module 12 — Memory forensics](module-12-memory-volatility3)** · tool: `Volatility 3` (`vol`)
     *What was alive in RAM at the moment of capture.* You analyse a Windows memory image and reconstruct running processes and ancestry, hunt hidden processes (`psscan` vs `pslist`), read launch command lines, look for injected code (`malfind`), map network connections (`netscan`) and service persistence (`svcscan`), then **carve a suspect binary back out of RAM**. **You'll learn:** that *disk can lie but memory tells the truth at capture time*, why Volatility 3 needs no profile, and how a clean injection/C2/persistence result is itself a finding (here it scopes an **insider data-staging** case).
@@ -147,8 +147,14 @@ How attackers try to erase their tracks — and why NTFS remembers anyway. Build
 23. **[Module 23 — Anti-Forensics: Wiping tool-marks](module-23-anti-forensics-wiping)** · tool: `MFTECmd`
     *Wiping destroys content, not the record of wiping.* From an inert `$UsnJrnl`/`$MFT`, you detect **SDelete** (26-rename chain), **`cipher /w`** (`EFSTMPWP` folder), Eraser and BCWipe by their tool-marks — and **recover a securely-wiped file's original name**. **You'll learn:** that NTFS journals the delete *before* the data dies (ATT&CK T1070.004 / T1485).
 
+24. **[Module 24 — Anti-Forensics: Volume Shadow Copy destruction & recovery](module-24-anti-forensics-vss)** · tool: `EvtxECmd` (+ libvshadow)
+    *Smash the time machine — and get caught doing it.* You detect **VSS destruction (ATT&CK T1490)** from the `4688` command lines ransomware runs first — `vssadmin delete shadows`, `vssadmin resize shadowstorage`, `wmic shadowcopy delete`, `wbadmin delete catalog` — and learn to recover historical evidence from **surviving** shadow copies with libvshadow. **You'll learn:** that destroying recovery is loud, and a shadow taken before the attack still holds what he deleted.
+
 25. **[Module 25 — Anti-Forensics: `$LogFile` transaction analysis](module-25-anti-forensics-logfile)** · tool: LogFileParser
     *NTFS's lowest-level flight recorder.* You read the `$LogFile` redo/undo **opcodes** to reconstruct create / rename / ADS / delete at the transaction level — separating a rename from a move from a new file, and recovering names after `$MFT` reuse. **You'll learn:** the opcode→action grammar that survives when the higher-level journals have already wrapped.
+
+26. **[Module 26 — Anti-Forensics: Carving evidence from unallocated space](module-26-anti-forensics-carving)** · tools: The Sleuth Kit + `grep`
+    *When metadata is gone, the bytes remain.* You take the two roads to a deleted file — **metadata recovery** (`fls -rd` + `icat`) and **carving** (`blkls` + `grep` on raw unallocated) — and recover a deleted **BitLocker recovery key** an attacker thought he destroyed. **You'll learn:** that carving sidesteps the very metadata anti-forensics attacks, so it works when recovery-by-pointer fails.
 
 ---
 
@@ -231,7 +237,7 @@ Each module ships its sample data in `data/` (committed to the repo), so you can
 ## 8. Suggested study plan
 
 - **Work 1 → 11, in order.** Part A teaches single-host execution proof; Part B teaches intrusion hunting; the capstone fuses them. The pivots only make sense forward.
-- **Then take the advanced tracks (12, 14–23, 25).** After the capstone, go below the artifact layer in any order: **Part C** host deep-dive (memory 12, maldocs 14, disk 15, registry 16, user activity 17, browser 19), **Part D** scale & detection (super-timeline 18, Velociraptor 20, network 21, detection engineering 22), and **Part E** anti-forensics (wiping 23, `$LogFile` 25). They are self-contained. (Remember: **13/24/26** are reserved for in-development modules.)
+- **Then take the advanced tracks (12, 14–23, 25).** After the capstone, go below the artifact layer in any order: **Part C** host deep-dive (memory 12, maldocs 14, disk 15, registry 16, user activity 17, browser 19), **Part D** scale & detection (super-timeline 18, Velociraptor 20, network 21, detection engineering 22), and **Part E** anti-forensics (wiping 23, VSS 24, `$LogFile` 25, carving 26). They are self-contained. (Remember: **13** is reserved for a future core module.)
 - **Do the exercises.** Each module ends with 4-6 *try-it-yourself* questions on the real data. They are where the learning sticks. Worked answers live in **[ANSWER-KEY.md](ANSWER-KEY.md)** (instructor material — try first, then check).
 - **Keep the [GLOSSARY](GLOSSARY.md) open** in another tab for any unfamiliar term.
 - **Take notes as a timeline.** From Module 1, start a running `YYYY-MM-DD HH:MM:SS UTC | host | what | artifact` log. By the capstone you will be building one for real.
@@ -267,7 +273,9 @@ Each module ships its sample data in `data/` (committed to the repo), so you can
 | 22 Detection engineering | make it repeatable? | Sigma / Chainsaw / Zircolite | rules, correlation, hunt-vs-alert |
 | *— Part E · Anti-Forensics (FOR508.5) —* | | | |
 | 23 Wiping tool-marks | who wiped what? | MFTECmd (`$J`/`$MFT`) | SDelete 26-rename, EFSTMPWP, name recovery |
+| 24 VSS destruction | who killed the shadows? | EvtxECmd (+libvshadow) | T1490 vssadmin/wmic/wbadmin delete; recover survivors |
 | 25 `$LogFile` analysis | what did the transactions do? | LogFileParser | redo/undo opcodes: create/rename/ADS/delete |
+| 26 Unallocated carving | recover when metadata is gone? | TSK blkls + grep | metadata-vs-carving, BitLocker-key recovery |
 
 ---
 
