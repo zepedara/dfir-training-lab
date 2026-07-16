@@ -167,6 +167,10 @@ Score your reconstruction against **[`data/APT29-ANSWER-KEY.md`](data/APT29-ANSW
 
 ---
 
+> **A third lens — the Pyramid of Pain.** David Bianco's *Pyramid of Pain* ranks indicators by how much it hurts an adversary to lose them: hash values and IPs sit at the bottom (trivial to swap "without breaking stride"), while **Tactics, Techniques & Procedures sit at the apex** — forcing an adversary to abandon a *behaviour* makes them reinvent their tradecraft. Every detection this capstone builds lives at that apex: you convicted DCSync on the *replication-request behaviour* (4662 + the `1131f6aa` control-access right), not on APT29's IP or a file hash. A hash-based rule dies the moment the attacker recompiles; a rule that fires on "a non-DC account requests directory replication" costs APT29 a fundamental change to evade. Grade your detections by *where on the pyramid they sit* — the higher, the harder to cheaply evade. (Bianco, *The Pyramid of Pain*, 2013.)
+>
+> **Guard against confirmation bias — you were handed the answer.** This capstone names the actor (APT29) and ships an answer key, which quietly invites the classic failure: forcing evidence to fit the label. Richards Heuer's **Analysis of Competing Hypotheses (ACH)** is the counter-discipline — for each finding, enumerate *competing* explanations and actively seek evidence that would **refute** each, rather than collecting confirmations for your favourite. That is exactly what separates the 830 benign `0x1000` LSASS *queries* (AV/EDR/Windows) from the 3 real dumps: you refute "malicious" for the query-only mask, you don't assume it because "APT29 dumps LSASS." State a **confidence level** per finding and name the one alternative you ruled out — a claim you cannot attack is one you cannot trust. On a real case with no answer key and no group name, this hypothesis-testing habit, not the technique catalog, is what keeps you honest. (Heuer, *Psychology of Intelligence Analysis*, ch. 8, CIA CSI.)
+
 ## 6. Try it yourself
 
 Before you read the answer key, prove you can do these unaided:

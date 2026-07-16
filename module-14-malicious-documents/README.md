@@ -112,7 +112,11 @@ VBA Macros          |Yes, suspicious     |HIGH      |This file contains VBA
                     |                    |          |olevba and mraptor for
                     |                    |          |more info.
 ```
-**Reading it:** `VBA Macros = Yes, suspicious — HIGH`. That single line is your green light to dig. (`oleid` says *"Generic OLE file / Compound File (unknown format)"* because this teaching sample is a minimal OLE2 VBA container rather than a full Word document — the macro is all that matters here, and `oleid` still finds it.) The `Encrypted = False` and `External Relationships = 0` rows rule out two common evasions (a flagged-but-unreadable encrypted doc, or a remote-template fetch). Pull just the verdict line if you like:
+**Reading it:** `VBA Macros = Yes, suspicious — HIGH`. That single line is your green light to dig. (`oleid` says *"Generic OLE file / Compound File (unknown format)"* because this teaching sample is a minimal OLE2 VBA container rather than a full Word document — the macro is all that matters here, and `oleid` still finds it.) The `Encrypted = False` and `External Relationships = 0` rows rule out two common evasions (a flagged-but-unreadable encrypted doc, or a remote-template fetch).
+
+> **Develop that "External Relationships" row — remote template injection.** A *non-zero* count (or any `http(s)` target inside a `.rels` part) is itself a finding. In **remote template injection** the emailed file is an ordinary `.docx` — clean to `olevba`/`mraptor` — but its **`word/_rels/settings.xml.rels`** part carries an `attachedTemplate` relationship with **`TargetMode="External"`** pointing at a URL; on open, Word silently fetches that remote **`.dotm`**, and *that* supplies the macro. The malicious code never rides in the attachment, only the pointer does — defeating static attachment scanning. Unzip and read the `.rels` parts; map a hit to **ATT&CK T1221 (Template Injection)**.
+
+Pull just the verdict line if you like:
 
 ```bash
 grep -iE 'VBA Macros|HIGH|Encrypted|External' 01_oleid_invoice.txt
@@ -131,6 +135,8 @@ Flags: A=AutoExec, W=Write, X=Execute
 Exit code: 20 - SUSPICIOUS
 ```
 **Reading it:** `SUSPICIOUS` with all three flags **`AWX`** — the macro auto-runs (`A`), writes to disk (`W`), and executes something (`X`). That is the textbook downloader shape, confirmed in one line. The **exit code** is the real prize (`0` = clean, `20` = suspicious): in production you run `mraptor *.doc *.docm` across an entire phishing-campaign dump and let the exit code *gate* which files earn a full `olevba` dissection. (`mraptor` on the `.docm` returns the same `SUSPICIOUS|AWX` — it reaches the macro **inside** the OOXML ZIP for you, so you do not pre-unpack.)
+
+> **A clean macro verdict is not a clean document.** `mraptor`'s **AWX** test and `olevba`'s keyword scan both key on **VBA** — so a file carrying **no VBA at all** can still execute code and sail through macro triage as clean. The classic macro-less vector is **DDE / DDEAUTO**: a Word/Excel **field code** (e.g. `{ DDEAUTO c:\\windows\\system32\\cmd.exe "/c powershell -w hidden …" }`) that abuses Dynamic Data Exchange to launch a program on open. Microsoft disabled DDE by default (Word in advisory **ADV170021**, Dec 2017; Excel Jan 2018), but it still surfaces in older/unpatched estates and in RTF and even CSV carriers. oletools ships a **dedicated** tool for it — **`msodde`** — which extracts DDE/DDEAUTO fields and de-obfuscates the `QUOTE`-field trick attackers hide them with. Whenever the *VBA verdict is clean but the document is still suspect*, run the DDE check and map a hit to **ATT&CK T1559.002 (Dynamic Data Exchange)**, not the macro techniques.
 
 ### Step A2 — Extract & scan the macro with `olevba`
 `olevba -a` (analysis-only) was run to produce the IOC/keyword table. Read it:
@@ -250,6 +256,8 @@ cat 07_oledump_http_invoice.txt
 Note it surfaces only `http://www` — the *prefix* of the concatenated URL. That is a teaching point in itself: **string concatenation (`"http://www" & "." & "example" …`) deliberately breaks a single literal**, so a heuristic that keys on contiguous bytes only recovers a fragment. The reliable read is your **computed reconstruction** in A4 (confirmed by olevba's reveal in A5), where you see the whole thing assembled.
 
 ---
+
+> **Not every macro is VBA — and the `M` flag won't find the other kind.** oledump's uppercase **`M`** marks a **VBA** module stream, but **Excel 4.0 (XLM) macros** — the pre-VBA macro language — live nowhere near a `VBA/` storage: their functions sit in the **cells of a (routinely *very-hidden*) macro sheet**, stored as **BIFF records in the `Workbook` stream**, and auto-run via an **`Auto_Open` defined name**. So an XLM-weaponised `.xls` shows **no `M`-flagged macro stream** and may report no VBA in `oleid`; you surface it with `olevba` (which parses XLM) or Didier Stevens' **`plugin_biff`** for `oledump` (its `-x` pulls the `BOUNDSHEET` record that exposes the hidden sheet, the `Auto_Open` `LABEL`, and the `FORMULA`/`STRING` records holding the command). XLM was heavily abused in 2020-2021 precisely because it slips the "look for a VBA module" reflex — Microsoft didn't restrict it by default until July 2021.
 
 ## 5. Part B — the modern Office path (`Statement_Q4.docm`, OOXML)
 
