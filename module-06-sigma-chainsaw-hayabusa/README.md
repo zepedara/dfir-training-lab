@@ -156,6 +156,8 @@ chainsaw hunt . -s /opt/chainsaw/sigma \
 
 Open the merged outputs and you'll see each sample light up with the technique its filename hints at: the `mimikatz-*` files fire credential-dumping rules, `Powershell-Invoke-Obfuscation-*` fire encoded-PowerShell rules, `password-spray` / `smb-password-guessing` fire brute-force rules, `UACME_59` fires a UAC-bypass rule, and `disablestop-eventlog` fires a defense-evasion (log-tampering) rule. **This is the real workflow:** one command turns a folder of unknown logs into a ranked list of named leads.
 
+> **Zoom out from alerts to *coverage*.** Most Sigma rules carry `tags:` in the **`attack.`** namespace (e.g. `attack.t1021.002`, `attack.lateral_movement`), so every hit is a labelled coordinate on the MITRE ATT&CK matrix — Hayabusa even abbreviates the tactic in its output (e.g. `LatMov`). Aggregate the `attack.tXXXX` tags from a whole-folder run and you can ask a hunting-level question instead of a per-alert one: *which tactics did this intrusion actually touch, and where are my blind spots?* Feed those tags into the **ATT&CK Navigator** for a coverage heatmap that also exposes the stages (persistence, exfil) where you have logs but no rule fired.
+
 ### Step 5 — Tune the noise with severity
 ```bash
 hayabusa csv-timeline -d . -o high.csv -w -C --min-level high
@@ -172,6 +174,7 @@ Compare `high.csv` to `all-timeline.csv`. Raising the floor shrinks the list to 
 - **`Level` / severity is a starting point, not a verdict.** Start at HIGH, then read the surrounding low/medium events to build the timeline.
 - **Look at the evidence fields.** Chainsaw's `Event Data` (the `Image` path, the `PipeName`, the `User`) is what separates real from benign. `C:\Users\Public\psexecprivesc.exe` running as SYSTEM is not a sysadmin doing maintenance.
 - **False positives** usually come from legitimate admin tools (PsExec, PowerShell remoting) used the normal way. Triage by asking: *right host? right account? expected time? expected source path?* If the answer is "no" to several, it's real.
+- **Judge a rule's *confidence*, not just its `level`.** Every Sigma rule also carries a **`status`** (`experimental` → `test` → `stable`, or `deprecated`) and an optional **`falsepositives`** list naming the benign activity that legitimately trips it — read both before you trust a hit. An `experimental` rule, or one whose `falsepositives` says "administrative activity," is telling you in the author's own words to expect noise. This is *why* a community rule set is never run blind: a rule written for a generic network will flag *your* backup agent, patch tool, or scanner until you **baseline what's normal on these hosts and tune it out** — the same rule is a true positive in one environment and pure noise in another. Hayabusa bakes this in: its default **Core** ruleset enables only `stable`/`test` *and* `high`/`critical` rules — the exact false-positive filter you bypass when you pass `-w` to load everything.
 
 ---
 
@@ -186,7 +189,7 @@ On `MSEDGEWIN10`, an attacker who already had a foothold used **PsExec** to exec
 1. **Name them all.** After Step 4, open `all-timeline.csv` and the Chainsaw CSV. For each of the attack-technique samples, write the one-line technique its detections reveal (Mimikatz hash-dump, Invoke-Obfuscation, password-spray, UACME bypass, event-log tampering, …) — the `many-events-*` files are volume/baseline logs, not single-technique captures, so treat them as background rather than a technique to name. Pure **WMI/DCOM** lateral movement lives in **Module 8**.
 2. **Tell the story.** In `timeline.csv` (Step 2), sort by timestamp and write the 3-line account of the PsExec attack.
 3. **Tune severity.** Run Step 5 with `--min-level high` vs. `--min-level low`. How does the noise change? Which level would you start triage at, and why is "high only" risky if you stop there?
-4. **Cross-tool check.** Pick the `mimikatz-privesc-hashdump.evtx` sample. Does Hayabusa's top alert and Chainsaw's named rule agree on the technique? When they differ, why might that happen (different rule sets)?
+4. **Cross-tool check.** Pick the `mimikatz-privesc-hashdump.evtx` sample. Does Hayabusa's top alert and Chainsaw's named rule agree on the technique? When they differ, why might that happen (different rule sets)? *(There's a subtler second cause: the **field-translation pipeline** differs even for a byte-identical rule — Chainsaw applies upstream Sigma YAML through your external `--mapping` file, while Hayabusa runs a **pre-converted** `hayabusa-rules` set with its field logic baked in. So the same rule can fire in one tool and stay silent in the other purely because one pipeline mapped the logical field to the event's real location and the other didn't — the Step-3 mapping gotcha again. When two tools disagree on a **known-malicious** sample, suspect the mapping/pipeline before concluding either tool is "better.")*
 
 ---
 
