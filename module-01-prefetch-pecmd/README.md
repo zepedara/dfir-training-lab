@@ -121,7 +121,7 @@ Source file: prefetch\AM_DELTA.EXE-78CA83B0.pf
 - **Version** — PECmd reports the Prefetch format as an OS family in words: **`Windows 10 or Windows 11`** here. (Older formats show as Windows 8.x or Windows 7.) This confirms the OS family.
 - **Run count** — how many times this program has executed. `1` = ran exactly once.
 - **Last run** — the **most recent** execution time, in **UTC** (Coordinated Universal Time — the timezone forensics uses so everyone agrees on "when"). PECmd also lists the earlier run times (up to 8 total) on their own lines.
-- **Files referenced** (and **Directories referenced**) — every file and DLL the program loaded in its first ~10 seconds. The `\VOLUME{...}` prefix is Windows' internal name for the disk volume. **This list is your DLL side-loading hunt** — `-f` always prints it in full.
+- **Files referenced** (and **Directories referenced**) — every file and DLL the program loaded in its first ~10 seconds. The `\VOLUME{...}` prefix is Windows' internal name for the disk volume — and its **serial number** fingerprints the *specific* disk: a Prefetch entry whose volume serial/device path isn't the system `C:` volume (e.g. `HarddiskVolume3`) is direct evidence the program ran from a **second internal disk, an attached USB hard drive, eSATA disk, or a mounted `.vhd(x)`** — a real staging/anti-forensics pattern you can cross-reference against USB and volume history. (Caveat: post-XP Prefetch doesn't reliably record device paths for media with the *removable-media bit* set, so many thumb-drive launches show no volume path; USB HDDs, eSATA, and mounted VHDs are captured normally.) **This list is your DLL side-loading hunt** — `-f` always prints it in full.
 
 ### Step 2 — Parse ALL 197 files at once (directory → CSV)
 Reading 197 files one at a time is impractical. PECmd's directory mode parses the whole folder and writes a single CSV you can triage:
@@ -199,6 +199,7 @@ echo "===== SUSPECT: COREUPDATER ====="; PECmd.exe -f prefetch/COREUPDATER.EXE-1
 **Rules of thumb:**
 - A binary in Prefetch but **not** in ShimCache (Module 2) or Amcache (Module 3) — or vice-versa — is a gap worth explaining; the three artifacts cover each other's blind spots.
 - LOLBins (*Living-Off-the-Land Binaries*: legit Windows tools attackers abuse — `powershell.exe`, `rundll32.exe`, `cmd.exe`, `wscript.exe`, `mshta.exe`) running at unusual times deserve a look at *what they loaded* and *what ran right after*.
+- **A script has no Prefetch of its own — the interpreter's does.** A `.ps1`/`.vbs`/`.js`/`.bat`/scriptlet never gets its own `.pf` (it's *data*, not an executed image); Windows only prefetches the **interpreter** (`powershell.exe`, `wscript.exe`, `cscript.exe`, `mshta.exe`, `rundll32.exe`, `regsvr32.exe`, `cmstp.exe`). So when a LOLBin's `.pf` lands in the incident window, its **Files referenced** list is frequently the *only* Prefetch trace of the payload at all — read it for a script or DLL sitting in `\Temp\`, `\AppData\`, `\Users\Public\`, or `\ProgramData\`. That path is your next lead, and it's how you catch **T1059** activity that otherwise leaves no per-payload artifact.
 - Always apply the **10-second rule** when timelining: the recorded run is the real start; the file's on-disk timestamp is ~10s later.
 
 ---
