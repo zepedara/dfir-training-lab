@@ -296,6 +296,8 @@ rip -r NTUSER.DAT -p run            # mortysmith's per-user autostart: just OneD
 `userassist` shows only built-in Windows apps with small run counts, and the per-user `run` key holds only OneDrive — a clean profile.
 
 ### Step 11 — Folder-browsing history: Shellbags (UsrClass.dat)
+
+> RegRipper gives you a fast shellbag pass here as part of the registry sweep; **Module 17** does the dedicated deep parse with **SBECmd** (the MRU-0 timing trap, `FirstInteracted`/`LastInteracted`). Use this for triage, Module 17 for depth.
 ```bash
 rip -r UsrClass.dat -p shellbags
 ```

@@ -27,7 +27,7 @@ Every filesystem action decomposes into a fixed set of `$LogFile` **redo opcodes
 | **Create a file** | `InitializeFileRecordSegment` (new `$MFT` record) + `AddIndexEntryRoot`/`AddIndexEntryAllocation` (name into parent index) | `FileCreate` |
 | **Rename** | `DeleteIndexEntryRoot` (old name) + `CreateAttribute`/`UpdateFileNameRoot` + `AddIndexEntryRoot` (new name) — **same MFT entry** | `RenameOldName` + `RenameNewName` |
 | **Create an ADS** | `CreateAttribute` (a second, named `$DATA` attribute) | `StreamChange` / `NamedDataExtend` |
-| **Delete a file** | `DeleteIndexEntryRoot` (name out of parent) + `DeallocateFileRecordSegment` (release the `$MFT` record) | `FileDelete` |
+| **Delete a file** | `DeleteIndexEntryRoot` (or `…Allocation` for a large directory — name out of parent) + `DeallocateFileRecordSegment` (release the `$MFT` record) | `FileDelete` |
 
 Data writes appear as `UpdateResidentValue` / `UpdateNonResidentValue`. (Opcode *names* come from Schicht's reverse-engineered decoder, the community standard — they are not Microsoft-documented.)
 
@@ -88,7 +88,7 @@ Still in that output, follow **MFT entry 39**: after the create, you see **`Dele
 grep -i CreateAttribute LogFile_transactions.csv | cut -d'|' -f2,10,13 | head
 ```
 
-**Read it:** entry **40 (`notes.txt`)** carries a **`CreateAttribute`** transaction — that is the **`:hidden` ADS** being attached as a second named `$DATA` attribute (Module 15's hiding/execution vector). The `$LogFile` recorded the stream's creation even though Explorer never shows it.
+**Read it:** entry **40 (`notes.txt`)** carries a **`CreateAttribute`** transaction — that is the **`:hidden` ADS** being attached as a second named `$DATA` attribute (Module 15's hiding/execution vector). The `$LogFile` recorded the stream's creation even though Explorer never shows it. Note `CreateAttribute` **also** fires for the Step-3 rename (it rewrote entry 39's `$FILE_NAME`), so this filter returns entry 39 as well — the ADS is the **entry-40** row.
 
 ### Step 5 — Prove the deletion
 

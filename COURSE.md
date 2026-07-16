@@ -180,11 +180,23 @@ Part B — hunt the INTRUSION across the logs
   11 CAPSTONE ─ do it all on one case, produce a timeline + findings
         │
         ▼  go BELOW the artifact layer + out to the front door
-Part C — advanced add-ons (no Module 13 — reserved)
+Part C — Host Forensics Deep-Dive (no Module 13 — reserved)
   12 Memory (Volatility 3) ─ what was alive in RAM at capture
   14 Malicious documents ─ the phishing launcher that started it all
   15 Filesystem & timelines (TSK + MFTECmd) ─ deleted files, timestomping, the timeline spine
-  16 Registry forensics (RegRipper) ─ persistence, accounts, USB, program execution from hives
+  16 Registry forensics (RegRipper) ─ persistence, accounts, USB, program execution
+  17 User activity (JLECmd/LECmd/SBECmd/RBCmd) ─ jump lists, LNK, shellbags, recycle bin
+  19 Browser forensics (Hindsight) ─ history, downloads, typed-URL intent
+Part D — Timeline, Triage & Detection at Scale
+  18 Super timeline (MFTECmd + mactime) ─ every artifact on one clock
+  20 Triage at scale (Velociraptor / VQL) ─ collect + hunt across a fleet
+  21 Network forensics (tshark / Zeek) ─ carve HTTP/DNS/TLS, measure beacons
+  22 Detection engineering (Sigma/Chainsaw/Zircolite) ─ findings → repeatable rules
+Part E — Anti-Forensics (FOR508.5)
+  23 Wiping tool-marks (MFTECmd) ─ SDelete/cipher marks; recover a wiped name
+  24 VSS destruction & recovery (EvtxECmd) ─ detect T1490; recover from survivors
+  25 $LogFile transactions (LogFileParser) ─ redo/undo opcode grammar
+  26 Carving unallocated (TSK blkls + grep) ─ metadata-vs-carving; BitLocker key
 ```
 
 The pivots are deliberate. A suspicious binary in **Module 1** is confirmed in **2/3** and hunted fleet-wide in **4**; its SHA1 and execution time become anchors you carry forward. **Part B** then teaches the intrusion-hunting techniques on **representative public captures** — how credential theft (**7**) lets an attacker spread (**8**), how PowerShell (**9**) shows *what they typed*, and how Sysmon/WEF (**10**) is the sensor layer that records it all — and the capstone (**11**) fuses those techniques back onto the Case-001 host to close the loop. The **advanced add-ons** then deepen the same case from new angles: memory (**12**) shows what was running and connected at capture, malicious documents (**14**) explain the **initial access** that dropped the implant, and filesystem forensics (**15**) recovers what the attacker deleted and exposes the timestamps he faked — feeding the super-timeline the capstone builds.
@@ -237,7 +249,7 @@ Each module ships its sample data in `data/` (committed to the repo), so you can
 ## 8. Suggested study plan
 
 - **Work 1 → 11, in order.** Part A teaches single-host execution proof; Part B teaches intrusion hunting; the capstone fuses them. The pivots only make sense forward.
-- **Then take the advanced tracks (12, 14–23, 25).** After the capstone, go below the artifact layer in any order: **Part C** host deep-dive (memory 12, maldocs 14, disk 15, registry 16, user activity 17, browser 19), **Part D** scale & detection (super-timeline 18, Velociraptor 20, network 21, detection engineering 22), and **Part E** anti-forensics (wiping 23, VSS 24, `$LogFile` 25, carving 26). They are self-contained. (Remember: **13** is reserved for a future core module.)
+- **Then take the advanced tracks (12, 14–26).** After the capstone, go below the artifact layer in any order: **Part C** host deep-dive (memory 12, maldocs 14, disk 15, registry 16, user activity 17, browser 19), **Part D** scale & detection (super-timeline 18, Velociraptor 20, network 21, detection engineering 22), and **Part E** anti-forensics (wiping 23, VSS 24, `$LogFile` 25, carving 26). They are self-contained. (Remember: **13** is reserved for a future core module.)
 - **Do the exercises.** Each module ends with 4-6 *try-it-yourself* questions on the real data. They are where the learning sticks. Worked answers live in **[ANSWER-KEY.md](ANSWER-KEY.md)** (instructor material — try first, then check).
 - **Keep the [GLOSSARY](GLOSSARY.md) open** in another tab for any unfamiliar term.
 - **Take notes as a timeline.** From Module 1, start a running `YYYY-MM-DD HH:MM:SS UTC | host | what | artifact` log. By the capstone you will be building one for real.
@@ -279,4 +291,4 @@ Each module ships its sample data in `data/` (committed to the repo), so you can
 
 ---
 
-*Start with **[Module 1 — Prefetch](module-01-prefetch-pecmd)**. By Module 11 you'll take a triage collection and build a full incident timeline — exactly the decks' goal: **"Master the Triad. Close the Gap."** Then take the advanced tracks — **Part C** (12, 14, 15, 16, 17, 19), **Part D** (18, 20, 21, 22), and **Part E** anti-forensics (23, 25) — to go below the artifact layer, across the wire, and into how attackers try to erase their tracks.*
+*Start with **[Module 1 — Prefetch](module-01-prefetch-pecmd)**. By Module 11 you'll take a triage collection and build a full incident timeline — exactly the decks' goal: **"Master the Triad. Close the Gap."** Then take the advanced tracks — **Part C** (12, 14, 15, 16, 17, 19), **Part D** (18, 20, 21, 22), and **Part E** anti-forensics (23, 24, 25, 26) — to go below the artifact layer, across the wire, and into how attackers try to erase their tracks.*

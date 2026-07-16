@@ -79,7 +79,7 @@ The lab runs in five arcs. **Work Part A → the Capstone (Modules 1–11) in or
 - **EVTX-ATTACK-SAMPLES** (sbousseaden) — EVTX of real attack techniques, organized by MITRE ATT&CK → modules 7–10.
 - **hayabusa-sample-evtx** (Yamato-Security) — sample EVTX → module 6.
 - **DFIR Madness Case 001** disk image → real Prefetch/ShimCache/Amcache/registry extracted for Parts A & C (a documented intrusion with a known story, so exercises have *answers*).
-- **Advanced-track data** → a published Win7 RAM capture (Module 12, `get-data.sh`), purpose-built maldoc samples (14), synthetic NTFS images (15), a Chromium profile (19), a teaching PCAP (21), and **inert scratch-VHD `$MFT`/`$LogFile`/`$UsnJrnl` artifacts generated for the Anti-Forensics track (23, 25)** — marker strings only, no code. Each module's `data/README.md` gives exact provenance and licensing.
+- **Advanced-track data** → a published Win7 RAM capture (Module 12, `get-data.sh`), purpose-built maldoc samples (14), synthetic NTFS images (15), a Chromium profile (19), a teaching PCAP (21), and **inert artifacts generated for the Anti-Forensics track (23–26)** — scratch-VHD `$MFT`/`$LogFile`/`$UsnJrnl` records, a T1490 process-creation event log, and an NTFS carving image; marker strings only, no code. Each module's `data/README.md` gives exact provenance and licensing.
 
 All data is bundled in each module's `data/` folder (or fetched by a per-module `get-data.sh` on an online host). All analysis runs **offline** on the lab VM.
 

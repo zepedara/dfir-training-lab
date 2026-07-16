@@ -10,7 +10,7 @@
 When Windows "deletes" a file it does **not** erase the data. It flips two bits: the file's `$MFT` record is marked free, and its clusters are marked free in the `$Bitmap`. The **name, the metadata, and the bytes all remain** until something reuses them. That gives an examiner two independent recovery paths:
 
 - **Metadata recovery.** If the file's `$MFT` record is still intact, it still lists the file's name and the exact clusters that held its data. You read them straight out — this is what `fls`/`icat` did in Module 15. Fast, exact, gives you the **name**.
-- **Carving.** If the `$MFT` record has been **reused or wiped** (an attacker's goal — see Modules 23 & 25), the pointer is gone, but the **data may still be sitting in unallocated clusters**. You extract that raw free space and search it for known content or signatures. Slower, no filename, but it works **when metadata recovery fails**.
+- **Carving.** If the `$MFT` record has been **reused or wiped** (wiping is an attacker's goal — see Module 23), the pointer is gone, but the **data may still be sitting in unallocated clusters**. You extract that raw free space and search it for known content or signatures. Slower, no filename, but it works **when metadata recovery fails**.
 
 > **The lesson:** anti-forensics attacks the *metadata* — wiping `$MFT` records, clearing the journals. Carving sidesteps that entirely by reading the **raw bytes** the attacker forgot to overwrite. Two roads; when the attacker blocks one, take the other.
 >

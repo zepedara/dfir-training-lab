@@ -73,8 +73,7 @@ vshadowmount -o <partition_byte_offset> disk.raw /mnt/vss
 
 # 3) now treat each vssN as a volume — run the SAME Sleuth Kit / MFTECmd workflow
 #    from Module 15 against the historical state:
-mmls /mnt/vss/vss1
-fls -r /mnt/vss/vss1        # files that existed at snapshot time
+fls -r /mnt/vss/vss1        # each vssN is already a bare volume (no mmls/-o needed)
 icat /mnt/vss/vss1 <inode>  # recover a file the attacker later deleted/wiped
 #    (for an E01 image, ewfmount it first, then point vshadowinfo at ewf1)
 ```
@@ -106,7 +105,7 @@ The payoff: a file wiped on the live volume (Module 23) or a `$MFT`/journal stat
 ## 6. Sources
 
 - MITRE ATT&CK — **T1490 Inhibit System Recovery** (lists `vssadmin`, `wmic shadowcopy delete`, `wbadmin delete catalog`, `bcdedit`): <https://attack.mitre.org/techniques/T1490/>
-- MITRE CAR-2021-01-009 — *Delete Volume Shadow Copies via WMIC / vssadmin*: <https://car.mitre.org/analytics/CAR-2021-01-009/>
+- MITRE CAR-2021-01-009 — *Detecting Shadow Copy Deletion or Resize*: <https://car.mitre.org/analytics/CAR-2021-01-009/>
 - Microsoft — enabling command line in **4688** process-creation events: <https://learn.microsoft.com/en-us/windows-server/identity/ad-ds/manage/component-updates/command-line-process-auditing>
 - libvshadow (Joachim Metz) — VSS format & `vshadowinfo`/`vshadowmount`: <https://github.com/libyal/libvshadow>
 - Microsoft — VSS / `System Volume Information` store & catalog: <https://learn.microsoft.com/en-us/windows/win32/vss/volume-shadow-copy-service-overview>

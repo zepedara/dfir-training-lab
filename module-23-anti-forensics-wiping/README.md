@@ -138,7 +138,7 @@ The through-line: **every wiper must transact through NTFS to do its job, and NT
 
 ## 8. Try it yourself
 
-1. **Prove the count.** How many `RenameNewName` records does the SDelete wipe produce, and why is that number (not 25 or 27) the signature? (Hint: A–Z.)
+1. **Prove the count.** How many `RenameOldName` records does the SDelete wipe produce, and why is that number (not 25 or 27) the signature? (Hint: A–Z.)
 2. **Name the victim.** Using only `usn.csv`, write the one command that recovers the wiped file's original name, and explain *why* the journal still has it after a secure delete.
 3. **Two tools, one journal.** The journal contains **both** an SDelete run and a `cipher /w` run. Give the single most distinctive marker of each, and state which one wiped a *named file* versus *free space*.
 4. **Timeline the wipe.** From `mft.csv`, find the `EFSTMPWP` records and state what their timestamps tell you about *when* the anti-forensics happened relative to the intrusion.
