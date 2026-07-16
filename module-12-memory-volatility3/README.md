@@ -12,6 +12,8 @@
 ### What a memory image actually is
 Everything a computer is *currently doing* lives in **RAM** (random-access memory): every running program, every open network connection, every password the user just typed, every chunk of malware that was decrypted so the CPU could run it. RAM is **volatile** — pull the power and it is gone forever. A **memory image** (also called a *memory dump* or *RAM capture*) is a byte-for-byte copy of that RAM, frozen to a file while the machine is still running, so you can study it later.
 
+> **Why memory is captured first — the "order of volatility."** Acquisition follows a documented principle (codified in **IETF RFC 3227**, §2.1): collect evidence **most-volatile first**. CPU registers/cache vanish in nanoseconds; RAM — running processes, decrypted malware config, live sockets, unpacked payloads — is lost the instant power drops; disk persists for weeks. That is exactly why a responder runs a RAM capture (DumpIt, here) *before* imaging the disk: everything memory-only would otherwise be destroyed by a shutdown.
+
 Disk forensics (Modules 1-11) reads what was **written to storage**. Memory forensics reads what was **alive in RAM**. They answer different questions, and the memory questions are often the ones that crack a case:
 
 - **What was actually running** at capture time — including processes hidden from Task Manager or unlinked by a rootkit?
@@ -177,6 +179,8 @@ vol -q -f Challenge.raw windows.cmdline
 2124  chrome.exe   "C:\Program Files (x86)\Google\Chrome\Application\chrome.exe"
 ```
 **Read it:** this *independently corroborates* Step 3 from a different kernel structure (the PEB, not the process tree) — the same `pr0t3ct3d\flag.rar` argument appears. Corroboration from two structures is what makes the finding defensible. Everything else here is a normal, fully-pathed program; there is no encoded command line, no LOLBin abuse, no script cradle.
+
+> **`windows.cmdline` shows how a process *launched*; `windows.cmdscan` / `windows.consoles` show what was *typed into it* afterward.** `cmdline` only reads the PEB launch arguments, so an attacker who opens `cmd.exe` and then types commands interactively leaves nothing there. **`windows.cmdscan`** recovers that **typed command history** by carving the `COMMAND_HISTORY` structures out of the console host (`conhost.exe` on Win7+, `csrss.exe` on XP), and **`windows.consoles`** reconstructs the **entire console screen buffer** — the commands *and* their printed output/scrollback — often recovering an attacker's exact keystrokes (`whoami`, `net user`, download cradles) even after every shell process has exited. On this insider image the console activity is just the benign `cmd.exe` (PID 880), but these are the plugins you reach for the moment a hands-on-keyboard shell is in scope (ATT&CK T1059).
 
 ### Step 6 — Inspect a suspect process's modules (`windows.dlllist`)
 ```bash
