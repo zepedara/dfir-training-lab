@@ -43,6 +43,8 @@ WHERE condition
 
 Thousands of community artifacts live in the **Velociraptor Artifact Exchange** (<https://docs.velociraptor.app/exchange/>) — hunts for specific ATT&CK techniques, parsers for niche artifacts, detection content — all just VQL you can read, audit, and run. **One caution:** Exchange artifacts are community-contributed and **not officially supported** — some fetch or run external tooling, so read an artifact's VQL before you run it (Velociraptor's own guidance is “use at your own risk”).
 
+**Beyond `SELECT` — VQL pivots mid-query (`LET` and `foreach()`).** Unlike SQL, VQL is **evaluated lazily, not compiled** — which is exactly what lets a query pivot. A **`LET`** expression stores a *query* (not just a value) in a variable, and it doesn't run until referenced; the **`foreach()`** plugin then feeds the *output* of one plugin as the *input* to another (`row=` a subquery of rows, `query=` a subquery evaluated per row). That's the pivot a bare `pslist()` filter can't do: `LET procs = SELECT Pid FROM pslist() WHERE Name =~ 'powershell'` then `SELECT * FROM foreach(row=procs, query={ SELECT * FROM handles(pid=Pid) })` walks *from* each suspect process *into* its open handles in one query. Lazy evaluation also lets an upstream `LIMIT` short-circuit the whole chain once enough rows are found — you compose expensive collection out of cheap, short-circuiting parts.
+
 ---
 
 ## 3. Setup
@@ -153,6 +155,8 @@ Because this is a **lab-mode, unencrypted** container, you can inspect and extra
 ## 5. The offline-collector workflow — the safe triage pipeline
 
 The single most valuable pattern Velociraptor gives DFIR is the **offline collector**: a standalone, **serverless, agentless** executable that collects a predefined artifact set and drops a single container — perfect for triaging a host you cannot (or must not) connect to a server, and for the malware-analysis loop this lab is built around.
+
+> **Analyze the results *in Velociraptor* — notebooks.** Collecting is only half of it: Velociraptor analyzes results in place with VQL **notebooks** (markdown text + live VQL in one document). Every collection and hunt gets one automatically — a **flow notebook** to explore a single collection, a **hunt notebook** to post-process results *across all clients in a hunt*. You query collected data with the **`source()`** plugin (the notebook pre-populates `ClientId`/`FlowId`/artifact/time so you don't pass them by hand). This is why fleet scale matters: a hunt across ten thousand endpoints returns far more than any single-file analyzer can open — the notebook is where you **stack, count, and rank** those results (group every host's autoruns, surface the rare ones) before you ever export an artifact to PECmd/EvtxECmd.
 
 The standard, safe pipeline:
 
