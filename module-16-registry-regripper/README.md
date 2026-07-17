@@ -66,6 +66,8 @@ You can run a single plugin (`-p`), or a whole **profile** (`-f system`, `-f sof
 
 > **Plain-language summary:** RegRipper turns an unreadable binary hive into a readable report, one artifact at a time, without you memorising hundreds of registry paths.
 
+> **Tool-currency note — why this module uses RegRipper 3.0.** The lab ships and teaches **RegRipper 3.0**, the freely redistributable open-source release. Harlan Carvey has since published **RegRipper 4.0** — it adds many new plugins, ISO-8601 timestamps, per-plugin **MITRE ATT&CK** mappings, an "Analysis Tips" line in the output, and even a plugin to run **YARA** rules against registry data. The lab stays on 3.0 deliberately: **4.0's license restricts it to personal/academic use and forbids inclusion in any vendor product, training, or distribution**, so a self-contained teaching VM can't bundle it. The tradecraft is identical — 4.0 mostly *annotates* the same findings you produce here. (Like 3.0, RegRipper 4.0 still does **not** auto-replay hive transaction logs — see the `.LOG` note later in the walkthrough.)
+
 ---
 
 ## 3. The scenario in this module's data
