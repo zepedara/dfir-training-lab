@@ -122,6 +122,9 @@ A fast log-hunting engine (WithSecure) that runs Sigma rules and built-in detect
 A fast log-analysis engine (Yamato Security) that produces a **severity-ranked timeline** from `.evtx` and has handy summaries like `logon-summary`.
 *Sources:* <https://github.com/Yamato-Security/hayabusa>.
 
+**SRUM (System Resource Usage Monitor / `SRUDB.dat`)**
+A Windows 8+ service that keeps a rolling ~30–60-day, per-application ledger of resource use — **bytes sent/received per app per network**, CPU, and energy — in an ESE database at `C:\Windows\System32\sru\SRUDB.dat`, flushed about hourly (recent activity may still sit in the registry cache). Prized because it **quantifies** activity (sizing exfiltration) and **survives deletion of the executable**. Parsed offline with SrumECmd; acquire it *and* the `SOFTWARE` hive via a Volume Shadow Copy since the live file is service-locked. Module 27.
+
 **Sysmon (System Monitor)**
 A free Microsoft Sysinternals tool: a kernel driver + service that taps **ETW** and kernel callbacks to log rich, security-relevant events (process creation *with hashes and parent*, network connections, image loads, LSASS access, file drops, registry edits, named pipes, injection) to its own channel. Its **XML config** decides what it records — a good config (e.g. SwiftOnSecurity's template) is what makes it valuable.
 *Sources:* <https://learn.microsoft.com/en-us/sysinternals/downloads/sysmon>; SwiftOnSecurity config <https://github.com/SwiftOnSecurity/sysmon-config>.

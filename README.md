@@ -50,6 +50,7 @@ The lab runs in five arcs. **Work Part A → the Capstone (Modules 1–11) in or
 | 16 | [Registry forensics](module-16-registry-regripper) | RegRipper (`rip`) | persistence, accounts, USB history & program execution from the registry hives | DFIR-Madness Case 001 hives |
 | 17 | [User activity](module-17-user-activity) | `JLECmd`/`LECmd`/`SBECmd`/`RBCmd` | jump lists, LNK, ShellBags, Recycle Bin — what the user opened, ran & deleted | user-artifact set |
 | 19 | [Browser forensics](module-19-browser-forensics) | `Hindsight` | history, downloads, sessions & the packed `transition` type from Chromium profiles | Chromium profile |
+| 27 | [SRUM resource monitor](module-27-srum) | `SrumECmd` | ~30–60 days of per-app **network bytes**, CPU & energy from `SRUDB.dat`; survives deletion of the binary | inert VSS-acquired `SRUDB.dat` |
 
 ### Part D — Timeline, Triage & Detection at Scale
 *Fuse everything into one timeline, collect at fleet scale, and cross the wire — then turn findings into repeatable detections.*

@@ -39,7 +39,7 @@ Two big arcs run through the core modules:
 
 A **capstone (Module 11)** then makes you work one full intrusion end-to-end, using everything from Parts A and B.
 
-After the capstone, three **advanced tracks** extend the lab in any order: **Part C — Host Forensics Deep-Dive (12, 14, 15, 16, 17, 19)** goes *below* the artifact layer into raw memory, raw disk, the registry, user activity and browsers; **Part D — Timeline, Triage & Detection at Scale (18, 20, 21, 22)** fuses one super-timeline, collects at fleet scale, crosses the wire, and turns findings into detections; **Part E — Anti-Forensics (23, 24, 25, 26)** shows how wiping, shadow-destruction and timestomping betray themselves — and how deleted evidence is recovered. (**Module 13** is **reserved/held** for a future core module and skipped on purpose; the gap is deliberate, not a missing file.)
+After the capstone, three **advanced tracks** extend the lab in any order: **Part C — Host Forensics Deep-Dive (12, 14, 15, 16, 17, 19, 27)** goes *below* the artifact layer into raw memory, raw disk, the registry, user activity and browsers; **Part D — Timeline, Triage & Detection at Scale (18, 20, 21, 22)** fuses one super-timeline, collects at fleet scale, crosses the wire, and turns findings into detections; **Part E — Anti-Forensics (23, 24, 25, 26)** shows how wiping, shadow-destruction and timestomping betray themselves — and how deleted evidence is recovered. (**Module 13** is **reserved/held** for a future core module and skipped on purpose; the gap is deliberate, not a missing file.)
 
 > **What's one case and what's a technique sample (read this once).** The **Case-001 host** (the `DESKTOP-SDN1RPT` desktop and its `CITADEL-DC01` server) is the real, single, documented intrusion that carries **Part A (Modules 1-4)** and the registry/filesystem advanced modules (**15-16**) — one host, one real clock, verifiable answers. **Part B (Modules 5-10)** and the **malicious-documents module (14)** instead teach each technique on **representative public captures** — real attacks, but from *different* hosts and clocks (EVTX-ATTACK-SAMPLES, hayabusa-sample-evtx) — because no public dataset makes a fictional binary perform every technique. The **capstone (11)** fuses them into one kill-chain narrative, pinning real timestamps where the host data provides them and ordering the technique samples logically. Knowing which evidence is one case and which is a representative sample is itself a DFIR skill — each module's `data/README.md` states exactly which it is.
 
@@ -124,6 +124,9 @@ These three advanced tracks are self-contained; take them after the capstone, in
 19. **[Module 19 — Browser forensics](module-19-browser-forensics)** · tool: `Hindsight`
     *Where the user went and what they downloaded.* You parse a Chromium profile — history, downloads, and the **packed `transition` integer** that separates a *typed* URL (intent) from an auto-loaded resource — plus the Session/Tabs files showing what was open at seizure. **You'll learn:** to read browser *intent*, not just browser noise.
 
+27. **[Module 27 — SRUM resource monitor](module-27-srum)** · tool: `SrumECmd`
+    *The month-long ledger nobody clears.* You parse `SRUDB.dat` — Windows' hidden ~30–60-day, per-application record of **bytes sent/received**, CPU and energy — into a CSV per provider, and learn why it **survives deletion of the binary** and quantifies exfiltration. Acquired the right way: from a **Volume Shadow Copy**, because the live file is service-locked. **You'll learn:** to size *how much data left, via which app*, long after the classic artifacts are gone.
+
 ### Part D — Timeline, Triage & Detection at Scale
 
 Fuse every artifact onto one clock, collect at fleet scale, cross the wire, and turn findings into repeatable detections.
@@ -187,6 +190,7 @@ Part C — Host Forensics Deep-Dive (no Module 13 — reserved)
   16 Registry forensics (RegRipper) ─ persistence, accounts, USB, program execution
   17 User activity (JLECmd/LECmd/SBECmd/RBCmd) ─ jump lists, LNK, shellbags, recycle bin
   19 Browser forensics (Hindsight) ─ history, downloads, typed-URL intent
+  27 SRUM resource monitor (SrumECmd) ─ per-app network bytes/CPU/energy; survives file deletion
 Part D — Timeline, Triage & Detection at Scale
   18 Super timeline (MFTECmd + mactime) ─ every artifact on one clock
   20 Triage at scale (Velociraptor / VQL) ─ collect + hunt across a fleet
@@ -249,7 +253,7 @@ Each module ships its sample data in `data/` (committed to the repo), so you can
 ## 8. Suggested study plan
 
 - **Work 1 → 11, in order.** Part A teaches single-host execution proof; Part B teaches intrusion hunting; the capstone fuses them. The pivots only make sense forward.
-- **Then take the advanced tracks (12, 14–26).** After the capstone, go below the artifact layer in any order: **Part C** host deep-dive (memory 12, maldocs 14, disk 15, registry 16, user activity 17, browser 19), **Part D** scale & detection (super-timeline 18, Velociraptor 20, network 21, detection engineering 22), and **Part E** anti-forensics (wiping 23, VSS 24, `$LogFile` 25, carving 26). They are self-contained. (Remember: **13** is reserved for a future core module.)
+- **Then take the advanced tracks (12, 14–26).** After the capstone, go below the artifact layer in any order: **Part C** host deep-dive (memory 12, maldocs 14, disk 15, registry 16, user activity 17, browser 19, SRUM 27), **Part D** scale & detection (super-timeline 18, Velociraptor 20, network 21, detection engineering 22), and **Part E** anti-forensics (wiping 23, VSS 24, `$LogFile` 25, carving 26). They are self-contained. (Remember: **13** is reserved for a future core module.)
 - **Do the exercises.** Each module ends with 4-6 *try-it-yourself* questions on the real data. They are where the learning sticks. Worked answers live in **[ANSWER-KEY.md](ANSWER-KEY.md)** (instructor material — try first, then check).
 - **Keep the [GLOSSARY](GLOSSARY.md) open** in another tab for any unfamiliar term.
 - **Take notes as a timeline.** From Module 1, start a running `YYYY-MM-DD HH:MM:SS UTC | host | what | artifact` log. By the capstone you will be building one for real.
@@ -278,6 +282,7 @@ Each module ships its sample data in `data/` (committed to the repo), so you can
 | 16 Registry forensics | what persisted / who logged on / what ran? | RegRipper | Run keys, services, UserAssist, USBSTOR, SAM, shellbags |
 | 17 User activity | what did the person do? | JLECmd/LECmd/SBECmd/RBCmd | Jump Lists, LNK, ShellBags, Recycle Bin |
 | 19 Browser forensics | where did they go / download? | Hindsight | history, downloads, packed `transition`, sessions |
+| 27 SRUM resource monitor | how much did each app do / send? | SrumECmd | `SRUDB.dat`: per-app bytes sent/received, CPU, energy; survives deletion |
 | *— Part D · Timeline, Triage & Detection at Scale —* | | | |
 | 18 Super timeline | every artifact on one clock? | MFTECmd + mactime | `$MFT`+evtx merge, clock skew, MACB traps |
 | 20 Triage at scale | collect across a fleet? | Velociraptor (VQL) | KAPE targets, `foreach()`, notebooks |
