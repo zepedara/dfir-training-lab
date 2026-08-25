@@ -116,7 +116,7 @@ plugin reads; **the filename is the hostname**). The fleet:
 All commands run from the lab VM (Git Bash or PowerShell) in this module's folder. `vol`-style, ACP takes
 a **database file** argument first, then a subcommand. We build a fresh DB from the fleet:
 
-```
+```bash
 cd module-04-scaling-appcompatprocessor
 python C:\DFIR\tools\appcompatprocessor\AppCompatProcessor.py acp.db load data/fleet
 ```
@@ -125,7 +125,7 @@ python C:\DFIR\tools\appcompatprocessor\AppCompatProcessor.py acp.db load data/f
 
 ### 4.1 Status — what did we ingest?
 
-```
+```bash
 acp acp.db status
 ```
 ```
@@ -138,7 +138,7 @@ Eight hosts ingested. Now make the data work for you.
 
 ### 4.2 `stack` — the headline technique
 
-```
+```bash
 acp acp.db stack FileName
 ```
 Output (trimmed — read it bottom-up and top-down):
@@ -176,7 +176,7 @@ Count  What
 ACP ships a curated known-bad signature set (`AppCompatSearch.txt`, ~98 patterns: staging dirs, LOLBins
 in odd places, recon tools, etc.). Run it with no regex:
 
-```
+```bash
 acp acp.db search
 ```
 ```
@@ -192,7 +192,7 @@ intel.
 
 Once you have a lead (the Count=2 outliers, the PerfLogs hit), sweep the fleet for the whole toolkit:
 
-```
+```bash
 acp acp.db search -f "palantir|nazgul|theonering|gollum|balrog|morgul|mordor-update"
 ```
 ```
@@ -209,7 +209,7 @@ Temp on patient zero; ProgramData/AppData on the insider; Temp/NTDS/PerfLogs on 
 
 ### 4.5 `filehitcount` — how widespread is one file?
 
-```
+```bash
 acp acp.db filehitcount evilnames.txt    # evilnames.txt contains: palantir.exe
 ```
 ```
@@ -223,7 +223,7 @@ Four execution records of the C2 beacon across the fleet — a quick prevalence 
 Given one known-bad file, **what else executed around the same time on the same hosts?** This is how you
 discover tooling you didn't have an IOC for.
 
-```
+```bash
 acp acp.db tcorr palantir.exe
 ```
 ```
@@ -244,7 +244,7 @@ after landing. That `repadmin`/`netdom` burst immediately after `palantir` is yo
 
 Stack only what executed inside the incident window:
 
-```
+```bash
 acp acp.db tstack 2024-09-13 2024-09-15
 ```
 ```
@@ -263,7 +263,7 @@ does not. This is time-boxing the hunt.
 
 ### 4.8 `reconscan` — which hosts did the most looking-around?
 
-```
+```bash
 acp acp.db reconscan
 ```
 ```
