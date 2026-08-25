@@ -82,24 +82,120 @@ Hypothesis to carry into Module 4: *"SHA1 `fd153c66…` is the Case 001 malware;
 
 ## Module 4 — Scaling the hunt (AppCompatProcessor)
 
-**1. Find the outlier, the right way.**
-`coreupdater.exe` in `C:\Windows\System32\`: empty ProductName/Version, **7,168 bytes**, `IsOsComponent=False`, **SHA1 `fd153c66386ca93ec9993d66a84d6f0d129a3a5c`**, **Count = 1** across the three hosts (verified: present on `DESKTOP`, absent on `WORKSTATION07`/`12`). Its **2010 LinkDate is *not*** on the suspicion list because LinkDate is forgeable and genuine MS files here have wilder dates.
+> **Dataset.** This module runs on the **synthetic eight-host fleet** in `data/fleet/` (see
+> `data/README.md`) — *not* on the Case-001 host of Modules 1-3. That is deliberate: stacking/LFO only
+> works when you have many hosts to count against, and no license-clear public multi-host AppCompat
+> corpus exists. Every number below was produced by running ACP against this fleet in the lab VM.
+> Load it clean each time (`rm -f acp.db` first) so counts are reproducible.
 
-**2. Hash beats name.**
-Stacking on **SHA1** is stronger because the hash is the file's content fingerprint. An attacker can beat a **name** stack by renaming the binary on each host (`coreupdater.exe` → `svc_update.exe` → …), making every name Count = 1 — but the **identical bytes share one SHA1**, so a hash stack still groups and counts them as the same file.
+**1. Load the fleet and find the rare tail.**
+`acp acp.db load data/fleet` then `acp acp.db stack FileName`. `status` confirms the ingest:
+**8 hosts / 8 instances / 352 entries**, across **61 distinct filenames**. The stack falls into clean bands:
 
-**3. The benign Count=1 trap.**
-Rarity alone returned `chrome.exe`, `firefox.exe`, `code.exe`, **and** `coreupdater.exe` all at Count = 1 — legitimate per-host apps are *also* rare. So rarity only produced a **candidate list**; what convicted `coreupdater.exe` was the **metadata** (System32 path + not-an-OS-component + empty product info + 7 KB + incident-window timing). *Rarity finds candidates; metadata convicts.*
+| Count | What sits there | Meaning |
+|---|---|---|
+| **8** (40 files) | `svchost.exe`, `lsass.exe`, `explorer.exe`, `cmd.exe`, `powershell.exe`, `kernel32.dll`, `chrome.exe`… | the ubiquitous OS/enterprise baseline — the noise you ignore |
+| **5** | `Teams.exe` | on every workstation-class host, absent from the servers |
+| **4** | `Acrobat.exe` | standard-build software, not on the laptop/servers |
+| **2** (3 files) | `dfsrs.exe`, **`nazgul.exe`**, **`palantir.exe`** | the interesting band — see 2 |
+| **1** (16 files) | 11 legitimate role tools + **5 implants** | the rare tail you must triage |
 
-**4. Triad gap, mechanised.**
-`grep -i coreupdater shimcache_host-DESKTOP.csv` → **no hits** — not in ShimCache. "In Amcache, not in ShimCache" means you have its **identity** (SHA1) and (via Prefetch) its **execution**, but no "OS-evaluated-the-path" record — a normal Triad gap, not exoneration.
+The whole lesson is in the shape: 40 of 61 filenames are on *every* host, and the intrusion lives in a
+tail of 19. `lsass.exe` shows Count **9** (it appears twice on one host) — a useful reminder that the
+stack counts *entries*, not hosts.
 
-**5. Plan the fleet hunt.**
-One-sentence LFO hypothesis: *"The host(s) where SHA1 `fd153c66…` appears at low frequency are the infected boxes; ubiquitous Microsoft-signed System32 binaries are the high-count noise to ignore."* Command shape:
-`AppCompatProcessor.py <db> stack "FileName,Sha1"` — run across all 500 hosts' ingested Amcache/AppCompat data; the rows with the malware's SHA1 and a tiny count are your lead list.
+**2. Legitimate-rare vs malicious-rare — judged by path.**
+Rarity alone does **not** convict: 11 of the 16 Count = 1 entries are perfectly innocent.
 
-**6. (Stretch) Add a host, watch Count move.**
-Copying a `WORKSTATION` CSV in as a fourth host and re-running Stack 1 makes a shared OS binary's `Count` rise (3 → 4) while `coreupdater.exe` stays at 1 — a live demonstration that stacking separates ubiquitous noise from rare leads.
+- **Legitimate-rare (role tools).** `repadmin.exe`, `netdom.exe`, `ntdsutil.exe`, `dsac.exe`, `dns.exe`,
+  `ismserv.exe` — all on `MINAS-TIRITH-DC01`, all in `C:\Windows\System32\`, because only a **domain
+  controller** runs DC tooling. `sqlservr.exe`, `SQLCMD.EXE`, `Ssms.exe` on `EREBOR-SQL01` under
+  `C:\Program Files\Microsoft SQL Server\…`. `srmhost.exe` on the file server. `putty.exe` on
+  `BAG-END-LT01` under `C:\Program Files\PuTTY\`. `dfsrs.exe` (Count 2) on the file server **and** the
+  DC — replication, exactly where it belongs.
+- **Malicious-rare (the SAURON toolkit, 7 files).** Every one sits in a **user-writable or staging**
+  directory, and every one carries an **incident-window mtime** (2024-09-13 / 2024-09-14) while the
+  entire benign baseline is stamped `2021-03-15 09:14:22`:
+
+| File | Host(s) | Path | mtime |
+|---|---|---|---|
+| `theonering.exe` | BAG-END-LT01 | `C:\Users\frodo.baggins\Downloads\` | 2024-09-13 22:47:11 |
+| `gollum.exe` | BAG-END-LT01 | `C:\Users\frodo.baggins\AppData\Local\Temp\` | 2024-09-13 22:47:11 |
+| `mordor-update.exe` | ISENGARD-WS04 | `C:\Users\saruman.white\AppData\Roaming\` | 2024-09-13 22:47:11 |
+| `palantir.exe` | ISENGARD-WS04, MINAS-TIRITH-DC01 | `C:\ProgramData\`, `C:\Windows\Temp\` | 2024-09-13 / 09-14 |
+| `nazgul.exe` | ISENGARD-WS04, MINAS-TIRITH-DC01 | `C:\Windows\Temp\` | 2024-09-14 02:09:48 |
+| `morgul.dll` | MINAS-TIRITH-DC01 | `C:\Windows\NTDS\` | 2024-09-14 02:09:48 |
+| `balrog.exe` | MINAS-TIRITH-DC01 | `C:\PerfLogs\` | 2024-09-14 02:09:48 |
+
+**The discriminator is path + timestamp, not rarity.** A rare binary in `C:\Program Files\` with the
+fleet's baseline mtime is a role tool; a rare binary in `\Downloads\`, `\AppData\`, `\Windows\Temp\`,
+`\ProgramData\`, `\PerfLogs\` or `\Windows\NTDS\` stamped inside the incident window is your lead.
+`morgul.dll` in `C:\Windows\NTDS\` is the loudest single artifact in the fleet — nothing legitimate
+drops a new DLL into the **AD database directory** (T1003.006, DCSync/NTDS theft).
+
+**3. `tcorr palantir.exe` — the temporal pivot.**
+`acp acp.db tcorr palantir.exe` reports `palantir.exe => [2 hits]` and returns **exactly one**
+correlation candidate:
+
+```
+LastModified         FilePath         FileName(*)  Size    ExecFlag  Before  After  Weight  Total_Count
+2024-09-14 02:09:48  C:\Windows\Temp   nazgul.exe   151552  True      2       0      11.11   2
+```
+
+Read it as: on both hosts where `palantir.exe` appears, `nazgul.exe` executed **near it in time**
+(`Before 2 / After 0` — `nazgul` follows the beacon on both). The relationship is symmetric: run
+`tcorr nazgul.exe` and you get `palantir.exe` (`C:\ProgramData\`, 412,672 bytes, `Before 0 / After 2`).
+**Both are implants, not abused LOLBins** — the pivot names the beacon's partner tool without you ever
+having an IOC for it, which is the point of the technique.
+
+> **Scope honestly.** On this fleet `tcorr` yields **one** partner, not a whole kill chain. The benign
+> DC tools (`repadmin`, `netdom`, `dsac`) carry the 2021 baseline mtime, so they are nowhere near the
+> 2024 window and correctly do **not** correlate. (The sample output printed in README §4.6 shows seven
+> rows including those DC tools; that output does not reproduce against the shipped fleet — see
+> `MODULE_REVIEW.md`.)
+
+**4. `tstack 2024-09-13 2024-09-15` — the intrusion timeline.**
+Restricting the stack to the window returns exactly the seven planted tools, every one with
+**Hits Out = 0** (they executed *only* inside the window — by construction, incident-relevant):
+
+```
+FullPath           Hits In  Hits Out  Ratio
+nazgul.exe         2        0         20.000
+palantir.exe       2        0         20.000
+balrog.exe         1        0         10.000
+gollum.exe         1        0         10.000
+mordor-update.exe  1        0         10.000
+morgul.dll         1        0         10.000
+theonering.exe     1        0         10.000
+```
+
+**The paragraph:** *On 2024-09-13 22:47, `frodo.baggins` runs `theonering.exe` from his **Downloads**
+folder on `BAG-END-LT01` — patient zero, a phished dropper — which stages `gollum.exe` in
+`%LOCALAPPDATA%\Temp`. The same evening `mordor-update.exe` is written to `saruman.white`'s **Roaming**
+profile on `ISENGARD-WS04` (a fake-updater persistence foothold) and `palantir.exe`, the recon/C2
+beacon, lands in `C:\ProgramData\`. Hours later, at 2024-09-14 02:09, the operator moves: `palantir.exe`
+and `nazgul.exe` both appear in `C:\Windows\Temp\` on the **domain controller** `MINAS-TIRITH-DC01` —
+the beacon plus its lateral-movement tool, the Count = 2 pair the stack surfaced. On the DC they drop
+`morgul.dll` into `C:\Windows\NTDS\` (the AD database directory — credential/NTDS theft) and
+`balrog.exe` into `C:\PerfLogs\` as the end-objective payload. Laptop → workstation → domain
+controller, in about three and a half hours.*
+
+Note the two-stage clock the data encodes: **22:47:11** on the 13th is the foothold stage, **02:09:48**
+on the 14th is the hands-on-keyboard DC stage.
+
+**5. `reconscan` — who was looking around?**
+`acp acp.db reconscan` reports **65 potential recon commands** across **8 / 8 hosts** and scores each
+host. Because the synthetic baseline gives *every* host the same recon-capable tools (`whoami.exe`,
+`net.exe`, `net1.exe`, `ipconfig.exe`, `tasklist.exe`), the scan flags all eight — a good teaching
+moment in itself: **`reconscan` measures the presence of recon tooling, not proof of recon.** On a real
+fleet you use it to *rank* hosts, then confirm with command-line telemetry (Modules 9-10), because
+ShimCache/AppCompat records that a binary was evaluated — never its arguments.
+
+**6. (Stretch) Regenerate the fleet and watch Count move.**
+Edit `tools/build_fleet_csvs.py` to plant your own tool on one host and re-run the load: your implant
+lands at Count = 1 in the rare tail, while any binary you add to *all* hosts joins the Count = 8
+baseline band. That is the whole thesis of stacking made falsifiable — and it is why the technique needs
+a fleet: with one host, every single file is Count = 1 and the signal disappears.
 
 ---
 

@@ -118,10 +118,21 @@ a **database file** argument first, then a subcommand. We build a fresh DB from 
 
 ```bash
 cd module-04-scaling-appcompatprocessor
-python C:\DFIR\tools\appcompatprocessor\AppCompatProcessor.py acp.db load data/fleet
+rm -f acp.db          # load appends to an existing DB - start clean so counts reproduce
+acp acp.db load data/fleet
 ```
 
-> On the VM a convenience wrapper `acp` is on PATH, so you can also just run `acp acp.db load data/fleet`.
+> **Which Python?** AppCompatProcessor is **Python 2** code. On the lab VM bare `python` is **Python
+> 3.12**, which cannot run it — you will get `SyntaxError: Missing parentheses in call to 'print'`. The
+> `acp` wrapper exists precisely to hide this; it invokes Python 2.7 explicitly. If `acp` is missing on
+> your build, create it once:
+>
+> ```bash
+> printf '#!/usr/bin/env bash\nexec /c/Python27/python.exe /c/dfir/tools/appcompatprocessor/AppCompatProcessor.py "$@"\n' \
+>   > /c/dfir/tools/native-shim/acp && chmod +x /c/dfir/tools/native-shim/acp
+> ```
+>
+> The long-hand equivalent is `C:\Python27\python.exe C:\DFIR\tools\appcompatprocessor\AppCompatProcessor.py acp.db load data/fleet`.
 
 ### 4.1 Status — what did we ingest?
 
@@ -210,7 +221,8 @@ Temp on patient zero; ProgramData/AppData on the insider; Temp/NTDS/PerfLogs on 
 ### 4.5 `filehitcount` — how widespread is one file?
 
 ```bash
-acp acp.db filehitcount evilnames.txt    # evilnames.txt contains: palantir.exe
+printf '%s\n' palantir.exe nazgul.exe theonering.exe gollum.exe balrog.exe morgul.dll mordor-update.exe > evilnames.txt
+acp acp.db filehitcount evilnames.txt
 ```
 ```
 FileName      HitCount
@@ -227,18 +239,21 @@ discover tooling you didn't have an IOC for.
 acp acp.db tcorr palantir.exe
 ```
 ```
+Searching for AppCompat temporal correlations on FileName: palantir.exe => [2 hits]
 AppCompat temporal execution correlation candidates for palantir.exe:
-nazgul.exe          Before:4  ...  <- the rest of the toolkit
-morgul.dll          Before:2
-balrog.exe          Before:2
-mordor-update.exe   Before:2
-repadmin.exe        After:2   ...  <- DC recon/replication abused right after
-dsac.exe            After:2
-netdom.exe          After:2
+LastModified         FilePath         FileName(*)  Size    ExecFlag  Before  After  Weight  Total_Count
+2024-09-14 02:09:48  C:\Windows\Temp  nazgul.exe   151552  True      2       0      11.11   2
 ```
-Pivoting from one beacon, ACP surfaces the **entire kill chain clustered in time**: the other implants
-*and* the legitimate DC tools (`repadmin`, `dsac`, `netdom`) the attacker abused for recon/DCSync right
-after landing. That `repadmin`/`netdom` burst immediately after `palantir` is your DCSync story.
+Pivoting from one beacon, ACP names its **partner tool** without you ever having had an IOC for it: on
+both hosts where `palantir.exe` appears, `nazgul.exe` executed right beside it (`Before 2 / After 0`).
+The relationship is symmetric — run `acp acp.db tcorr nazgul.exe` and `palantir.exe` comes back
+(`C:\ProgramData`, 412,672 bytes, `Before 0 / After 2`). Both are implants, not abused LOLBins.
+
+> **Read the scope honestly.** On this fleet `tcorr` returns **one** correlated file, not a whole kill
+> chain — and it is worth saying why. The benign DC tools (`repadmin`, `netdom`, `dsac`) all carry the
+> fleet's baseline mtime of `2021-03-15`, nowhere near the 2024 incident window, so they correctly do
+> **not** correlate. On a real fleet, where those tools would carry genuine execution times during the
+> intrusion, this same pivot is what surfaces abused LOLBins alongside the implants.
 
 ### 4.7 `tstack` — stack a time window (the intrusion timeline)
 
@@ -248,14 +263,14 @@ Stack only what executed inside the incident window:
 acp acp.db tstack 2024-09-13 2024-09-15
 ```
 ```
-FullPath          Hits In  Hits Out  Ratio
-nazgul.exe        4        0         40.000
-palantir.exe      4        0         40.000
-balrog.exe        2        0         20.000
-gollum.exe        2        0         20.000
-mordor-update.exe 2        0         20.000
-morgul.dll        2        0         20.000
-theonering.exe    2        0         20.000
+FullPath           Hits In  Hits Out  Ratio
+nazgul.exe         2        0         20.000
+palantir.exe       2        0         20.000
+balrog.exe         1        0         10.000
+gollum.exe         1        0         10.000
+mordor-update.exe  1        0         10.000
+morgul.dll         1        0         10.000
+theonering.exe     1        0         10.000
 ```
 Every binary whose execution is **entirely inside** the window (Hits Out = 0) is, by construction,
 incident-relevant. The SAURON toolkit pops out cleanly; baseline software (which also ran on other days)
@@ -267,12 +282,18 @@ does not. This is time-boxing the hunt.
 acp acp.db reconscan
 ```
 ```
-Total number of potential recon commands detected: 122
-Total number of hosts with potential recon activity: ... scored per host
+Total number of potential recon commands detected: 65
+Total number of hosts with potential recon activity detected: 8 / 8
 ```
 `reconscan` tallies execution of reconnaissance-associated tools (`whoami`, `net`, `ipconfig`,
 `tasklist`, `nltest`, `dsquery`, …) and scores hosts so you can rank where an operator was actively
 enumerating. Combined with the stack, it points you at the hosts that had hands-on-keyboard.
+
+> **Note what it is measuring.** Every host in this fleet ships the same recon-capable binaries, so all
+> **8 / 8** are flagged. That is the honest lesson: `reconscan` measures the **presence of recon
+> tooling**, not proof that recon happened. AppCompat/ShimCache records that a binary was evaluated —
+> **never its arguments** — so you use this to *rank* hosts, then confirm intent with command-line
+> telemetry (Modules 9-10).
 
 ---
 
@@ -332,9 +353,11 @@ enumerating. Combined with the stack, it points you at the hosts that had hands-
 - MITRE ATT&CK: T1055-adjacent staging, **T1003.006** (DCSync), **T1070.006** (Timestomp), **T1021**
   (Lateral Movement), **T1057/T1018** (Recon).
 
-> **Honesty note:** the Count=3-style baseline bands and the planted SAURON toolkit are a constructed
-> teaching dataset (Section 3). The ACP tool, its commands, and its outputs are **real** — everything
-> above was produced by running this exact build of ACP on this exact fleet in the lab VM.
+> **Honesty note:** the baseline bands and the planted SAURON toolkit are a constructed teaching
+> dataset (Section 3). The ACP tool and its commands are **real**, and the outputs shown above were
+> re-verified on 2026-08-25 by running this build of ACP against this exact fleet in the lab VM — the
+> `status`, `stack`, `tcorr`, `tstack` and `reconscan` figures printed here are that run's output. If
+> your numbers differ, check you loaded a **clean** `acp.db` (`rm -f acp.db` first); `load` appends.
 
 
 ---
