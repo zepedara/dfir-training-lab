@@ -6,7 +6,7 @@
 - `shimcache.csv` — a **pre-parsed copy** of the ShimCache (AppCompatCacheParser output: `ControlSet, CacheEntryPosition, Path, LastModifiedTimeUTC, Executed, Duplicate, SourceFile`), committed so the module can be read/sorted without running the container. 266 entries.
 
 ## Origin / scenario
-From the desktop **`DESKTOP-SDN1RPT`** of the **DFIR Madness "Case 001 — The Stolen Szechuan Sauce"** dataset (users `mortysmith`, `administrator`). The same host worked in Modules 1, 3, and 4. Teaching point in this hive: the Win10 `Executed` column reads `No` for every row (unreliable on Win10/11), and the case malware `coreupdater.exe` is **absent** from ShimCache — a deliberate Triad-gap lesson.
+From the desktop **`DESKTOP-SDN1RPT`** of the **DFIR Madness "Case 001 — The Stolen Szechuan Sauce"** dataset (users `mortysmith`, `administrator`). The same host worked in Modules 1, 3, and 4. Teaching point in this hive: the Win10 `Executed` column is **unreliable — 247 rows read `No`, 19 read `Yes`** (the `Yes` set is AppX package entries and VMware driver installs, not the binaries known to have run), and the case malware `coreupdater.exe` is **absent** from ShimCache — a deliberate Triad-gap lesson.
 
 ## Source / license
 - DFIR Madness, "The Stolen Szechuan Sauce" (Case 001): https://dfirmadness.com/the-stolen-szechuan-sauce/

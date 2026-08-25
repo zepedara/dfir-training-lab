@@ -41,7 +41,7 @@ The real execution time is the **`LastRun` recorded inside the `.pf`** (e.g. `co
 ## Module 2 — ShimCache (AppCompatCacheParser)
 
 **1. Top of the cache.**
-`CacheEntryPosition 0` (most-recently-inserted) is `C:\Windows\System32\WScript.exe` — the **LOLBin script host**. It sits at the top because the cache is ordered most-recent-first, so whatever the OS most recently evaluated leads. A script host at position 0 is worth a glance: it's a common malware launch vector.
+`CacheEntryPosition 0` (most-recently-inserted) is `C:\Windows\System32\WScript.exe` — the **LOLBin script host** (its `Executed` column reads `No`, which as ever proves nothing either way). It sits at the top because the cache is ordered most-recent-first, so whatever the OS most recently evaluated leads. A script host at position 0 is worth a glance: it's a common malware launch vector.
 
 **2. Staging sweep.**
 For each `Temp`/`AppData` hit decide benign vs suspicious by **who owns the folder, the file name, and whether it's a known Microsoft component**. Example seen in the data: `C:\ProgramData\Microsoft\Windows Defender\platform\...\MpCmdRun.exe` — in a `platform` versioned folder, a signed Defender component → **benign**. A random-named `.exe` in a *user's* `\AppData\Local\Temp\` would be the opposite. The path tells the story.
@@ -53,7 +53,14 @@ For each `Temp`/`AppData` hit decide benign vs suspicious by **who owns the fold
 The teaching point: a ShimCache `LastModifiedTimeUTC` (the file's `$StandardInfo` modified time) and Amcache's timestamps describe **different events**, so they needn't match. **Agreement** raises confidence the file wasn't tampered; a **mismatch** can indicate timestomping (an attacker backdating a file) — worth investigating, not proof by itself.
 
 **5. Why the logs matter.**
-Re-running with `--nl` (no transaction logs) ignores `SYSTEM.LOG1/.LOG2`, so the most-recent, not-yet-flushed entries are missed and the count can **drop**. The default (replaying the logs) is what you want, because a live-collected hive is "dirty" — the newest evidence is in the logs.
+On *this* hive the count does **not** change — you get **266 entries either way**. What changes is what the tool tells you. With `--nl` it warns:
+
+```
+Registry hive is dirty and transaction logs were found in the same directory, but --nl was provided. Data may be missing! Continuing anyways...
+Sequence numbers do not match! Hive is dirty and the transaction logs should be reviewed for relevant data!
+```
+
+That is the lesson, and it is a better one than a changed number: the hive **is** dirty, but the pending changes in the logs happen not to touch the `AppCompatCache` blob — **and you could not have known that in advance.** On another host the newest, not-yet-flushed entries *are* the evidence, and skipping the replay silently loses them. So you always collect `.LOG1/.LOG2` and always let the parser replay them; `--nl` exists only for when you deliberately want the raw on-disk state. (Module 3's Amcache hive shows the other outcome — there the tool reports *"At least one transaction log was applied. Sequence numbers have been updated"*.)
 
 ---
 
