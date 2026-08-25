@@ -41,7 +41,7 @@ The real execution time is the **`LastRun` recorded inside the `.pf`** (e.g. `co
 ## Module 2 — ShimCache (AppCompatCacheParser)
 
 **1. Top of the cache.**
-`CacheEntryPosition 0` (most-recently-inserted) is `C:\Windows\System32\WScript.exe` — the **LOLBin script host**. It sits at the top because the cache is ordered most-recent-first, so whatever the OS most recently evaluated leads. A script host at position 0 is worth a glance: it's a common malware launch vector.
+`CacheEntryPosition 0` (most-recently-inserted) is `C:\Windows\System32\WScript.exe` — the **LOLBin script host** (its `Executed` column reads `No`, which as ever proves nothing either way). It sits at the top because the cache is ordered most-recent-first, so whatever the OS most recently evaluated leads. A script host at position 0 is worth a glance: it's a common malware launch vector.
 
 **2. Staging sweep.**
 For each `Temp`/`AppData` hit decide benign vs suspicious by **who owns the folder, the file name, and whether it's a known Microsoft component**. Example seen in the data: `C:\ProgramData\Microsoft\Windows Defender\platform\...\MpCmdRun.exe` — in a `platform` versioned folder, a signed Defender component → **benign**. A random-named `.exe` in a *user's* `\AppData\Local\Temp\` would be the opposite. The path tells the story.
@@ -53,7 +53,14 @@ For each `Temp`/`AppData` hit decide benign vs suspicious by **who owns the fold
 The teaching point: a ShimCache `LastModifiedTimeUTC` (the file's `$StandardInfo` modified time) and Amcache's timestamps describe **different events**, so they needn't match. **Agreement** raises confidence the file wasn't tampered; a **mismatch** can indicate timestomping (an attacker backdating a file) — worth investigating, not proof by itself.
 
 **5. Why the logs matter.**
-Re-running with `--nl` (no transaction logs) ignores `SYSTEM.LOG1/.LOG2`, so the most-recent, not-yet-flushed entries are missed and the count can **drop**. The default (replaying the logs) is what you want, because a live-collected hive is "dirty" — the newest evidence is in the logs.
+On *this* hive the count does **not** change — you get **266 entries either way**. What changes is what the tool tells you. With `--nl` it warns:
+
+```
+Registry hive is dirty and transaction logs were found in the same directory, but --nl was provided. Data may be missing! Continuing anyways...
+Sequence numbers do not match! Hive is dirty and the transaction logs should be reviewed for relevant data!
+```
+
+That is the lesson, and it is a better one than a changed number: the hive **is** dirty, but the pending changes in the logs happen not to touch the `AppCompatCache` blob — **and you could not have known that in advance.** On another host the newest, not-yet-flushed entries *are* the evidence, and skipping the replay silently loses them. So you always collect `.LOG1/.LOG2` and always let the parser replay them; `--nl` exists only for when you deliberately want the raw on-disk state. (Module 3's Amcache hive shows the other outcome — there the tool reports *"At least one transaction log was applied. Sequence numbers have been updated"*.)
 
 ---
 
@@ -82,24 +89,120 @@ Hypothesis to carry into Module 4: *"SHA1 `fd153c66…` is the Case 001 malware;
 
 ## Module 4 — Scaling the hunt (AppCompatProcessor)
 
-**1. Find the outlier, the right way.**
-`coreupdater.exe` in `C:\Windows\System32\`: empty ProductName/Version, **7,168 bytes**, `IsOsComponent=False`, **SHA1 `fd153c66386ca93ec9993d66a84d6f0d129a3a5c`**, **Count = 1** across the three hosts (verified: present on `DESKTOP`, absent on `WORKSTATION07`/`12`). Its **2010 LinkDate is *not*** on the suspicion list because LinkDate is forgeable and genuine MS files here have wilder dates.
+> **Dataset.** This module runs on the **synthetic eight-host fleet** in `data/fleet/` (see
+> `data/README.md`) — *not* on the Case-001 host of Modules 1-3. That is deliberate: stacking/LFO only
+> works when you have many hosts to count against, and no license-clear public multi-host AppCompat
+> corpus exists. Every number below was produced by running ACP against this fleet in the lab VM.
+> Load it clean each time (`rm -f acp.db` first) so counts are reproducible.
 
-**2. Hash beats name.**
-Stacking on **SHA1** is stronger because the hash is the file's content fingerprint. An attacker can beat a **name** stack by renaming the binary on each host (`coreupdater.exe` → `svc_update.exe` → …), making every name Count = 1 — but the **identical bytes share one SHA1**, so a hash stack still groups and counts them as the same file.
+**1. Load the fleet and find the rare tail.**
+`acp acp.db load data/fleet` then `acp acp.db stack FileName`. `status` confirms the ingest:
+**8 hosts / 8 instances / 352 entries**, across **61 distinct filenames**. The stack falls into clean bands:
 
-**3. The benign Count=1 trap.**
-Rarity alone returned `chrome.exe`, `firefox.exe`, `code.exe`, **and** `coreupdater.exe` all at Count = 1 — legitimate per-host apps are *also* rare. So rarity only produced a **candidate list**; what convicted `coreupdater.exe` was the **metadata** (System32 path + not-an-OS-component + empty product info + 7 KB + incident-window timing). *Rarity finds candidates; metadata convicts.*
+| Count | What sits there | Meaning |
+|---|---|---|
+| **8** (40 files) | `svchost.exe`, `lsass.exe`, `explorer.exe`, `cmd.exe`, `powershell.exe`, `kernel32.dll`, `chrome.exe`… | the ubiquitous OS/enterprise baseline — the noise you ignore |
+| **5** | `Teams.exe` | on every workstation-class host, absent from the servers |
+| **4** | `Acrobat.exe` | standard-build software, not on the laptop/servers |
+| **2** (3 files) | `dfsrs.exe`, **`nazgul.exe`**, **`palantir.exe`** | the interesting band — see 2 |
+| **1** (16 files) | 11 legitimate role tools + **5 implants** | the rare tail you must triage |
 
-**4. Triad gap, mechanised.**
-`grep -i coreupdater shimcache_host-DESKTOP.csv` → **no hits** — not in ShimCache. "In Amcache, not in ShimCache" means you have its **identity** (SHA1) and (via Prefetch) its **execution**, but no "OS-evaluated-the-path" record — a normal Triad gap, not exoneration.
+The whole lesson is in the shape: 40 of 61 filenames are on *every* host, and the intrusion lives in a
+tail of 19. `lsass.exe` shows Count **9** (it appears twice on one host) — a useful reminder that the
+stack counts *entries*, not hosts.
 
-**5. Plan the fleet hunt.**
-One-sentence LFO hypothesis: *"The host(s) where SHA1 `fd153c66…` appears at low frequency are the infected boxes; ubiquitous Microsoft-signed System32 binaries are the high-count noise to ignore."* Command shape:
-`AppCompatProcessor.py <db> stack "FileName,Sha1"` — run across all 500 hosts' ingested Amcache/AppCompat data; the rows with the malware's SHA1 and a tiny count are your lead list.
+**2. Legitimate-rare vs malicious-rare — judged by path.**
+Rarity alone does **not** convict: 11 of the 16 Count = 1 entries are perfectly innocent.
 
-**6. (Stretch) Add a host, watch Count move.**
-Copying a `WORKSTATION` CSV in as a fourth host and re-running Stack 1 makes a shared OS binary's `Count` rise (3 → 4) while `coreupdater.exe` stays at 1 — a live demonstration that stacking separates ubiquitous noise from rare leads.
+- **Legitimate-rare (role tools).** `repadmin.exe`, `netdom.exe`, `ntdsutil.exe`, `dsac.exe`, `dns.exe`,
+  `ismserv.exe` — all on `MINAS-TIRITH-DC01`, all in `C:\Windows\System32\`, because only a **domain
+  controller** runs DC tooling. `sqlservr.exe`, `SQLCMD.EXE`, `Ssms.exe` on `EREBOR-SQL01` under
+  `C:\Program Files\Microsoft SQL Server\…`. `srmhost.exe` on the file server. `putty.exe` on
+  `BAG-END-LT01` under `C:\Program Files\PuTTY\`. `dfsrs.exe` (Count 2) on the file server **and** the
+  DC — replication, exactly where it belongs.
+- **Malicious-rare (the SAURON toolkit, 7 files).** Every one sits in a **user-writable or staging**
+  directory, and every one carries an **incident-window mtime** (2024-09-13 / 2024-09-14) while the
+  entire benign baseline is stamped `2021-03-15 09:14:22`:
+
+| File | Host(s) | Path | mtime |
+|---|---|---|---|
+| `theonering.exe` | BAG-END-LT01 | `C:\Users\frodo.baggins\Downloads\` | 2024-09-13 22:47:11 |
+| `gollum.exe` | BAG-END-LT01 | `C:\Users\frodo.baggins\AppData\Local\Temp\` | 2024-09-13 22:47:11 |
+| `mordor-update.exe` | ISENGARD-WS04 | `C:\Users\saruman.white\AppData\Roaming\` | 2024-09-13 22:47:11 |
+| `palantir.exe` | ISENGARD-WS04, MINAS-TIRITH-DC01 | `C:\ProgramData\`, `C:\Windows\Temp\` | 2024-09-13 / 09-14 |
+| `nazgul.exe` | ISENGARD-WS04, MINAS-TIRITH-DC01 | `C:\Windows\Temp\` | 2024-09-14 02:09:48 |
+| `morgul.dll` | MINAS-TIRITH-DC01 | `C:\Windows\NTDS\` | 2024-09-14 02:09:48 |
+| `balrog.exe` | MINAS-TIRITH-DC01 | `C:\PerfLogs\` | 2024-09-14 02:09:48 |
+
+**The discriminator is path + timestamp, not rarity.** A rare binary in `C:\Program Files\` with the
+fleet's baseline mtime is a role tool; a rare binary in `\Downloads\`, `\AppData\`, `\Windows\Temp\`,
+`\ProgramData\`, `\PerfLogs\` or `\Windows\NTDS\` stamped inside the incident window is your lead.
+`morgul.dll` in `C:\Windows\NTDS\` is the loudest single artifact in the fleet — nothing legitimate
+drops a new DLL into the **AD database directory** (T1003.006, DCSync/NTDS theft).
+
+**3. `tcorr palantir.exe` — the temporal pivot.**
+`acp acp.db tcorr palantir.exe` reports `palantir.exe => [2 hits]` and returns **exactly one**
+correlation candidate:
+
+```
+LastModified         FilePath         FileName(*)  Size    ExecFlag  Before  After  Weight  Total_Count
+2024-09-14 02:09:48  C:\Windows\Temp   nazgul.exe   151552  True      2       0      11.11   2
+```
+
+Read it as: on both hosts where `palantir.exe` appears, `nazgul.exe` executed **near it in time**
+(`Before 2 / After 0` — `nazgul` follows the beacon on both). The relationship is symmetric: run
+`tcorr nazgul.exe` and you get `palantir.exe` (`C:\ProgramData\`, 412,672 bytes, `Before 0 / After 2`).
+**Both are implants, not abused LOLBins** — the pivot names the beacon's partner tool without you ever
+having an IOC for it, which is the point of the technique.
+
+> **Scope honestly.** On this fleet `tcorr` yields **one** partner, not a whole kill chain. The benign
+> DC tools (`repadmin`, `netdom`, `dsac`) carry the 2021 baseline mtime, so they are nowhere near the
+> 2024 window and correctly do **not** correlate. (The sample output printed in README §4.6 shows seven
+> rows including those DC tools; that output does not reproduce against the shipped fleet — see
+> `MODULE_REVIEW.md`.)
+
+**4. `tstack 2024-09-13 2024-09-15` — the intrusion timeline.**
+Restricting the stack to the window returns exactly the seven planted tools, every one with
+**Hits Out = 0** (they executed *only* inside the window — by construction, incident-relevant):
+
+```
+FullPath           Hits In  Hits Out  Ratio
+nazgul.exe         2        0         20.000
+palantir.exe       2        0         20.000
+balrog.exe         1        0         10.000
+gollum.exe         1        0         10.000
+mordor-update.exe  1        0         10.000
+morgul.dll         1        0         10.000
+theonering.exe     1        0         10.000
+```
+
+**The paragraph:** *On 2024-09-13 22:47, `frodo.baggins` runs `theonering.exe` from his **Downloads**
+folder on `BAG-END-LT01` — patient zero, a phished dropper — which stages `gollum.exe` in
+`%LOCALAPPDATA%\Temp`. The same evening `mordor-update.exe` is written to `saruman.white`'s **Roaming**
+profile on `ISENGARD-WS04` (a fake-updater persistence foothold) and `palantir.exe`, the recon/C2
+beacon, lands in `C:\ProgramData\`. Hours later, at 2024-09-14 02:09, the operator moves: `palantir.exe`
+and `nazgul.exe` both appear in `C:\Windows\Temp\` on the **domain controller** `MINAS-TIRITH-DC01` —
+the beacon plus its lateral-movement tool, the Count = 2 pair the stack surfaced. On the DC they drop
+`morgul.dll` into `C:\Windows\NTDS\` (the AD database directory — credential/NTDS theft) and
+`balrog.exe` into `C:\PerfLogs\` as the end-objective payload. Laptop → workstation → domain
+controller, in about three and a half hours.*
+
+Note the two-stage clock the data encodes: **22:47:11** on the 13th is the foothold stage, **02:09:48**
+on the 14th is the hands-on-keyboard DC stage.
+
+**5. `reconscan` — who was looking around?**
+`acp acp.db reconscan` reports **65 potential recon commands** across **8 / 8 hosts** and scores each
+host. Because the synthetic baseline gives *every* host the same recon-capable tools (`whoami.exe`,
+`net.exe`, `net1.exe`, `ipconfig.exe`, `tasklist.exe`), the scan flags all eight — a good teaching
+moment in itself: **`reconscan` measures the presence of recon tooling, not proof of recon.** On a real
+fleet you use it to *rank* hosts, then confirm with command-line telemetry (Modules 9-10), because
+ShimCache/AppCompat records that a binary was evaluated — never its arguments.
+
+**6. (Stretch) Regenerate the fleet and watch Count move.**
+Edit `tools/build_fleet_csvs.py` to plant your own tool on one host and re-run the load: your implant
+lands at Count = 1 in the rare tail, while any binary you add to *all* hosts joins the Count = 8
+baseline band. That is the whole thesis of stacking made falsifiable — and it is why the technique needs
+a fleet: with one host, every single file is Count = 1 and the signal disappears.
 
 ---
 
@@ -122,7 +225,38 @@ With `get-data.sh` (online host) you fetch the whole EVTX-ATTACK-SAMPLES *Execut
 ## Module 6 — Sigma hunting (Chainsaw & Hayabusa)
 
 **1. Name them all.**
-Across the 23 samples the detections name techniques such as: **Mimikatz** hash-dump (`mimikatz-privesc-hashdump`, `…privilegedebug-tokenelevate-hashdump`), **Invoke-Obfuscation** encoded PowerShell (`Powershell-Invoke-Obfuscation-*`), **PowerSploit / PS-Attack** frameworks, **password-spray / SMB password-guessing** (`password-spray`, `smb-password-guessing-security`), **PsExec** lateral movement (`metasploit-psexec-*`, `sysmon_privesc_psexec_dwell`), **UAC bypass** (`UACME_59_Sysmon`), **event-log tampering** (`disablestop-eventlog`, `eventlog-dac`), and **account creation** (`new-user-security`). (Pure **WMI/DCOM** lateral movement is covered in Module 8.)
+Note the exercise asks for the technique the **detections** reveal — so name the *rules that fire*, not
+the sample filenames. Chainsaw over the folder reports **4,121 detections on 3,872 documents** from
+3,608 loaded rules; Hayabusa's unfiltered timeline is **18,442 rows**. The distinct rule titles that
+actually fire (counts from the lab VM) map to techniques like this:
+
+| Sigma rule title (real output) | Hits | Technique |
+|---|---|---|
+| `Metasploit SMB Authentication` | 3561 | Metasploit SMB auth against the target |
+| `Rare Service Installations` | 65 | service-install lateral movement / persistence |
+| `Unauthorized System Time Modification` | 40 | anti-forensics (T1070.006-adjacent) |
+| `HackTool - Mimikatz Execution` | 20 | credential dumping |
+| `PowerShell Download and Execution Cradles` / `Suspicious PowerShell Download and Execute Pattern` | 20 each | download-cradle execution |
+| `Malicious PowerShell Commandlets - ProcessCreation` | 20 | offensive PowerShell tooling |
+| `Base64 Encoded PowerShell Command Detected` | 18 | encoded-command obfuscation |
+| `Suspicious Program Names` | 13 | tool naming heuristics |
+| `Rundll32 Execution Without Parameters` | 12 | LOLBin abuse |
+| `Invoke-Obfuscation Obfuscated IEX Invocation - PowerShell` | 9 | Invoke-Obfuscation |
+| `CobaltStrike Service Installations` / `Meterpreter or Cobalt Strike Getsystem Service Installation` | 6 / 5 | C2 framework service install |
+| `PsExec Default Named Pipe` / `PsExec Tool Execution` / `PsExec Service Start` | 3 / 1 / 1 | PsExec lateral movement |
+| `Important Windows Eventlog Cleared` | 3 | event-log tampering |
+| `Local User Creation`, `A Member Was Added to a Security-Enabled Global Group` | 2 each | account creation / privilege grant |
+| `Hurricane Panda Activity` | 2 | named-actor heuristic |
+
+Two things worth flagging to a learner:
+- **`Godmode Sigma Rule`** fires **41** times. It is a deliberate catch-all meta-rule in the Sigma repo,
+  not a technique — it inflates counts and should be recognised, not reported.
+- **One rule dominates everything.** `Metasploit SMB Authentication` alone is 3,561 of the 4,121
+  detections, almost all from the `many-events-*` bulk logs. A raw detection count is therefore a
+  terrible triage metric; **count distinct rules and distinct hosts**, not alerts.
+
+(The `many-events-*` files are volume/baseline logs, not single-technique captures. Pure **WMI/DCOM**
+lateral movement is covered in Module 8.)
 
 **2. Tell the story (PsExec).**
 Sorting `sysmon_privesc_psexec_dwell.evtx` by timestamp: a process connects to the target, a service/pipe `\PSEXESVC` appears, and a child process runs **as SYSTEM** — i.e. *remote connection → PsExec service/pipe → SYSTEM-level command execution*. That's PsExec lateral movement to SYSTEM in three beats.
@@ -131,7 +265,30 @@ Sorting `sysmon_privesc_psexec_dwell.evtx` by timestamp: a process connects to t
 `--min-level high` shows only the loudest, highest-confidence alerts (low noise, but you can **miss** quieter techniques like recon or a single suspicious logon); `--min-level low` surfaces far more, including benign-ish noise. Start triage at **medium** (or low with discipline) and escalate — *stopping at "high only" is risky* because real intrusions hide in the medium/low band.
 
 **4. Cross-tool check.**
-On `mimikatz-privesc-hashdump.evtx`, Hayabusa's top alert and Chainsaw's named rule should **agree** on the credential-dumping technique. When they differ it's usually because they ship **different rule sets / naming**, not because one is wrong — which is exactly why you **run both**: each catches things the other misses.
+They do **not** agree — and that is the answer. Measured on `mimikatz-privesc-hashdump.evtx`:
+
+| Tool | Result |
+|---|---|
+| **Chainsaw** (3,608 Sigma rules, `sigma-event-logs-all` mapping) | *"Loaded 1 forensic artefacts (68.0 KiB) … **0 Detections found on 0 documents**"* |
+| **Hayabusa** (pre-converted `hayabusa-rules`) | `Process Ran With High Privilege` **[med]** ×4, `Log Cleared` **[high]** ×1 |
+
+Chainsaw **is** working — the same command on `sysmon_privesc_psexec_dwell.evtx` returns 9 detections —
+it simply matches nothing here. The reason is in the evidence: this sample is a **Security**-channel log
+containing **1102** (log cleared) ×1, **4673** (privileged service called) ×5 and **4798** (local group
+membership enumerated) ×7. Hayabusa ships built-in rules for those classic Security events; Chainsaw's
+mapped Sigma set, which leans on Sysmon-style process/handle telemetry, does not cover them.
+
+Three lessons, in order of importance:
+1. **"No detections" is not "no evidence."** A silent tool is a coverage gap, not an all-clear. Had you
+   run only Chainsaw here you would have called a Mimikatz sample clean.
+2. **Neither tool names Mimikatz.** You identify it from the event detail —
+   `Proc: C:\Tools\mimikatz\mimikatz.exe` in Hayabusa's `Details` column. **The alert label is not the
+   identification; the evidence is.**
+3. **This is the concrete case for running both** (and for the mapping/pipeline caveat in the module's
+   exercise text): coverage differs by ruleset *and* by the telemetry each ruleset was written against.
+
+*Instructor note:* the second sample behaves the same way — `mimikatz-privilegedebug-tokenelevate-hashdump.evtx`
+is also **0 detections** in Chainsaw and only `Log Cleared` **[high]** in Hayabusa.
 
 ---
 
@@ -169,14 +326,45 @@ In `lm_sysmon_18_remshell_over_namedpipe.evtx` a **Sysmon 18 (Pipe Connected)** 
 In `remote task update 4624 4702 same logonid.evtx` the **4702** (task updated) and a **4624** share one **LogonId**. LogonId is the glue because it ties the task change to **one specific authenticated session** — without it, the task edit could be background noise; with it, you attribute the action to the exact remote logon that performed it.
 
 **5. Find the source IP.**
-In `dfir_rdpsharp_target_RdpCoreTs_168_68_131.evtx`, an **RdpCoreTS 131** event records the **client IP knocking** (the file name even encodes `168.68.131`-style addressing). **131 is useful even when the logon fails** because it captures the *source of the connection attempt* before authentication — so you see who's probing RDP regardless of success.
+In `dfir_rdpsharp_target_RdpCoreTs_168_68_131.evtx`, an **RdpCoreTS 131** event records the **client IP
+knocking** — in this sample **`10.0.2.16`**. **131 is useful even when the logon fails** because it
+captures the *source of the connection attempt* before authentication, so you see who is probing RDP
+regardless of success.
+
+> **Read the filename correctly.** The `168_68_131` in the name is **not an IP address** — those are the
+> three **event IDs** the file contains. Confirm it yourself with EvtxECmd, which reports
+> **68 ×9, 131 ×22, 168 ×9**. (`RdpCoreTS` 131 = connection accepted from a client address, 68/168 =
+> related RDP transport events.) Mistaking artifact numbering for network addressing is an easy and
+> embarrassing error to make in a report — always resolve a value from the parsed evidence, never from
+> a filename.
 
 ---
 
 ## Module 9 — PowerShell tradecraft
 
 **1. Obfuscation can't hide intent.**
-Reading `ScriptBlockText` in `exec_emotet_ps_4104` and `Powershell_4104_MiniDumpWriteDump_Lsass`, the give-away tokens are `IEX`, `FromBase64String`, `DownloadString` (Emotet downloader) and `MiniDumpWriteDump`, `Get-Process lsass` (the LSASS dump). One sentence: **4104 logs the *decoded* script at compile time, so even a Base64-launched command is recorded in clear — and the decoded text names the malicious intent the encoding tried to hide.**
+One sentence first: **4104 logs the *decoded* script at compile time, so even an obfuscated command is
+recorded in clear — and the decoded text names the malicious intent the obfuscation tried to hide.**
+
+**`Powershell_4104_MiniDumpWriteDump_Lsass`** is the easy one: `MiniDumpWriteDump` (×10) and
+`Get-Process lsass` (×2) appear verbatim. Intent stated in plain text.
+
+**`exec_emotet_ps_4104`** is the interesting one, and the give-aways are *not* the usual tokens — this
+sample contains **no `IEX`, no `Invoke-Expression`, no `FromBase64String`, no `DownloadString`, and no
+Base64 at all.** It is a single 4104 record obfuscated a different way. What actually gives it away:
+
+| Give-away in the decoded text | Why it is damning |
+|---|---|
+| `&('ne'+'w-'+'item')`, `&('new-'+'obje'+'c'+'t') neT.WEbcLiENt` | **cmdlet names assembled by string concatenation** — no benign script builds `new-object` from fragments |
+| ``[Net.ServicePointManager]::"SecURi`T`ypRO`T`oCOL"`` | **backtick + random-case obfuscation** of a property name |
+| `$eNV:teMP\WOrd\2019\` and `$env:temp+…+'.exe'` | payload staged into a **temp path disguised as a Word folder** |
+| `'http://…/*https://…/*https://…'` (a long `*`-separated list) | **multi-URL fallback list** of compromised WordPress sites — Emotet's payload-rotation signature |
+| `tls12, tls11, tls` | explicit **TLS pinning** so the download succeeds on older hosts |
+
+The teaching point survives intact and is arguably stronger: **you cannot hunt obfuscated PowerShell by
+keyword list.** `IEX`/`FromBase64String` would miss this sample completely. What catches it is *shape* —
+concatenated cmdlet names, backticked properties, a temp-path drop, and a URL list — which is exactly
+why Sigma rules for this technique match on structure rather than on any single token.
 
 **2. Same goal, two telemetries.**
 `Powershell_4104_MiniDumpWriteDump_Lsass.evtx` caught the dump via **PowerShell 4104** (the script text); `babyshark_mimikatz_powershell.evtx` caught a PowerShell credential dump via **Sysmon 10** (LSASS access). If only **one** source were enabled you'd miss the other view — e.g. with Sysmon off you lose the LSASS-access proof; with PowerShell logging off you lose the script text. Run both.
