@@ -51,6 +51,24 @@ Thousands of community artifacts live in the **Velociraptor Artifact Exchange** 
 
 Open **Git Bash** on the lab host and change into this module's folder. Velociraptor is installed **natively and on your `PATH` as `velociraptor`** (a shim wraps the real binary), so you call it by bare name — there is no container, no server, and (for this module) no agent to install.
 
+> ### ⚠ This module needs an **elevated** shell
+> Unlike every other module in the lab, Module 20 reads the **live operating system** rather than a
+> file of evidence — so `velociraptor.exe` declares `requireAdministrator` in its manifest and Windows
+> refuses to start it from an ordinary prompt. The lab's `Analyst` account **is** a local
+> administrator, but UAC hands normal shells a *filtered* token, so you must launch the shell elevated:
+>
+> **Right-click the "DFIR Lab Shell" desktop shortcut → *Run as administrator*** (accept the UAC
+> prompt), then `cd` here and run the commands as written.
+>
+> If you skip this, every command in this module fails with:
+> ```
+> /c/dfir/tools/native-shim/velociraptor: line 2: .../velociraptor.exe: Permission denied
+> ```
+> which is Git-Bash's rendering of Windows' *"The requested operation requires elevation."* The
+> follow-on `unzip -l collection.zip` then fails too, because the collection was never created.
+> **Needing privilege to collect live triage data is itself the lesson** — this is exactly why
+> forward-deployed responders run their collector as SYSTEM or an administrator.
+
 ```bash
 cd module-20-triage-velociraptor
 ```
