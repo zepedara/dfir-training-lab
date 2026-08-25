@@ -34,9 +34,9 @@ Verdicts: ✅ solid · ⚠ weak but usable · ❌ defective (fix before showcase
 | 1 Prefetch | ✅ | ✅ | ✅ | ✅ | ✅ | **audited — excellent** |
 | 2 ShimCache | ✅ | n/a | ✅ | ❌→✅ | ✅ | **audited — 2 defects fixed** |
 | 3 Amcache | ✅ | n/a | ⚠ | ✅ | ✅ | **audited — solid, low difficulty** |
-| 4 AppCompatProcessor | ✅ | ⚠ | ✅ | ❌→✅ | ✅ | fixed last pass; re-verify signatures |
-| 5 EvtxECmd | — | — | — | — | — | pending |
-| 6 Sigma/Chainsaw/Hayabusa | — | — | — | — | — | pending |
+| 4 AppCompatProcessor | ✅ | ✅ | ✅ | ✅ | ✅ | **re-verified — signatures correct** |
+| 5 EvtxECmd | ✅ | ✅ | ⚠ | ✅ | ✅ | **audited — tiny samples, no baseline** |
+| 6 Sigma/Chainsaw/Hayabusa | ✅ | ✅ | ✅ | ❌→✅ | ✅ | **audited — 2 answer-key defects fixed** |
 | 7 Credential theft | — | — | — | — | — | pending |
 | 8 Lateral movement | — | — | — | — | — | pending |
 | 9 PowerShell | — | — | — | — | — | pending |
@@ -131,12 +131,92 @@ it is worth knowing the difficulty is low if this module is demoed as a hunting 
 
 ---
 
+## Iteration 2 — 2026-08-25
+
+### Module 4 — signatures re-verified ✅
+
+The corrections from the previous pass hold up under a fresh run:
+
+- `acp acp.db search` uses ACP's stock known-bad list and reports **"98 search terms"**, exactly as the
+  README states.
+- The targeted regex search returns **9 hits**, with correct hosts and paths —
+  `ISENGARD-WS04 … C:\ProgramData\palantir.exe 412672`, `MINAS-TIRITH-DC01 … C:\Windows\NTDS\morgul.dll 76288`.
+- `filehitcount evilnames.txt` returns exactly the seven planted tools with the documented counts
+  (`nazgul` 2, `palantir` 2, the rest 1).
+
+### Module 5 — ⚠ teaches recognition, not hunting
+
+**R3 is the honest weak spot.** The build fetches **36** EVTX samples (the repo ships 4), but each file
+holds only a handful of records:
+
+| Sample | Records | Event IDs |
+|---|---|---|
+| `bits_lolbas_desktopimgdownldr_59_60` | 5 | 3, 4, 59, 60, 209 |
+| `evasion_execution_imageload_wuauclt_lolbas` | 3 | 1×2, 7 |
+| `exec_driveby_cve-2018-15982_sysmon_1_10` | 2 | 1, 10 |
+| `exec_sysmon_1_11_lolbin_rundll32_openurl_FileProtocolHandler` | 11 | 1×9, 11×2 |
+
+With 2–11 records per file, **100% of the data is the answer** — a student is *recognising* a technique,
+not *hunting* for it. That is a legitimate design for a teaching module and the lab's Part-B framing
+already says these "teach the method", but it should not be demoed as a hunting exercise. Module 6 is
+where the volume lives (18,442 Hayabusa rows), and module 4 is where the needle-in-fleet skill lives.
+No change made — this is a scoping note, not a defect.
+
+### Module 6 — ✅ excellent data, ❌→✅ two answer-key defects fixed
+
+**R2/R3 are genuinely strong.** Chainsaw loads **3,608** Sigma rules and produces **4,121 detections on
+3,872 documents**; Hayabusa's unfiltered timeline is **18,442 rows**. The rules that fire are real,
+well-known ones — `HackTool - Mimikatz Execution`, `Invoke-Obfuscation Obfuscated IEX Invocation`,
+`PsExec Default Named Pipe`, `CobaltStrike Service Installations`, `Meterpreter or Cobalt Strike
+Getsystem Service Installation`, `Important Windows Eventlog Cleared`, `Rare Service Installations`.
+There is real baseline noise (`Proc Exec` 8,413; `Logon Failure (Wrong Password)` 3,558) from the
+`many-events-*` bulk logs, so this module *is* a real hunting exercise.
+
+**D1 — exercise 1's answer listed sample filenames, not detections.** The exercise asks for the
+technique *the detections reveal*; the key answered with the names of the `.evtx` files. **Fixed:**
+replaced with the actual rule titles and their hit counts, plus two lessons the real output hands you
+for free:
+- **`Godmode Sigma Rule` fires 41 times** — a catch-all meta-rule, not a technique.
+- **One rule is 3,561 of the 4,121 detections** (`Metasploit SMB Authentication`). A raw detection count
+  is a terrible triage metric; count **distinct rules and hosts** instead.
+
+**D2 — exercise 4 asked students to compare two things when one doesn't exist.** The key said Hayabusa
+and Chainsaw "should **agree**" on `mimikatz-privesc-hashdump.evtx`. Measured:
+
+| Tool | Result |
+|---|---|
+| Chainsaw | `Loaded 1 forensic artefacts (68.0 KiB)` → **0 detections** |
+| Hayabusa | `Process Ran With High Privilege` [med] ×4, `Log Cleared` [high] ×1 |
+
+Chainsaw is not broken — the same command on `sysmon_privesc_psexec_dwell.evtx` returns 9 detections. The
+sample is a **Security**-channel log (1102 ×1, 4673 ×5, 4798 ×7) that Chainsaw's mapped Sigma set doesn't
+cover. **Fixed**, and rewritten into a much better exercise: *"no detections" is not "no evidence"*;
+**neither tool names Mimikatz** — you identify it from `Proc: C:\Tools\mimikatz\mimikatz.exe` in the
+event detail, so **the alert label is not the identification, the evidence is**. Both mimikatz samples
+behave this way.
+
+### ⚠ A finding I raised and then withdrew
+
+I initially measured that severity filtering was **inverted** (`high` returning 3,774 vs `low` 120) and
+was about to rewrite exercise 3. **That was my error, not the lab's:** I tested *chainsaw's* `--level`,
+which is an **exact-level** filter, while exercise 3 is about *hayabusa's* `--min-level`, a true
+**minimum** filter (`-m, --min-level <LEVEL>  Minimum level for rules to load`). Re-measured on the
+right tool: informational **18,442** rows → low **8,639**, i.e. raising the floor reduces volume exactly
+as the answer key says. **Exercise 3 is correct and was left untouched.**
+
+Worth keeping as its own lesson: chainsaw `--level` (exact) and hayabusa `--min-level` (minimum) are
+different semantics with similar names, and the exact-level partition is visible in the data —
+info 57 + low 120 + medium 164 + high 3,774 + critical 6 = **4,121**, the full total.
+
+---
+
 ## Carried forward / open
 
 - **M2 cosmetic:** regenerate `shimcache.csv` so `SourceFile` isn't a container path.
-- **M4:** signatures re-verify pending (outputs were corrected last pass; confirm `search`/`filehitcount`
-  behave as newly documented).
-- Modules **5–10** not yet audited on these axes.
+- ~~M4 signature re-verify~~ — **done, correct** (iteration 2).
+- Modules **7–10** not yet audited on these axes.
+- **M6 note:** consider telling learners up front that one rule supplies 86% of the detections, so they
+  don't mistake alert volume for severity.
 - Defender on the test VM is now actively interfering with process spawning (ASR-style
   `Access is denied` when PowerShell launches a child PowerShell). Workaround in use: type commands into
   the already-open shell rather than spawning. Worth an exclusion at build time if the VM is re-baked.

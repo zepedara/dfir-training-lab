@@ -225,7 +225,38 @@ With `get-data.sh` (online host) you fetch the whole EVTX-ATTACK-SAMPLES *Execut
 ## Module 6 — Sigma hunting (Chainsaw & Hayabusa)
 
 **1. Name them all.**
-Across the 23 samples the detections name techniques such as: **Mimikatz** hash-dump (`mimikatz-privesc-hashdump`, `…privilegedebug-tokenelevate-hashdump`), **Invoke-Obfuscation** encoded PowerShell (`Powershell-Invoke-Obfuscation-*`), **PowerSploit / PS-Attack** frameworks, **password-spray / SMB password-guessing** (`password-spray`, `smb-password-guessing-security`), **PsExec** lateral movement (`metasploit-psexec-*`, `sysmon_privesc_psexec_dwell`), **UAC bypass** (`UACME_59_Sysmon`), **event-log tampering** (`disablestop-eventlog`, `eventlog-dac`), and **account creation** (`new-user-security`). (Pure **WMI/DCOM** lateral movement is covered in Module 8.)
+Note the exercise asks for the technique the **detections** reveal — so name the *rules that fire*, not
+the sample filenames. Chainsaw over the folder reports **4,121 detections on 3,872 documents** from
+3,608 loaded rules; Hayabusa's unfiltered timeline is **18,442 rows**. The distinct rule titles that
+actually fire (counts from the lab VM) map to techniques like this:
+
+| Sigma rule title (real output) | Hits | Technique |
+|---|---|---|
+| `Metasploit SMB Authentication` | 3561 | Metasploit SMB auth against the target |
+| `Rare Service Installations` | 65 | service-install lateral movement / persistence |
+| `Unauthorized System Time Modification` | 40 | anti-forensics (T1070.006-adjacent) |
+| `HackTool - Mimikatz Execution` | 20 | credential dumping |
+| `PowerShell Download and Execution Cradles` / `Suspicious PowerShell Download and Execute Pattern` | 20 each | download-cradle execution |
+| `Malicious PowerShell Commandlets - ProcessCreation` | 20 | offensive PowerShell tooling |
+| `Base64 Encoded PowerShell Command Detected` | 18 | encoded-command obfuscation |
+| `Suspicious Program Names` | 13 | tool naming heuristics |
+| `Rundll32 Execution Without Parameters` | 12 | LOLBin abuse |
+| `Invoke-Obfuscation Obfuscated IEX Invocation - PowerShell` | 9 | Invoke-Obfuscation |
+| `CobaltStrike Service Installations` / `Meterpreter or Cobalt Strike Getsystem Service Installation` | 6 / 5 | C2 framework service install |
+| `PsExec Default Named Pipe` / `PsExec Tool Execution` / `PsExec Service Start` | 3 / 1 / 1 | PsExec lateral movement |
+| `Important Windows Eventlog Cleared` | 3 | event-log tampering |
+| `Local User Creation`, `A Member Was Added to a Security-Enabled Global Group` | 2 each | account creation / privilege grant |
+| `Hurricane Panda Activity` | 2 | named-actor heuristic |
+
+Two things worth flagging to a learner:
+- **`Godmode Sigma Rule`** fires **41** times. It is a deliberate catch-all meta-rule in the Sigma repo,
+  not a technique — it inflates counts and should be recognised, not reported.
+- **One rule dominates everything.** `Metasploit SMB Authentication` alone is 3,561 of the 4,121
+  detections, almost all from the `many-events-*` bulk logs. A raw detection count is therefore a
+  terrible triage metric; **count distinct rules and distinct hosts**, not alerts.
+
+(The `many-events-*` files are volume/baseline logs, not single-technique captures. Pure **WMI/DCOM**
+lateral movement is covered in Module 8.)
 
 **2. Tell the story (PsExec).**
 Sorting `sysmon_privesc_psexec_dwell.evtx` by timestamp: a process connects to the target, a service/pipe `\PSEXESVC` appears, and a child process runs **as SYSTEM** — i.e. *remote connection → PsExec service/pipe → SYSTEM-level command execution*. That's PsExec lateral movement to SYSTEM in three beats.
@@ -234,7 +265,30 @@ Sorting `sysmon_privesc_psexec_dwell.evtx` by timestamp: a process connects to t
 `--min-level high` shows only the loudest, highest-confidence alerts (low noise, but you can **miss** quieter techniques like recon or a single suspicious logon); `--min-level low` surfaces far more, including benign-ish noise. Start triage at **medium** (or low with discipline) and escalate — *stopping at "high only" is risky* because real intrusions hide in the medium/low band.
 
 **4. Cross-tool check.**
-On `mimikatz-privesc-hashdump.evtx`, Hayabusa's top alert and Chainsaw's named rule should **agree** on the credential-dumping technique. When they differ it's usually because they ship **different rule sets / naming**, not because one is wrong — which is exactly why you **run both**: each catches things the other misses.
+They do **not** agree — and that is the answer. Measured on `mimikatz-privesc-hashdump.evtx`:
+
+| Tool | Result |
+|---|---|
+| **Chainsaw** (3,608 Sigma rules, `sigma-event-logs-all` mapping) | *"Loaded 1 forensic artefacts (68.0 KiB) … **0 Detections found on 0 documents**"* |
+| **Hayabusa** (pre-converted `hayabusa-rules`) | `Process Ran With High Privilege` **[med]** ×4, `Log Cleared` **[high]** ×1 |
+
+Chainsaw **is** working — the same command on `sysmon_privesc_psexec_dwell.evtx` returns 9 detections —
+it simply matches nothing here. The reason is in the evidence: this sample is a **Security**-channel log
+containing **1102** (log cleared) ×1, **4673** (privileged service called) ×5 and **4798** (local group
+membership enumerated) ×7. Hayabusa ships built-in rules for those classic Security events; Chainsaw's
+mapped Sigma set, which leans on Sysmon-style process/handle telemetry, does not cover them.
+
+Three lessons, in order of importance:
+1. **"No detections" is not "no evidence."** A silent tool is a coverage gap, not an all-clear. Had you
+   run only Chainsaw here you would have called a Mimikatz sample clean.
+2. **Neither tool names Mimikatz.** You identify it from the event detail —
+   `Proc: C:\Tools\mimikatz\mimikatz.exe` in Hayabusa's `Details` column. **The alert label is not the
+   identification; the evidence is.**
+3. **This is the concrete case for running both** (and for the mapping/pipeline caveat in the module's
+   exercise text): coverage differs by ruleset *and* by the telemetry each ruleset was written against.
+
+*Instructor note:* the second sample behaves the same way — `mimikatz-privilegedebug-tokenelevate-hashdump.evtx`
+is also **0 detections** in Chainsaw and only `Log Cleared` **[high]** in Hayabusa.
 
 ---
 
