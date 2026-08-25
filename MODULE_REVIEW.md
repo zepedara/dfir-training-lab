@@ -76,7 +76,15 @@ last-run **03:40:49**. The "they agree within seconds" teaching point holds.
 
 **4a. It could not run at all.** `AppCompatProcessor` is **Python 2** code; the VM's `python` is
 **Python 3.12.7**, so every documented command died with `SyntaxError: Missing parentheses in call to
-'print'`. The README promised *"a convenience wrapper `acp` is on PATH"* — no such shim existed.
+'print'`. The README promised *"a convenience wrapper `acp` is on PATH"*, and `acp` did not resolve.
+
+> **Root cause, corrected 2026-08-25.** An earlier draft of this review said the shim "was never
+> created". That was wrong. The build's `42-module04-acp` step *did* create it — the recovered
+> provisioning transcript logs `==== acp shim ====`. The real fault is a **PATH mismatch between two Git
+> installations**: the shim was written to **`C:\dfir\Git\usr\bin\acp`**, but the machine PATH carries
+> `C:\DFIR\Git\cmd`, `C:\dfir\tools\git\bin`, `C:\dfir\tools\git\usr\bin` and
+> `C:\dfir\tools\native-shim` — **`C:\dfir\Git\usr\bin` is not on it.** Two Git trees exist and the
+> shim landed in the one that isn't wired up.
 
 *Cause:* the V3 rebuild installed Python 3 (correct — Module 12's Volatility3 requires it) and that
 **silently broke Module 4**, which needs Python 2. `C:\Python27\python.exe` is still on the VM and ACP
@@ -194,6 +202,21 @@ person at the keyboard clicks **Yes** and it runs.
 ---
 
 ## 7. Still open
+
+0. **🔴 Windows Defender fights the lab.** It quarantines the shipped attack samples
+   (`Trojan:PowerShell/Mimikatz.A` and friends) **and student output** — including
+   `module-06/data/high.csv`, the file module 6 Step 5 tells you to create — and behaviour-blocks
+   `bash.exe`, after which `EvtxECmd` fails from Git-Bash while working from PowerShell. Worse, the
+   first detection landed *after* a clean validation run, so **the lab validates green on a fresh boot
+   and degrades as definitions catch up**. The build must ship a `C:\dfir` exclusion
+   (`HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Exclusions\Paths`); an offline merge of just
+   that key restored the toolchain. See `TRAINING_VALUE_AUDIT.md` iteration 3.
+
+0b. **The build is not reproducible from this repo.** `C:\dfir-provision.log` shows the VM was driven by
+   `A:\provision.ps1` running `30 → 32 → 34 → 36-shim → 40-clone-lab → 42-module04-acp`. Two of those
+   steps **failed** (`32-native-env` and `40-clone-lab`, both `lastexit=1`) and the image was packaged
+   anyway — direct evidence for the missing build gate — and **`42-module04-acp` does not exist in the
+   repository at all**.
 
 1. **Expired `Analyst` password** — blocks every new user at first login. Set `PasswordNeverExpires` and
    re-bake, or document the reset.

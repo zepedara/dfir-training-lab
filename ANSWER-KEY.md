@@ -326,7 +326,17 @@ In `lm_sysmon_18_remshell_over_namedpipe.evtx` a **Sysmon 18 (Pipe Connected)** 
 In `remote task update 4624 4702 same logonid.evtx` the **4702** (task updated) and a **4624** share one **LogonId**. LogonId is the glue because it ties the task change to **one specific authenticated session** — without it, the task edit could be background noise; with it, you attribute the action to the exact remote logon that performed it.
 
 **5. Find the source IP.**
-In `dfir_rdpsharp_target_RdpCoreTs_168_68_131.evtx`, an **RdpCoreTS 131** event records the **client IP knocking** (the file name even encodes `168.68.131`-style addressing). **131 is useful even when the logon fails** because it captures the *source of the connection attempt* before authentication — so you see who's probing RDP regardless of success.
+In `dfir_rdpsharp_target_RdpCoreTs_168_68_131.evtx`, an **RdpCoreTS 131** event records the **client IP
+knocking** — in this sample **`10.0.2.16`**. **131 is useful even when the logon fails** because it
+captures the *source of the connection attempt* before authentication, so you see who is probing RDP
+regardless of success.
+
+> **Read the filename correctly.** The `168_68_131` in the name is **not an IP address** — those are the
+> three **event IDs** the file contains. Confirm it yourself with EvtxECmd, which reports
+> **68 ×9, 131 ×22, 168 ×9**. (`RdpCoreTS` 131 = connection accepted from a client address, 68/168 =
+> related RDP transport events.) Mistaking artifact numbering for network addressing is an easy and
+> embarrassing error to make in a report — always resolve a value from the parsed evidence, never from
+> a filename.
 
 ---
 

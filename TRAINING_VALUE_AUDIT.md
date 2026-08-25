@@ -37,8 +37,8 @@ Verdicts: ✅ solid · ⚠ weak but usable · ❌ defective (fix before showcase
 | 4 AppCompatProcessor | ✅ | ✅ | ✅ | ✅ | ✅ | **re-verified — signatures correct** |
 | 5 EvtxECmd | ✅ | ✅ | ⚠ | ✅ | ✅ | **audited — tiny samples, no baseline** |
 | 6 Sigma/Chainsaw/Hayabusa | ✅ | ✅ | ✅ | ❌→✅ | ✅ | **audited — 2 answer-key defects fixed** |
-| 7 Credential theft | — | — | — | — | — | pending |
-| 8 Lateral movement | — | — | — | — | — | pending |
+| 7 Credential theft | ✅ | ✅ | ✅ | ✅ | ✅ | **audited — claims verified** |
+| 8 Lateral movement | ✅ | ✅ | ✅ | ❌→✅ | ✅ | **audited — 1 answer-key defect fixed** |
 | 9 PowerShell | — | — | — | — | — | pending |
 | 10 Sysmon + WEF | — | — | — | — | — | pending |
 
@@ -210,11 +210,120 @@ info 57 + low 120 + medium 164 + high 3,774 + critical 6 = **4,121**, the full t
 
 ---
 
+## Iteration 3 — 2026-08-25
+
+### 🔴 P1 — Windows Defender quarantines the lab's own evidence and blocks Git-Bash
+
+This is the most consequential finding of the audit so far, and it is a **defect in the shipped VM**,
+not merely a quirk of my test bed.
+
+Defender's threat history on the running lab VM:
+
+| Detection | What it hit |
+|---|---|
+| `Trojan:PowerShell/Mimikatz.A` | the module-6/7 Mimikatz samples |
+| `TrojanDownloader:PowerShell/Plasti.A`, `Trojan:PowerShell/Powdow.HNAB!MTB` | the PowerShell attack samples |
+| `Trojan:Win32/CeeInject.WN!bit`, `Trojan:Win32/Commando.A!ml` | attack telemetry |
+| `Behavior:Win32/SuspClickFix.G2` | behaviour block |
+| *(file action)* | **`C:\dfir\lab\module-06-sigma-chainsaw-hayabusa\data\high.csv`** |
+
+That last row is the important one: **`high.csv` is the file module 6's own Step 5 instructs the student
+to create.** Defender deletes it mid-write, because a CSV of parsed attack telemetry contains the
+malicious command lines. The same happened to my probe outputs (`_hb/medium.csv`, `_hb/critical.csv`,
+`_m5/tmp.csv`).
+
+**It also blocks the toolchain itself.** Defender logged behaviour detections against
+`C:\dfir\tools\git\usr\bin\bash.exe` and `env.exe`, after which `EvtxECmd.exe` returned
+`Permission denied` **when launched from Git-Bash while running fine from PowerShell**. The lab's entire
+native-first design runs through Git-Bash, so this degrades everything.
+
+**The timing is the worst part.** The first detection is stamped **01:18**; my clean
+`24 pass / 1 fail` validation ran at **01:14**. In other words the lab **validates green on a fresh boot
+and then rots as Defender's cloud definitions catch up** — a reproducibility trap that would make a
+demo fail for reasons no one could explain.
+
+**Remediation prototyped** (offline hive merge, which also bypasses Tamper Protection):
+- `HKLM\SOFTWARE\Policies\Microsoft\Windows Defender\Exclusions\Paths\C:\dfir = 0` — **this alone
+  restored file access and made EvtxECmd runnable again.**
+- Clearing `…\Windows Defender\Features\TamperProtection` then allows
+  `DisableRealtimeMonitoring` / `DisableBehaviorMonitoring` to actually apply (the policies are ignored
+  while TP is on — `IsTamperProtected: True` overrode them on the first attempt).
+
+**The VM build should ship the `C:\dfir` exclusion.** Without it the lab actively fights the student.
+
+### 🔍 The real build recipe — recovered from `C:\dfir-provision.log`
+
+The shipped VM was provisioned by **`A:\provision.ps1`** (an attached scripts drive), *not* by the
+packer provisioner list in the repo. The transcript gives the true sequence:
+
+```
+RUN 30-windows-tools    -> DONE (lastexit=0)
+RUN 32-native-env       -> DONE (lastexit=1)   <-- FAILED
+RUN 34-native-tools     -> DONE (lastexit=0)
+RUN 36-shim             -> DONE (lastexit=0)
+RUN 40-clone-lab        -> DONE (lastexit=1)   <-- FAILED
+RUN 42-module04-acp     -> DONE (lastexit=0)   <-- not in the repo at all
+```
+
+Two conclusions, both material:
+1. **The build shipped with two failed provisioning steps** (`32-native-env`, `40-clone-lab`) and
+   packaged anyway. That is `MODULE_REVIEW.md`'s missing-gate issue, now with direct evidence rather
+   than inference.
+2. **`42-module04-acp` does not exist in the repository.** It installs Python 2.7, fetches ACP, applies
+   the Windows patches, and creates the `acp` shim and `evilnames.txt`. So the shipped VM is *not*
+   reproducible from the repo — a step that mattered lives only on the build media.
+
+### 🔧 Module 4 root cause — corrected and sharpened
+
+My earlier conclusion ("no `acp` shim was ever created") was **wrong**. The build *did* create it. The
+actual fault is a **PATH mismatch between two Git installations**:
+
+| Fact | Value |
+|---|---|
+| Git trees present | `C:\dfir\Git` **and** `C:\dfir\tools\git` |
+| Where the build put the shim | `C:\dfir\Git\usr\bin\acp` |
+| What is on the machine PATH | `C:\DFIR\Git\cmd`, `C:\dfir\tools\git\bin`, `C:\dfir\tools\git\usr\bin`, `C:\dfir\tools\native-shim` |
+| `C:\dfir\Git\usr\bin` on PATH? | **No** — hence `acp: command not found` |
+
+Python 2.7 is present exactly as `42-module04-acp` logged. The one-line fix stands, but the *reason*
+is worth recording: two Git trees, and the shim went into the one that isn't wired up.
+
+### Module 7 — ✅ claims verified
+
+| Claim | Result |
+|---|---|
+| Baseline `security_4624_4625_logon_baseline.evtx` yields **zero** detections | ✅ `Loaded 1 forensic artefacts` → **0 Detections** — the "quiet baseline proves your rules don't false-positive" lesson is real |
+| Folder-wide detections | 22 detections on 9 documents |
+| `sysmon_10_comsvcs_minidump_lsass` contains the LOLBAS dump | ✅ Sysmon 1/7/10/11 present, `comsvcs.dll` in the call trace alongside `rundll32.exe` |
+| `security_4662_dcsync` carries the DCSync tell | ✅ `1131f6aa-9c07-11d1-f79f-00c04fc2dcd2` ×2 and `1131f6ad-…` ×1 — DS-Replication-Get-Changes / -All |
+
+### Module 8 — ✅ claims verified, ❌→✅ one answer-key defect fixed
+
+| Claim | Result |
+|---|---|
+| `LM_Remote_Service02_7045` has **three** 7045 events | ✅ exactly 3 |
+| DCOM failures appear **only** as System 10016 | ✅ 10016 ×4, no other event ID in the file |
+| `lm_sysmon_18_remshell_over_namedpipe` shows Sysmon 18 | ✅ 18 ×1 (plus 1 ×3, 3 ×1, 10 ×2), pipe name `\46a676ab7f179e511e30dd2dc41bd388` — a random-hex pipe, realistic C2 tradecraft |
+| RDP sample records the client IP | ✅ **`10.0.2.16`** |
+
+**Defect fixed:** the key claimed the filename `dfir_rdpsharp_target_RdpCoreTs_168_68_131.evtx` "even
+encodes `168.68.131`-style addressing". It does **not** — `68`, `131` and `168` are the **event IDs** in
+the file (68 ×9, 131 ×22, 168 ×9), and the real client IP is `10.0.2.16`. Corrected, with the
+transferable lesson attached: *resolve a value from the parsed evidence, never from a filename.*
+
+**Carried:** claim that a `4702` and a `4624` share one LogonId is **not yet verified** — the file holds
+4624 ×6, 4702 ×1, 1102 ×1 and six distinct LogonIds by my first (lossy) extraction. Re-check with proper
+CSV parsing once Git-Bash is unblocked.
+
+---
+
 ## Carried forward / open
 
 - **M2 cosmetic:** regenerate `shimcache.csv` so `SourceFile` isn't a container path.
 - ~~M4 signature re-verify~~ — **done, correct** (iteration 2).
-- Modules **7–10** not yet audited on these axes.
+- Modules **9–10** not yet audited on these axes.
+- **M8 claim 9** (4702/4624 shared LogonId) unverified — re-run with proper CSV parsing.
+- **Verify the Tamper-Protection clear took effect** on next boot, then re-run the full harness.
 - **M6 note:** consider telling learners up front that one rule supplies 86% of the detections, so they
   don't mistake alert volume for severity.
 - Defender on the test VM is now actively interfering with process spawning (ASR-style
