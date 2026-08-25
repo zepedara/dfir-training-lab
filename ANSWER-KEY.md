@@ -343,7 +343,28 @@ regardless of success.
 ## Module 9 — PowerShell tradecraft
 
 **1. Obfuscation can't hide intent.**
-Reading `ScriptBlockText` in `exec_emotet_ps_4104` and `Powershell_4104_MiniDumpWriteDump_Lsass`, the give-away tokens are `IEX`, `FromBase64String`, `DownloadString` (Emotet downloader) and `MiniDumpWriteDump`, `Get-Process lsass` (the LSASS dump). One sentence: **4104 logs the *decoded* script at compile time, so even a Base64-launched command is recorded in clear — and the decoded text names the malicious intent the encoding tried to hide.**
+One sentence first: **4104 logs the *decoded* script at compile time, so even an obfuscated command is
+recorded in clear — and the decoded text names the malicious intent the obfuscation tried to hide.**
+
+**`Powershell_4104_MiniDumpWriteDump_Lsass`** is the easy one: `MiniDumpWriteDump` (×10) and
+`Get-Process lsass` (×2) appear verbatim. Intent stated in plain text.
+
+**`exec_emotet_ps_4104`** is the interesting one, and the give-aways are *not* the usual tokens — this
+sample contains **no `IEX`, no `Invoke-Expression`, no `FromBase64String`, no `DownloadString`, and no
+Base64 at all.** It is a single 4104 record obfuscated a different way. What actually gives it away:
+
+| Give-away in the decoded text | Why it is damning |
+|---|---|
+| `&('ne'+'w-'+'item')`, `&('new-'+'obje'+'c'+'t') neT.WEbcLiENt` | **cmdlet names assembled by string concatenation** — no benign script builds `new-object` from fragments |
+| ``[Net.ServicePointManager]::"SecURi`T`ypRO`T`oCOL"`` | **backtick + random-case obfuscation** of a property name |
+| `$eNV:teMP\WOrd\2019\` and `$env:temp+…+'.exe'` | payload staged into a **temp path disguised as a Word folder** |
+| `'http://…/*https://…/*https://…'` (a long `*`-separated list) | **multi-URL fallback list** of compromised WordPress sites — Emotet's payload-rotation signature |
+| `tls12, tls11, tls` | explicit **TLS pinning** so the download succeeds on older hosts |
+
+The teaching point survives intact and is arguably stronger: **you cannot hunt obfuscated PowerShell by
+keyword list.** `IEX`/`FromBase64String` would miss this sample completely. What catches it is *shape* —
+concatenated cmdlet names, backticked properties, a temp-path drop, and a URL list — which is exactly
+why Sigma rules for this technique match on structure rather than on any single token.
 
 **2. Same goal, two telemetries.**
 `Powershell_4104_MiniDumpWriteDump_Lsass.evtx` caught the dump via **PowerShell 4104** (the script text); `babyshark_mimikatz_powershell.evtx` caught a PowerShell credential dump via **Sysmon 10** (LSASS access). If only **one** source were enabled you'd miss the other view — e.g. with Sysmon off you lose the LSASS-access proof; with PowerShell logging off you lose the script text. Run both.

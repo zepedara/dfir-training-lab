@@ -38,9 +38,9 @@ Verdicts: ✅ solid · ⚠ weak but usable · ❌ defective (fix before showcase
 | 5 EvtxECmd | ✅ | ✅ | ⚠ | ✅ | ✅ | **audited — tiny samples, no baseline** |
 | 6 Sigma/Chainsaw/Hayabusa | ✅ | ✅ | ✅ | ❌→✅ | ✅ | **audited — 2 answer-key defects fixed** |
 | 7 Credential theft | ✅ | ✅ | ✅ | ✅ | ✅ | **audited — claims verified** |
-| 8 Lateral movement | ✅ | ✅ | ✅ | ❌→✅ | ✅ | **audited — 1 answer-key defect fixed** |
-| 9 PowerShell | — | — | — | — | — | pending |
-| 10 Sysmon + WEF | — | — | — | — | — | pending |
+| 8 Lateral movement | ✅ | ✅ | ✅ | ❌→✅ | ✅ | **audited — 1 defect fixed, LogonId claim confirmed** |
+| 9 PowerShell | ✅ | ✅ | ✅ | ❌→✅ | ✅ | **audited — 1 answer-key defect fixed** |
+| 10 Sysmon + WEF | ✅ | ✅ | ✅ | ✅ | ✅ | **audited — every claim verified** |
 
 ---
 
@@ -317,13 +317,89 @@ CSV parsing once Git-Bash is unblocked.
 
 ---
 
+## Iteration 4 — 2026-08-25 · modules 9 and 10 (audit of 1–10 complete)
+
+### End-to-end, re-run with the Defender exclusion in place
+
+```
+=== RESULT: 24 pass / 1 fail / 0 unvalidated / 0 conceptual ===
+    failed:      module-20-triage-velociraptor      (documented elevation requirement)
+    missing tools: 0
+```
+
+### Module 8 — the carried claim is **CORRECT** (and I nearly filed a false defect)
+
+The key says a `4702` and a `4624` share one LogonId. Reading the events directly:
+
+```
+4624  TargetLogonId  = 0x21a8c68
+4702  SubjectLogonId = 0x21a8c68     <== SHARED
+4624  TargetLogonId  = 0x21a8c80 / 0x21a8c9a / 0x21aa47f / 0x21aad4a / 0x21aadb8
+```
+
+My first pass compared **`SubjectLogonId` on the 4624s** — which is `0x0` on all six, because on a 4624
+the *new* session's identifier is **`TargetLogonId`**; `SubjectLogonId` is the requesting process
+(SYSTEM). Comparing the wrong field produced "no shared LogonId" and would have condemned a correct
+answer key. **The sample is well built:** five decoy 4624s carry different TargetLogonIds, so the
+student has to find the matching pair rather than being handed it.
+
+### Module 9 — ✅ strong, ❌→✅ one answer-key defect fixed
+
+| Claim | Result |
+|---|---|
+| The injection sample has **82** Sysmon 8 (CreateRemoteThread) | ✅ **exactly 82** (plus 7 ×1 image load, 10 ×1) — a precise claim that holds |
+| `Powershell_4104_MiniDumpWriteDump_Lsass` states intent in clear | ✅ `MiniDumpWriteDump` ×10, `Get-Process lsass` ×2 |
+| Guardrail tampering precedes the payload | ✅ CLM-disabled = Sysmon **12 ×1**; execpolicy-changed = Sysmon **13 ×5** |
+| Emotet give-aways are `IEX` / `FromBase64String` / `DownloadString` | ❌ **none of them are present** |
+
+**The defect:** `exec_emotet_ps_4104` contains **no `IEX`, no `Invoke-Expression`, no `FromBase64String`,
+no `DownloadString`, and no Base64 at all** (0 hits each, read straight from the event). It is a single
+4104 record obfuscated a different way. The sample itself is excellent — a real Emotet downloader with
+concatenation-built cmdlets (`&('new-'+'obje'+'c'+'t') neT.WEbcLiENt`), backtick/random-case obfuscation
+(``"SecURi`T`ypRO`T`oCOL"``), TLS pinning, a `%TEMP%\WOrd\2019\` drop path, and a `*`-separated
+fallback list of compromised WordPress URLs.
+
+**Fixed**, and the replacement is a stronger lesson: **you cannot hunt obfuscated PowerShell with a
+keyword list** — `IEX`/`FromBase64String` would miss this sample entirely. What catches it is *shape*.
+
+### Module 10 — ✅ every claim verified
+
+| Claim | Result |
+|---|---|
+| `UACME_45` is a **registry** bypass (12/13) | ✅ Sysmon 12 ×1, 13 ×1, plus 1 ×5 and 5 ×1 (the elevated payoff) |
+| `UACME_63` is an **image-load** bypass (7/10) | ✅ Sysmon 7 ×1, 10 ×1, 1 ×1 |
+| lsass dump shows Sysmon 10 (access) **and** 11 (`.dmp` written) | ✅ 10 ×2, 11 ×2 — dump file `lsass.exe_190317_120941.dmp` |
+| Zerologon: Security uniquely has **4742**, Sysmon uniquely has the process tree | ✅ Security = 4742 ×1 (+4624 ×10, 4634 ×9, 4672 ×10, 4769 ×4, 1102 ×1); Sysmon = 1 ×10, 4, 5 ×10, 16 — **and neither log contains the other's evidence** |
+
+The two-UACME contrast is genuinely distinguishable in the data, and the Zerologon pair is the cleanest
+"why forward both logs" demonstration in the whole lab.
+
+### Defender — updated, and the P1 finding stands
+
+- Clearing Tamper Protection offline **did not persist**: `IsTamperProtected: True`,
+  `RealTimeProtectionEnabled: True` after reboot. Windows re-asserts it. **Defender was never actually
+  disabled**, so the `DisableRealtimeMonitoring` policies never applied.
+- **Git-Bash can run the tools again** — so the fix was the `C:\dfir` **exclusion** (and/or the reboot
+  clearing a transient behaviour block), *not* disabling AV. **Recommendation for the build: ship the
+  exclusion; do not attempt to disable Defender.**
+- **Defender is still deleting derived CSVs.** Demonstrated twice this iteration: EvtxECmd reported
+  `Records included: 8, Errors: 0`, a `grep` then read the resulting CSV successfully, and a second
+  later Python got `FileNotFoundError` on the same path. This is precisely what a student experiences
+  with module 6's `high.csv`. Workaround used for the remaining checks: read events directly with
+  `Get-WinEvent` and never materialise an intermediate file.
+
+---
+
 ## Carried forward / open
 
 - **M2 cosmetic:** regenerate `shimcache.csv` so `SourceFile` isn't a container path.
 - ~~M4 signature re-verify~~ — **done, correct** (iteration 2).
-- Modules **9–10** not yet audited on these axes.
-- **M8 claim 9** (4702/4624 shared LogonId) unverified — re-run with proper CSV parsing.
-- **Verify the Tamper-Protection clear took effect** on next boot, then re-run the full harness.
+- ~~Modules 9–10~~ — **done (iteration 4). All ten modules are now audited.**
+- ~~M8 claim 9~~ — **confirmed correct** (iteration 4).
+- ~~Verify the Tamper-Protection clear~~ — **it did not persist**; the exclusion is the real fix.
+- **Build-side work remains in `project-dfir/dfir-vm`:** ship the `C:\dfir` Defender exclusion, add
+  `42-module04-acp` to the repo, put `C:\dfir\Git\usr\bin` on PATH (or write the shim into
+  `native-shim`), and gate packaging on the harness so a step exiting 1 fails the build.
 - **M6 note:** consider telling learners up front that one rule supplies 86% of the detections, so they
   don't mistake alert volume for severity.
 - Defender on the test VM is now actively interfering with process spawning (ASR-style
