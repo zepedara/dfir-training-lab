@@ -436,6 +436,85 @@ author ran it on and will differ on every host by design.
 
 ---
 
+## Per-command audit — 2026-08-26
+
+Everything above tested modules. This pass tested **every individual command**: 265 commands
+across 26 modules, each executed separately on the **shipped v5 image** with its own exit code and
+its own captured output, then compared against the output its README documents.
+
+### Method (and three harness bugs that had to be fixed first)
+
+Commands run **sequentially in one shell per module**, so `cd` and created files carry over exactly
+as they do for a student typing them — but each command is bracketed by markers so its exit code
+and output can be attributed individually. Getting there took three corrections, all mine:
+
+| Attempt | Bug | Symptom |
+|---|---|---|
+| v1 | each command in its own `bash -c` | the module's opening `cd` did not persist → 129 bogus failures |
+| v2 | `cmd </dev/null` binds to the **last** element of a pipeline | `head file \| awk …` fed awk from `/dev/null` → dozens of bogus "no output" results |
+| v3 | `{ cmd ; } </dev/null` | a trailing `#` comment swallowed the closing brace → bash hung waiting for input |
+| **v4** | brace delimiters on their own lines | **correct** |
+
+*Worth recording:* the first three runs produced confident-looking failure lists that were entirely
+artefacts of the harness. Every one of those "defects" would have been a false accusation against
+the lab.
+
+### Result
+
+```
+265 commands
+  exit 0            252
+  non-zero exit       3   (all `grep` returning 1 on no-match)
+  silent but exit 0  38   (cd / rm / mkdir / printf / redirects to file - correct)
+documented output    93
+  MATCH              37
+  PARTIAL            29
+  MISS               27
+```
+
+**Every command runs.** The three non-zero exits are shell semantics, not breakage: `grep` exits 1
+when it matches nothing.
+
+### The three no-match commands — a real training-value gap, now fixed
+
+| Command | Why it returns nothing |
+|---|---|
+| M17 `grep -i "Removable" out/lnk.csv` | the three shipped `.lnk` fixtures are ordinary local shortcuts, so `DriveType` is `Fixed` throughout |
+| M17 `grep -iE "Removable\|\\\\\|USB" out/*.csv` | the shipped `UsrClass.dat` carries ordinary local browsing |
+| M12 `vol … windows.svcscan \| grep -Ei 'Users\|Temp\|AppData'` | no service on that image runs from a user-writable path |
+
+Module 17 was the sharp one: it teaches `DriveType = Removable` as **the** LNK field — the USB
+data-theft case — then hands the student data where it never appears. The module already uses an
+honesty note for its missing Recycle-Bin fixture, so the same pattern was applied: state that the
+empty result is correct, show what a real hit looks like, and point at Module 16's `USBSTOR` for
+the volume-serial correlation. **Absence of evidence is a finding; silence with no explanation is
+a bug.**
+
+### MATCH / PARTIAL / MISS — what those really mean
+
+The comparison is deliberately strict, and **abbreviation is the dominant cause of PARTIAL/MISS**,
+not error. The READMEs elide columns, truncate hashes and drop fractional seconds. Verified by hand:
+
+- **M12 pslist** — documented `4  0  System  78  495  2019-08-19 14:40:07`; actual row is identical
+  once `Offset(V)`, `SessionId` and `Wow64` are accounted for.
+- **M21 tshark** — documented and actual both give `frames:8`, `dns 3`, `http 2`. Correct.
+- **M14 maldoc chain** — runs end to end: `IDENTICAL — same VBA project in both containers`, then
+  PDFiD reporting `/JS 2`, `/JavaScript 3`, `/AA 1`, `/OpenAction 1`, `/Launch 1`. Genuinely
+  realistic malicious-document indicators.
+- **M22 `sigma convert`** — documented `SELECT * FROM logs …`; sigma-cli actually emits
+  `SELECT * FROM <TABLE_NAME> …`. **Real, fixed.**
+
+### Still open
+
+- **M27's `head -1 *AppResourceUseInfo_Output.csv`** is ambiguous: `SrumECmd` writes
+  `<timestamp>_SrumECmd_*.csv`, so the glob matches one file on a fresh VM but **grows with every
+  re-run**. Works first time, degrades after. Worth making deterministic.
+- The 29 PARTIAL / remaining MISS entries are recorded in `percmd_rows.json` from this run; each is
+  an abbreviation judgement rather than a pass/fail, and they have not all been individually
+  adjudicated.
+
+---
+
 ## Carried forward / open
 
 - **M2 cosmetic:** regenerate `shimcache.csv` so `SourceFile` isn't a container path.

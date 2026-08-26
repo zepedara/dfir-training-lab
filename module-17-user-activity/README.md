@@ -140,6 +140,21 @@ grep -i "Removable" out/lnk.csv        # anything opened off external media
 head -1 out/lnk.csv                     # inspect the full column list
 ```
 
+> **Expect no hits here — and that is the point.** The three `.lnk` fixtures that ship with this
+> module are ordinary local shortcuts (`Hyper-V Manager.lnk` and friends), so `DriveType` is
+> `Fixed` throughout and the grep returns **nothing**. That is a correct result, not a broken
+> command: *absence of a Removable hit is evidence too.* On a real case the row you are hunting
+> looks like this, and the two fields that matter are the last ones:
+>
+> ```
+> ...,E:\exfil\Q3_customers.xlsx,...,Removable,1A2B-3C4D,MY_USB
+>                                       ^drive     ^volume  ^label
+> ```
+>
+> Take the **`VolumeSerialNumber`** from a row like that into Module 16's `USBSTOR` /
+> `MountedDevices` keys and you have put a **specific device**, holding a **specific file**, on
+> this machine at a **specific time** — the core of a data-theft (T1052) case.
+
 ### 4c. Shellbags — folders browsed, even after they're gone (`SBECmd`)
 
 **What it is.** Every time a user opens a folder in Explorer, Windows saves that folder's **view preferences** (window size, sort order, icon layout) so it re-opens the same way. That preference record is a **shellbag**, stored as a tree of **`BagMRU`** keys inside the per-user **`UsrClass.dat`** hive. The catch — and the reason shellbags are a top-tier artifact — is that the record is keyed by the folder's **shell path**, and **it is never cleaned up.** The shellbag persists **after the folder is deleted, after the USB stick is removed, after the network share is unmounted.**
@@ -169,6 +184,11 @@ SBECmd.exe -d artifacts --csv out
 ```bash
 grep -i -E "Removable|\\\\\\\\|USB" out/*.csv   # external drives + UNC shares in the bags
 ```
+
+> **Also expect no hits on the shipped `UsrClass.dat`** — it carries ordinary local browsing,
+> so this grep returns nothing. Run the same search against a live-acquired `UsrClass.dat` and a
+> bag for `E:\` or a `\\server\share` is exactly what betrays a folder the user opened and
+> later deleted, or a drive they unplugged. **The empty result is the baseline you compare against.**
 
 ### 4d. Recycle Bin — the deletion receipt (`RBCmd`)
 

@@ -116,7 +116,7 @@ sigma convert -t sqlite rules/new_service.yml
 ```
 **Expected output (a SQL query):**
 ```sql
-SELECT * FROM logs WHERE EventID=7045
+SELECT * FROM <TABLE_NAME> WHERE EventID=7045
 ```
 This is the "**write once, run anywhere**" moment made literal. Your abstract Sigma rule just became a concrete **SQL** query. Point `-t` at a different backend (`splunk`, `esql`, `elasticsearch`, …) and the *same rule* emits SPL, ES|QL, or a Lucene query instead. **One rule, many targets** — you never rewrite the logic, you only change the target.
 

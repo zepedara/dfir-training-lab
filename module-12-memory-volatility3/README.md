@@ -275,7 +275,7 @@ vol -q -f Challenge.raw windows.svcscan
 
 **Real result:** **863 service entries**, every one of them a normal Windows service whose binary lives under `C:\Windows\system32\…` or `system32\drivers\…` (e.g. `Power`→`umpo.dll`, `PlugPlay`→`umpnpmgr.dll`, `nsi`→`nsisvc.dll`). A quick filter for the tell-tale of a rogue service — a binary path under a **user-writable** folder — returns nothing:
 ```bash
-vol -q -f Challenge.raw windows.svcscan | grep -Ei 'Users|Temp|AppData|ProgramData'   # -> no rows
+vol -q -f Challenge.raw windows.svcscan | grep -Ei 'Users|Temp|AppData|ProgramData'   # no hits on this image - see note   # -> no rows
 ```
 **Read it:** no service runs from a user directory, no oddly-named service, nothing pointing at `pr0t3ct3d`. **There is no service persistence** on this host. **What suspicious looks like:** a `SERVICE_AUTO_START` service whose binary is `C:\Users\…\AppData\Local\Temp\svc.exe`, or a random-looking service name created minutes before capture.
 
