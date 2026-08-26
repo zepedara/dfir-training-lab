@@ -390,6 +390,52 @@ The two-UACME contrast is genuinely distinguishable in the data, and the Zerolog
 
 ---
 
+## Final verification — 2026-08-26 · on the SHIPPED artifact
+
+Validating the VM *before* export is not the same as validating what shipped, so the published
+OVA was re-imported from its own bits and re-tested.
+
+| Check | Result |
+|---|---|
+| OVA under test is the published one | `sha256 dd00d5c4…` — identical to the release manifest |
+| Imported fresh as VM 211 and booted | boots under OVMF/UEFI + e1000 |
+| Documented credentials | `Analyst / DFIRlab2026!` works; password does not expire |
+| Module count | **26** |
+| Full harness **on the shipped image** | **26 pass / 0 fail / 0 unvalidated / 0 tools missing** — `LAB_VALIDATION: PASS` |
+
+### Documented output vs actual output (modules 11–27)
+
+Modules 1–10 had their documented claims checked line by line during iterations 1–4 (six defects
+found and fixed). The remaining modules had been *executed* but their documented output had not
+been compared to reality. That sweep is now done.
+
+A mechanical diff of every untagged (output) fence against each module's real log reports many
+"unmatched" lines, but **almost all are legitimate abbreviation**, not error — the READMEs elide
+columns, truncate hashes and drop fractional seconds, and several say "(abbreviated)" outright.
+The checkable claims were verified individually:
+
+| Module | Documented | Actual |
+|---|---|---|
+| 12 memory | `4  0  System  78  495  2019-08-19 14:40:07` | matches — real row is `4 0 System 0xfa80012a5040 78 495 N/A False 2019-08-19 14:40:07`, the doc simply elides `Offset(V)`/`SessionId`/`Wow64`. `WinRAR.exe`, `DumpIt.exe`, user `Jaffa`, `flag.rar` all genuinely present |
+| 15 filesystem | `FILE records found: 35`, `Free records: 47` | **exact**; `coreupdater` ×12, `loot.zip` ×6, `mortysmith` ×15 |
+| 16 registry | `CITADEL-DC01`, `coreupdater`, `ControlSet001`, `compname` | all present — the DC/Administrator/persistence narrative is real in the hive |
+| 18 super-timeline | `FILE records found: 35`, `Free records: 47`, `Processed 36 files`, `582 events` | **every count exact** |
+| 27 SRUM | `SrumECmd` → `AppResourceUseInfo`, `NetworkUsage` | present |
+
+**One documented output legitimately cannot match: module 20.** It queries the **live OS**, so its
+sample `pslist` JSON (PIDs, `explorer.exe` at 3820, etc.) is illustrative of whatever machine the
+author ran it on and will differ on every host by design.
+
+### What is still not verified
+
+- **Modules 11–27 have no answer key.** `ANSWER-KEY.md` stops at module 10 (the long-standing
+  ISSUE-08). Their *output* is now confirmed to match their READMEs, but there is no instructor
+  material to check exercise answers against.
+- The harness proves modules **run and produce output**; for 11–27 the correctness check above is
+  claim-level spot verification, not the exhaustive line-by-line treatment modules 1–10 received.
+
+---
+
 ## Carried forward / open
 
 - **M2 cosmetic:** regenerate `shimcache.csv` so `SourceFile` isn't a container path.
@@ -397,6 +443,8 @@ The two-UACME contrast is genuinely distinguishable in the data, and the Zerolog
 - ~~Modules 9–10~~ — **done (iteration 4). All ten modules are now audited.**
 - ~~M8 claim 9~~ — **confirmed correct** (iteration 4).
 - ~~Verify the Tamper-Protection clear~~ — **it did not persist**; the exclusion is the real fix.
+- **Write an answer key for modules 11–27** — the single largest remaining content gap.
+- ~~Validate the shipped artifact~~ — **done 2026-08-26: 26/0 on the published OVA.**
 - **Build-side work remains in `project-dfir/dfir-vm`:** ship the `C:\dfir` Defender exclusion, add
   `42-module04-acp` to the repo, put `C:\dfir\Git\usr\bin` on PATH (or write the shim into
   `native-shim`), and gate packaging on the harness so a step exiting 1 fails the build.
